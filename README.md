@@ -1,6 +1,6 @@
 # Telemedicine Portal
 [![GitHub](https://img.shields.io/badge/GitHub-Repo-black?logo=github&logoColor=white)](https://github.com/achenio/telemedicine-portal)
-[![Docs](https://img.shields.io/badge/Docs-API-green?logo=read-the-docs&logoColor=white)](https://github.com/achenio/telemedicine-portal/docs.md)
+[![Docs](https://img.shields.io/badge/Docs-API-green?logo=read-the-docs&logoColor=white)](https://github.com/achenio/telemedicine-portal/docs/docs.md)
 
 ![Home Screenshot](./screenshots/screenshot_home.png)  
 

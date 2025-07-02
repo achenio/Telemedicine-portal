@@ -29,13 +29,7 @@ The platform ensures easy access to healthcare services from anywhere, with priv
 ---
 
 ## Live Demo & Links
-
-[🌐 Visit the Live Demo](https://yourdomain.com)  
-[📅 Book Appointment](https://yourdomain.com/appointments.html)  
-[💬 Secure Chat](https://yourdomain.com/chat.html)  
-[🤖 AI Chat](https://yourdomain.com/ai-chat.html)  
-[🔐 Login](https://yourdomain.com/login.html)  
-[📝 Register](https://yourdomain.com/register.html)
+WIP
 
 ---
 

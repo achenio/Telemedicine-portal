@@ -33,4 +33,4 @@ This document provides an overview of the frontend for the Telemedicine Portal a
 - Open the application in a web browser.
 - Follow the on-screen instructions to book appointments, chat, or initiate video calls.
 
-For more information on the backend and video call functionalities, please refer to their respective documentation files in the `backend` and `video-call` directories.
+For more information on the backend and video call functionalities, please refer to their respective documentation files in the `backend` directory.

@@ -34,9 +34,9 @@ WIP
 
 ## Screenshots
 
-| Home Page              | Secure Chat            | AI Chat Popup          |
+| Home Page              | Secure Chat            | AI Chat Popup          | Appointments          |
 | ---------------------- | ---------------------- | ---------------------- |
-| ![Home Screenshot](./screenshots/home.png) | ![Chat Screenshot](./screenshots/chat.png) | ![AI Chat Popup](./screenshots/ai-chat-popup.png) |
+| ![Home Screenshot](./screenshots/screenshot_home.png) | ![Chat Screenshot](./screenshots/screenshot_securechat.png) | ![AI Chat Popup](./screenshots/screenshot_aichat.png) | ![AI Chat Popup](./screenshots/screenshot_appointmentbooking.png) |
 
 ---
 

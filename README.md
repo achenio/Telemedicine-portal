@@ -2,8 +2,7 @@
 [![GitHub](https://img.shields.io/badge/GitHub-Repo-black?logo=github&logoColor=white)](https://github.com/achenio/telemedicine-portal)
 [![Docs](https://img.shields.io/badge/Docs-API-green?logo=read-the-docs&logoColor=white)](https://github.com/achenio/telemedicine-portal/docs.md)
 
-![App Screenshot](./screenshots/screenshot1.png)  
-*Add more screenshots in the `screenshots/` folder and update this section accordingly.*
+![Home Screenshot](./screenshots/screenshot_home.png)  
 
 ---
 

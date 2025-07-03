@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Register</title>
+  <style>
+    :root {
+      --bg: #fefefe;
+      --text: #1c1c1e;
+      --subtext: #555;
+      --primary: #007aff;
+      --card: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    header {
+      background-color: var(--card);
+      padding: 2rem 1rem;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+      animation: fadeIn 1s ease-out;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding: 0;
+      margin-top: 1rem;
+    }
+
+    nav ul li a {
+      text-decoration: none;
+      color: var(--primary);
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      transition: background-color 0.3s ease;
+    }
+
+    nav ul li a:hover {
+      background-color: rgba(0, 122, 255, 0.1);
+    }
+
+    main {
+      max-width: 400px;
+      margin: 4rem auto;
+      padding: 1rem;
+      animation: fadeInUp 1s ease-out;
+    }
+
+    h2 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    form {
+      background-color: var(--card);
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    label {
+      font-weight: 600;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="email"],
+    input[type="date"],
+    input[type="tel"] {
+      padding: 0.8rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      background-color: #fff;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    button[type="submit"] {
+      padding: 0.9rem;
+      background-color: var(--primary);
+      color: white;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button[type="submit"]:hover {
+      background-color: #005fcc;
+    }
+
+    #register-message {
+      margin-top: 1rem;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      font-size: 0.9rem;
+      color: #999;
+      border-top: 1px solid #eee;
+      margin-top: 4rem;
+      animation: fadeIn 1s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 600px) {
+      form {
+        padding: 1.5rem;
+      }
+
+      h2 {
+        font-size: 1.6rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="login.html">Login</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <h2>Register</h2>
+    <form id="register-form">
+      <div>
+        <label for="nome">Nome:</label><br />
+        <input type="text" id="nome" name="nome" required />
+      </div>
+      <div>
+        <label for="cognome">Cognome:</label><br />
+        <input type="text" id="cognome" name="cognome" required />
+      </div>
+      <div>
+        <label for="data-nascita">Data di nascita:</label><br />
+        <input type="date" id="data-nascita" name="data-nascita" />
+      </div>
+      <div>
+        <label for="email">Email:</label><br />
+        <input type="email" id="email" name="email" />
+      </div>
+      <div>
+        <label for="codice-fiscale">Codice fiscale:</label><br />
+        <input type="text" id="codice-fiscale" name="codice-fiscale" required maxlength="16" minlength="16" />
+      </div>
+      <div>
+        <label for="telefono">Telefono:</label><br />
+        <input type="tel" id="telefono" name="telefono" />
+      </div>
+      <div>
+        <label for="username">Username:</label><br />
+        <input type="text" id="username" name="username" required />
+      </div>
+      <div>
+        <label for="password">Password:</label><br />
+        <input type="password" id="password" name="password" required />
+      </div>
+      <button type="submit">Register</button>
+    </form>
+    <div id="register-message"></div>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Telemedicine Portal</p>
+  </footer>
+
+  <script>
+    const form = document.getElementById('register-form');
+    const messageDiv = document.getElementById('register-message');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const data = {
+        nome: form.nome.value.trim(),
+        cognome: form.cognome.value.trim(),
+        data_nascita: form['data-nascita'].value || null,
+        email: form.email.value.trim() || null,
+        codice_fiscale: form['codice-fiscale'].value.trim(),
+        telefono: form.telefono.value.trim() || null,
+        username: form.username.value.trim(),
+        password: form.password.value
+      };
+
+      try {
+        const res = await fetch('http://localhost:5501/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const json = await res.json();
+
+        if (res.ok) {
+          messageDiv.style.color = 'green';
+          messageDiv.textContent = json.message || 'Registration successful!';
+          form.reset();
+        } else {
+          messageDiv.style.color = 'red';
+          messageDiv.textContent = json.error || 'Registration failed.';
+        }
+      } catch (err) {
+        messageDiv.style.color = 'red';
+        messageDiv.textContent = 'Server error or unreachable.';
+      }
+    });
+  </script>
+</body>
+</html>

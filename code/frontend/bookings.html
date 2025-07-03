@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Bookings</title>
+  <style>
+    :root {
+      --bg: #fefefe;
+      --text: #1c1c1e;
+      --subtext: #555;
+      --primary: #007aff;
+      --card: #ffffff;
+      --error: #ff3b30;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    header {
+      background-color: var(--card);
+      padding: 2rem 1rem;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+      animation: fadeIn 1s ease-out;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding: 0;
+      margin-top: 1rem;
+    }
+
+    nav ul li a {
+      text-decoration: none;
+      color: var(--primary);
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      transition: background-color 0.3s ease;
+    }
+
+    nav ul li a:hover {
+      background-color: rgba(0, 122, 255, 0.1);
+    }
+
+    main {
+      max-width: 800px;
+      margin: 4rem auto;
+      padding: 1rem;
+      animation: fadeInUp 1s ease-out;
+    }
+
+    h2 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    #login-message {
+      text-align: center;
+      margin: 2rem 0;
+      font-weight: 600;
+      color: var(--error);
+    }
+
+    ul#appointments-list {
+      list-style: none;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    ul#appointments-list li {
+      background-color: var(--card);
+      padding: 1.5rem;
+      border-radius: 16px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    ul#appointments-list li:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    ul#appointments-list li span {
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .cancel-btn {
+      background-color: var(--error);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: opacity 0.3s ease;
+    }
+
+    .cancel-btn:hover {
+      opacity: 0.8;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      font-size: 0.9rem;
+      color: #999;
+      border-top: 1px solid #eee;
+      margin-top: 4rem;
+      animation: fadeIn 1s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 600px) {
+      ul#appointments-list li {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="appointments.html">Book Appointment</a></li>
+        <li><a href="chat.html">Secure Chat</a></li>
+        <li><a href="ai-chat.html">AI Chat</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <h2>My Booked Appointments</h2>
+    
+    <div id="login-message" style="display: none;">
+      Please <a href="login.html">login</a> to view your appointments.
+    </div>
+
+    <ul id="appointments-list" style="display: none;">
+      <!-- Appointments will be loaded here -->
+    </ul>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Telemedicine Portal</p>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const username = localStorage.getItem('username');
+      const appointmentsList = document.getElementById('appointments-list');
+      const loginMessage = document.getElementById('login-message');
+      
+      if (username) {
+        appointmentsList.style.display = 'flex';
+        loginMessage.style.display = 'none';
+        
+        try {
+          const response = await fetch(`http://localhost:5501/appointments?username=${username}`);
+          const appointments = await response.json();
+
+          if (response.ok) {
+            if (appointments.length > 0) {
+              appointmentsList.innerHTML = appointments.map(appt => `
+                <li>
+                  <span>📅 ${new Date(appt.date).toLocaleDateString()}</span>
+                  <span>🕒 ${appt.time}</span>
+                  <span>👨‍⚕️ ${appt.doctor_name}</span>
+                  <button class="cancel-btn" data-id="${appt.id}">Cancel</button>
+                </li>
+              `).join('');
+
+              // Add event listeners to cancel buttons
+              document.querySelectorAll('.cancel-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                  if (confirm('Are you sure you want to cancel this appointment?')) {
+                    try {
+                      const response = await fetch(`http://localhost:5501/appointments/${e.target.dataset.id}`, {
+                        method: 'DELETE'
+                      });
+                      
+                      if (response.ok) {
+                        e.target.parentElement.remove();
+                        alert('Appointment cancelled successfully');
+                      } else {
+                        alert('Failed to cancel appointment');
+                      }
+                    } catch (error) {
+                      console.error('Error:', error);
+                      alert('Server error, please try again later');
+                    }
+                  }
+                });
+              });
+            } else {
+              appointmentsList.innerHTML = '<li>No appointments booked yet</li>';
+            }
+          } else {
+            appointmentsList.innerHTML = '<li>Error loading appointments</li>';
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          appointmentsList.innerHTML = '<li>Server error, please try again later</li>';
+        }
+      } else {
+        appointmentsList.style.display = 'none';
+        loginMessage.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>

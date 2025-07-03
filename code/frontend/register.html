@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Register</title>
   <style>
     :root {
@@ -11,6 +11,7 @@
       --subtext: #555;
       --primary: #007aff;
       --card: #ffffff;
+      --error: #ff3b30;
     }
 
     * {
@@ -58,7 +59,7 @@
     }
 
     main {
-      max-width: 400px;
+      max-width: 500px;
       margin: 4rem auto;
       padding: 1rem;
       animation: fadeInUp 1s ease-out;
@@ -82,20 +83,22 @@
 
     label {
       font-weight: 600;
+      display: block;
+      margin-bottom: 0.5rem;
     }
 
     input[type="text"],
     input[type="password"],
     input[type="email"],
     input[type="date"],
-    input[type="tel"] {
+    input[type="tel"],
+    select {
       padding: 0.8rem;
       font-size: 1rem;
       border: 1px solid #ccc;
       border-radius: 12px;
       background-color: #fff;
       width: 100%;
-      box-sizing: border-box;
     }
 
     button[type="submit"] {
@@ -108,6 +111,7 @@
       border-radius: 25px;
       cursor: pointer;
       transition: background-color 0.3s ease;
+      margin-top: 1rem;
     }
 
     button[type="submit"]:hover {
@@ -171,37 +175,62 @@
     <h2>Register</h2>
     <form id="register-form">
       <div>
-        <label for="nome">Nome:</label><br />
-        <input type="text" id="nome" name="nome" required />
+        <label for="user_type">I am registering as:</label>
+        <select id="user_type" name="user_type" required>
+          <option value="">Select account type</option>
+          <option value="patient">Patient</option>
+          <option value="doctor">Doctor</option>
+        </select>
       </div>
+
       <div>
-        <label for="cognome">Cognome:</label><br />
-        <input type="text" id="cognome" name="cognome" required />
+        <label for="nome">First Name:</label>
+        <input type="text" id="nome" name="nome" required>
       </div>
+
       <div>
-        <label for="data-nascita">Data di nascita:</label><br />
-        <input type="date" id="data-nascita" name="data-nascita" />
+        <label for="cognome">Last Name:</label>
+        <input type="text" id="cognome" name="cognome" required>
       </div>
+
       <div>
-        <label for="email">Email:</label><br />
-        <input type="email" id="email" name="email" />
+        <label for="codice_fiscale">Tax Code (16 characters):</label>
+        <input type="text" id="codice_fiscale" name="codice_fiscale" required
+               pattern="[A-Za-z]{6}[0-9]{2}[A-Za-z]{1}[0-9]{2}[A-Za-z]{1}[0-9]{3}[A-Za-z]{1}"
+               maxlength="16" minlength="16">
       </div>
+
       <div>
-        <label for="codice-fiscale">Codice fiscale:</label><br />
-        <input type="text" id="codice-fiscale" name="codice-fiscale" required maxlength="16" minlength="16" />
+        <label for="data_nascita">Date of Birth:</label>
+        <input type="date" id="data_nascita" name="data_nascita">
       </div>
+
       <div>
-        <label for="telefono">Telefono:</label><br />
-        <input type="tel" id="telefono" name="telefono" />
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
       </div>
+
       <div>
-        <label for="username">Username:</label><br />
-        <input type="text" id="username" name="username" required />
+        <label for="telefono">Phone Number:</label>
+        <input type="tel" id="telefono" name="telefono" required>
       </div>
+
+      <div id="specialization-field" style="display: none;">
+        <label for="specialization">Medical Specialization:</label>
+        <input type="text" id="specialization" name="specialization">
+      </div>
+
       <div>
-        <label for="password">Password:</label><br />
-        <input type="password" id="password" name="password" required />
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required minlength="4">
       </div>
+
+      <div>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required minlength="8"
+               pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$">
+      </div>
+
       <button type="submit">Register</button>
     </form>
     <div id="register-message"></div>
@@ -212,42 +241,62 @@
   </footer>
 
   <script>
-    const form = document.getElementById('register-form');
-    const messageDiv = document.getElementById('register-message');
+    document.getElementById('user_type').addEventListener('change', function() {
+      const specField = document.getElementById('specialization-field');
+      const specInput = document.getElementById('specialization');
+      
+      if (this.value === 'doctor') {
+        specField.style.display = 'block';
+        specInput.required = true;
+      } else {
+        specField.style.display = 'none';
+        specInput.required = false;
+      }
+    });
 
-    form.addEventListener('submit', async (e) => {
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-
-      const data = {
-        nome: form.nome.value.trim(),
-        cognome: form.cognome.value.trim(),
-        data_nascita: form['data-nascita'].value || null,
-        email: form.email.value.trim() || null,
-        codice_fiscale: form['codice-fiscale'].value.trim(),
-        telefono: form.telefono.value.trim() || null,
-        username: form.username.value.trim(),
-        password: form.password.value
+      
+      const formData = {
+        user_type: document.getElementById('user_type').value,
+        nome: document.getElementById('nome').value.trim(),
+        cognome: document.getElementById('cognome').value.trim(),
+        codice_fiscale: document.getElementById('codice_fiscale').value.trim(),
+        data_nascita: document.getElementById('data_nascita').value,
+        email: document.getElementById('email').value.trim(),
+        telefono: document.getElementById('telefono').value.trim(),
+        username: document.getElementById('username').value.trim(),
+        password: document.getElementById('password').value,
+        specialization: document.getElementById('user_type').value === 'doctor' 
+          ? document.getElementById('specialization').value.trim()
+          : null
       };
 
       try {
-        const res = await fetch('http://localhost:5501/register', {
+        const response = await fetch('http://localhost:5501/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
+          body: JSON.stringify(formData)
         });
-        const json = await res.json();
 
-        if (res.ok) {
-          messageDiv.style.color = 'green';
-          messageDiv.textContent = json.message || 'Registration successful!';
-          form.reset();
+        const data = await response.json();
+        
+        if (response.ok) {
+          localStorage.setItem('username', data.user.username);
+          localStorage.setItem('user_type', data.user.user_type);
+          localStorage.setItem('user_id', data.user.id);
+          
+          window.location.href = data.user.user_type === 'doctor' 
+            ? 'doctor-appointments.html' 
+            : 'index.html';
         } else {
-          messageDiv.style.color = 'red';
-          messageDiv.textContent = json.error || 'Registration failed.';
+          document.getElementById('register-message').style.color = 'var(--error)';
+          document.getElementById('register-message').textContent = data.error || 'Registration failed';
         }
       } catch (err) {
-        messageDiv.style.color = 'red';
-        messageDiv.textContent = 'Server error or unreachable.';
+        console.error('Registration error:', err);
+        document.getElementById('register-message').style.color = 'var(--error)';
+        document.getElementById('register-message').textContent = 'Server error, please try again';
       }
     });
   </script>

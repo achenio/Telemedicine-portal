@@ -222,5 +222,33 @@
       }
     });
   </script>
+    <script>
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const response = await fetch('http://localhost:5501/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: form.username.value.trim(),
+          password: form.password.value
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem('username', data.user.username);
+        localStorage.setItem('user_type', data.user.user_type);
+        localStorage.setItem('user_id', data.user.id);
+        
+        window.location.href = data.user.user_type === 'doctor' 
+          ? 'doctor-appointments.html' 
+          : 'index.html';
+      } else {
+        // Mostra errore
+      }
+    });
+  </script>
 </body>
 </html>

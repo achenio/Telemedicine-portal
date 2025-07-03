@@ -187,10 +187,7 @@
       <div>
         <label for="doctor">Doctor:</label><br />
         <select id="doctor" name="doctor" required>
-          <option value="">Select a doctor</option>
-          <option value="dr_smith">Dr. Smith (Cardiology)</option>
-          <option value="dr_johnson">Dr. Johnson (Neurology)</option>
-          <option value="dr_williams">Dr. Williams (Pediatrics)</option>
+          <option value="">Loading doctors...</option>
         </select>
       </div>
       <button type="submit">Book Appointment</button>
@@ -202,31 +199,53 @@
   </footer>
 
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       const today = new Date().toISOString().split('T')[0];
       document.getElementById('date').min = today;
       
-      // Controlla se l'utente è loggato
+      // Check if user is logged in
       const username = localStorage.getItem('username');
+      const userId = localStorage.getItem('user_id');
       const form = document.getElementById('appointment-form');
       const loginMessage = document.getElementById('login-message');
       
-      if (username) {
+      if (username && userId) {
         form.style.display = 'block';
         loginMessage.style.display = 'none';
+        
+        // Load doctors list
+        try {
+          const response = await fetch('http://localhost:5501/doctors');
+          if (!response.ok) throw new Error('Failed to load doctors');
+          
+          const doctors = await response.json();
+          const doctorSelect = document.getElementById('doctor');
+          
+          doctorSelect.innerHTML = '<option value="">Select a doctor</option>';
+          doctors.forEach(doctor => {
+            const option = document.createElement('option');
+            option.value = doctor.id;
+            option.textContent = `${doctor.nome} ${doctor.cognome} (${doctor.specialization})`;
+            doctorSelect.appendChild(option);
+          });
+        } catch (error) {
+          console.error('Error loading doctors:', error);
+          doctorSelect.innerHTML = '<option value="">Error loading doctors</option>';
+        }
       } else {
         form.style.display = 'none';
         loginMessage.style.display = 'block';
       }
 
-      // Gestione del form
+      // Form submission
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const appointmentData = {
           date: form.date.value,
           time: form.time.value,
-          doctor: form.doctor.value,
+          doctor_id: form.doctor.value,
+          user_id: userId,
           username: username
         };
 

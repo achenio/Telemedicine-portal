@@ -14,144 +14,174 @@ const db = new sqlite3.Database('./utenti.db', (err) => {
   else console.log('Connected to SQLite DB.');
 });
 
-// Crea tabella utenti
-db.run(`
-CREATE TABLE IF NOT EXISTS utenti (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  nome TEXT NOT NULL,
-  cognome TEXT NOT NULL,
-  codice_fiscale TEXT UNIQUE NOT NULL,
-  luogo_nascita TEXT,
-  data_nascita TEXT,
-  email TEXT UNIQUE,
-  telefono TEXT UNIQUE,
-  username TEXT UNIQUE NOT NULL,
-  password_hash TEXT NOT NULL
-)
-`);
+// Create tables
+db.serialize(() => {
+  db.run(`
+  CREATE TABLE IF NOT EXISTS utenti (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    cognome TEXT NOT NULL,
+    codice_fiscale TEXT UNIQUE NOT NULL,
+    luogo_nascita TEXT,
+    data_nascita TEXT,
+    email TEXT UNIQUE,
+    telefono TEXT UNIQUE,
+    username TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    user_type TEXT NOT NULL CHECK(user_type IN ('patient', 'doctor')),
+    specialization TEXT
+  )`);
 
-// Crea tabella appuntamenti
-db.run(`
-CREATE TABLE IF NOT EXISTS appointments (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL,
-  username TEXT NOT NULL,
-  date TEXT NOT NULL,
-  time TEXT NOT NULL,
-  doctor_id TEXT NOT NULL,
-  doctor_name TEXT NOT NULL,
-  status TEXT DEFAULT 'booked',
-  FOREIGN KEY(user_id) REFERENCES utenti(id)
-)
-`);
-
-// --- REGISTER ---
-app.post('/register', (req, res) => {
-  const {
-    nome, cognome, codice_fiscale, luogo_nascita,
-    data_nascita, email, telefono, username, password
-  } = req.body;
-
-  if (!username || !password || !nome || !cognome || !codice_fiscale) {
-    return res.status(400).json({ error: "Missing required fields." });
-  }
-
-  bcrypt.hash(password, 10, (err, hash) => {
-    if (err) return res.status(500).json({ error: "Server error hashing password." });
-
-    const sql = `INSERT INTO utenti 
-      (nome, cognome, codice_fiscale, luogo_nascita, data_nascita, email, telefono, username, password_hash)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-
-    db.run(sql, [nome, cognome, codice_fiscale, luogo_nascita || null, data_nascita || null, email || null, telefono || null, username, hash], function(err) {
-      if (err) {
-        if (err.message.includes('UNIQUE constraint failed')) {
-          return res.status(409).json({ error: "Username, email, codice fiscale or telefono already exists." });
-        }
-        return res.status(500).json({ error: "Database error." });
-      }
-      res.json({ success: true, message: "User registered successfully." });
-    });
-  });
+  db.run(`
+  CREATE TABLE IF NOT EXISTS appointments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    username TEXT NOT NULL,
+    date TEXT NOT NULL,
+    time TEXT NOT NULL,
+    doctor_id INTEGER NOT NULL,
+    doctor_name TEXT NOT NULL,
+    status TEXT DEFAULT 'booked',
+    FOREIGN KEY(user_id) REFERENCES utenti(id),
+    FOREIGN KEY(doctor_id) REFERENCES utenti(id)
+  )`);
 });
 
-// --- LOGIN ---
-app.post('/login', (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) return res.status(400).json({ error: "Username and password required." });
+// Registration endpoint
+app.post('/register', (req, res) => {
+  const { nome, cognome, codice_fiscale, user_type, specialization, ...rest } = req.body;
 
-  db.get('SELECT * FROM utenti WHERE username = ?', [username], (err, row) => {
-    if (err) return res.status(500).json({ error: "Database error." });
-    if (!row) return res.status(401).json({ error: "Invalid username or password." });
+  // Log tutto ciò che arriva
+  console.log("Registering user with data:", req.body);
 
-    bcrypt.compare(password, row.password_hash, (err, result) => {
-      if (err) return res.status(500).json({ error: "Server error." });
-      if (!result) return res.status(401).json({ error: "Invalid username or password." });
+  // Controllo tipo utente
+  if (!['patient', 'doctor'].includes(user_type)) {
+    return res.status(400).json({ error: "Invalid user type" });
+  }
 
-      res.json({ 
-        success: true, 
-        message: "Login successful.",
+  // Controllo specializzazione se è un dottore
+  const specializationValue = (user_type === 'doctor') 
+    ? (specialization || '').trim() 
+    : null;
+
+  if (user_type === 'doctor' && !specializationValue) {
+    return res.status(400).json({ error: "Specialization required for doctors" });
+  }
+
+  // Crea hash della password
+  bcrypt.hash(req.body.password, 10, (err, hash) => {
+    if (err) {
+      console.error("Bcrypt error:", err);
+      return res.status(500).json({ error: "Server error during password hashing" });
+    }
+
+    const sql = `INSERT INTO utenti (
+      nome, cognome, codice_fiscale, user_type, specialization, password_hash, 
+      luogo_nascita, data_nascita, email, telefono, username
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+    const values = [
+      nome.trim(),
+      cognome.trim(),
+      codice_fiscale.trim(),
+      user_type,
+      specializationValue,
+      hash,
+      rest.luogo_nascita?.trim() || null,
+      rest.data_nascita || null,
+      rest.email?.trim() || null,
+      rest.telefono?.trim() || null,
+      rest.username.trim()
+    ];
+
+    console.log("Inserting user with values:", values);
+
+    db.run(sql, values, function(err) {
+      if (err) {
+        console.error("DB insert error:", err.message);
+        if (err.message.includes('UNIQUE constraint failed')) {
+          return res.status(409).json({ error: "Username/email/codice fiscale already exists" });
+        }
+        return res.status(500).json({ error: "Database error: " + err.message });
+      }
+
+      res.json({
+        success: true,
         user: {
-          id: row.id,
-          username: row.username,
-          nome: row.nome,
-          cognome: row.cognome
+          id: this.lastID,
+          username: rest.username,
+          user_type
         }
       });
     });
   });
 });
 
-// --- APPOINTMENTS ---
-const doctors = [
-  { id: 'dr_smith', name: 'Dr. Smith (Cardiology)' },
-  { id: 'dr_johnson', name: 'Dr. Johnson (Neurology)' },
-  { id: 'dr_williams', name: 'Dr. Williams (Pediatrics)' }
-];
+// Login endpoint
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
 
-// Prenota appuntamento
+  db.get('SELECT * FROM utenti WHERE username = ?', [username], (err, user) => {
+    if (err) return res.status(500).json({ error: "Database error" });
+    if (!user) return res.status(401).json({ error: "Invalid credentials" });
+
+    bcrypt.compare(password, user.password_hash, (err, result) => {
+      if (err || !result) return res.status(401).json({ error: "Invalid credentials" });
+      
+      res.json({
+        success: true,
+        user: {
+          id: user.id,
+          username: user.username,
+          nome: user.nome,
+          cognome: user.cognome,
+          user_type: user.user_type
+        }
+      });
+    });
+  });
+});
+
+// Get doctors endpoint
+app.get('/doctors', (req, res) => {
+  db.all(
+    `SELECT id, nome, cognome, specialization FROM utenti WHERE user_type = 'doctor'`,
+    (err, doctors) => {
+      if (err) return res.status(500).json({ error: "Database error" });
+      res.json(doctors);
+    }
+  );
+});
+
+// Book appointment endpoint
 app.post('/appointments', (req, res) => {
-  const { username, date, time, doctor } = req.body;
-  
-  if (!username || !date || !time || !doctor) {
-    return res.status(400).json({ error: "Missing required fields." });
+  const { user_id, doctor_id, date, time, username } = req.body;
+
+  if (!user_id || !doctor_id || !date || !time || !username) {
+    return res.status(400).json({ error: "Missing required fields" });
   }
 
-  // Verifica se il dottore esiste
-  const selectedDoctor = doctors.find(d => d.id === doctor);
-  if (!selectedDoctor) {
-    return res.status(400).json({ error: "Invalid doctor selection." });
-  }
+  db.get('SELECT * FROM utenti WHERE id = ? AND user_type = "doctor"', [doctor_id], (err, doctor) => {
+    if (err || !doctor) return res.status(400).json({ error: "Invalid doctor" });
 
-  // Verifica se l'utente esiste
-  db.get('SELECT id FROM utenti WHERE username = ?', [username], (err, user) => {
-    if (err) return res.status(500).json({ error: "Database error." });
-    if (!user) return res.status(404).json({ error: "User not found." });
-
-    // Verifica se esiste già un appuntamento allo stesso orario
+    // Check if the time slot is available
     db.get(
       `SELECT id FROM appointments 
-       WHERE date = ? AND time = ? AND doctor_id = ? AND status = 'booked'`,
-      [date, time, doctor],
+       WHERE doctor_id = ? AND date = ? AND time = ? AND status = 'booked'`,
+      [doctor_id, date, time],
       (err, existing) => {
-        if (err) return res.status(500).json({ error: "Database error." });
-        if (existing) {
-          return res.status(409).json({ error: "This time slot is already booked." });
-        }
+        if (err) return res.status(500).json({ error: "Database error" });
+        if (existing) return res.status(409).json({ error: "Time slot already booked" });
 
-        // Crea l'appuntamento
+        // Book the appointment
         db.run(
           `INSERT INTO appointments 
-           (user_id, username, date, time, doctor_id, doctor_name) 
-           VALUES (?, ?, ?, ?, ?, ?)`,
-          [user.id, username, date, time, doctor, selectedDoctor.name],
+          (user_id, username, date, time, doctor_id, doctor_name) 
+          VALUES (?, ?, ?, ?, ?, ?)`,
+          [user_id, username, date, time, doctor_id, `${doctor.nome} ${doctor.cognome}`],
           function(err) {
-            if (err) return res.status(500).json({ error: "Database error." });
-            res.json({ 
-              success: true, 
-              message: "Appointment booked successfully.",
-              appointmentId: this.lastID
-            });
+            if (err) return res.status(500).json({ error: "Database error" });
+            res.json({ success: true, appointmentId: this.lastID });
           }
         );
       }
@@ -159,40 +189,33 @@ app.post('/appointments', (req, res) => {
   });
 });
 
-// Ottieni appuntamenti per utente
-app.get('/appointments', (req, res) => {
-  const { username } = req.query;
-  
-  if (!username) {
-    return res.status(400).json({ error: "Username is required." });
-  }
+// Get doctor appointments endpoint
+app.get('/doctor/appointments', (req, res) => {
+  const doctorId = req.query.doctorId;
+  if (!doctorId) return res.status(400).json({ error: "Doctor ID required" });
 
   db.all(
-    `SELECT id, date, time, doctor_name 
-     FROM appointments 
-     WHERE username = ? AND status = 'booked'
-     ORDER BY date, time`,
-    [username],
+    `SELECT a.id, a.date, a.time, u.nome, u.cognome, u.codice_fiscale
+     FROM appointments a
+     JOIN utenti u ON a.user_id = u.id
+     WHERE a.doctor_id = ? AND a.status = 'booked'
+     ORDER BY a.date, a.time`,
+    [doctorId],
     (err, appointments) => {
-      if (err) return res.status(500).json({ error: "Database error." });
+      if (err) return res.status(500).json({ error: "Database error" });
       res.json(appointments);
     }
   );
 });
 
-// Cancella appuntamento
+// Cancel appointment endpoint
 app.delete('/appointments/:id', (req, res) => {
-  const { id } = req.params;
-
   db.run(
     `UPDATE appointments SET status = 'cancelled' WHERE id = ?`,
-    [id],
+    [req.params.id],
     function(err) {
-      if (err) return res.status(500).json({ error: "Database error." });
-      if (this.changes === 0) {
-        return res.status(404).json({ error: "Appointment not found." });
-      }
-      res.json({ success: true, message: "Appointment cancelled." });
+      if (err) return res.status(500).json({ error: "Database error" });
+      res.json({ success: true });
     }
   );
 });

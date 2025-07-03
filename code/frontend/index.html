@@ -406,91 +406,104 @@
       </div>
     </div>
   </div>
+<script>
+  const openBtn = document.getElementById('open-ai-chat');
+  const featureBtn = document.getElementById('feature-ai-chat');
+  const overlay = document.getElementById('ai-chat-overlay');
+  const closeBtn = document.getElementById('ai-chat-close');
+  const sendBtn = document.getElementById('ai-chat-send');
+  const input = document.getElementById('ai-chat-input');
+  const messages = document.getElementById('ai-chat-messages');
 
-  <script>
-    const openBtn = document.getElementById('open-ai-chat');
-    const featureBtn = document.getElementById('feature-ai-chat');
-    const overlay = document.getElementById('ai-chat-overlay');
-    const closeBtn = document.getElementById('ai-chat-close');
-    const sendBtn = document.getElementById('ai-chat-send');
-    const input = document.getElementById('ai-chat-input');
-    const messages = document.getElementById('ai-chat-messages');
+  function openChat() {
+    overlay.style.display = 'flex';
+    input.focus();
+  }
 
-    function openChat() {
-      overlay.style.display = 'flex';
-      input.focus();
+  function closeChat() {
+    overlay.style.display = 'none';
+    input.value = '';
+    messages.innerHTML = '';
+  }
+
+  function appendMessage(text, sender) {
+    const msg = document.createElement('div');
+    msg.classList.add('message', sender);
+    msg.textContent = text;
+    messages.appendChild(msg);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function getAIResponse(userText) {
+    return "You said: " + userText + ". (This is a dummy AI response.)";
+  }
+
+  function sendMessage() {
+    const text = input.value.trim();
+    if (!text) return;
+    appendMessage(text, 'user');
+    input.value = '';
+    setTimeout(() => {
+      const response = getAIResponse(text);
+      appendMessage(response, 'bot');
+    }, 800);
+  }
+
+  openBtn.addEventListener('click', openChat);
+  featureBtn.addEventListener('click', openChat);
+  closeBtn.addEventListener('click', closeChat);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeChat();
+  });
+  sendBtn.addEventListener('click', sendMessage);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      sendMessage();
     }
+  });
 
-    function closeChat() {
-      overlay.style.display = 'none';
-      input.value = '';
-      messages.innerHTML = '';
+  // USER PROFILE DISPLAY LOGIC
+  const profileArea = document.getElementById('profile-area');
+  const loginLink = document.getElementById('login-link');
+  const username = localStorage.getItem('username');
+  const userType = localStorage.getItem('user_type');
+
+  function renderProfile() {
+    if (username) {
+      loginLink.style.display = 'none';
+      const badge = userType === 'doctor'
+        ? `<span style="background:#007aff20; color:#007aff; border-radius:10px; padding:2px 8px; font-size:0.8rem; margin-left:6px;">Doctor</span>`
+        : '';
+      profileArea.innerHTML = `
+        Hello, <strong>${username}</strong>${badge}
+        <button id="logout-btn" aria-label="Logout">Logout</button>
+      `;
+      document.getElementById('logout-btn').addEventListener('click', () => {
+        localStorage.removeItem('username');
+        localStorage.removeItem('user_type');
+        localStorage.removeItem('user_id');
+        location.reload();
+      });
+    } else {
+      profileArea.innerHTML = '';
+      loginLink.style.display = '';
     }
+  }
 
-    // Append message to chat window
-    function appendMessage(text, sender) {
-      const msg = document.createElement('div');
-      msg.classList.add('message', sender);
-      msg.textContent = text;
-      messages.appendChild(msg);
-      messages.scrollTop = messages.scrollHeight;
-    }
+  renderProfile();
 
-    // Dummy AI response function (replace with real AI integration)
-    function getAIResponse(userText) {
-      return "You said: " + userText + ". (This is a dummy AI response.)";
-    }
+  // ADD LINK IF DOCTOR
+  if (userType === 'doctor') {
+    const nav = document.querySelector('nav ul');
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.href = 'doctor-appointments.html';
+    a.textContent = 'My Appointments';
+    li.appendChild(a);
+    nav.appendChild(li);
+  }
+</script>
 
-    // Send message handler
-    function sendMessage() {
-      const text = input.value.trim();
-      if (!text) return;
-      appendMessage(text, 'user');
-      input.value = '';
-      // Simulate AI response delay
-      setTimeout(() => {
-        const response = getAIResponse(text);
-        appendMessage(response, 'bot');
-      }, 800);
-    }
-
-    openBtn.addEventListener('click', openChat);
-    featureBtn.addEventListener('click', openChat);
-    closeBtn.addEventListener('click', closeChat);
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) closeChat();
-    });
-    sendBtn.addEventListener('click', sendMessage);
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        sendMessage();
-      }
-    });
-
-    // USER PROFILE DISPLAY LOGIC
-    const profileArea = document.getElementById('profile-area');
-    const loginLink = document.getElementById('login-link');
-    const username = localStorage.getItem('username');
-
-    function renderProfile() {
-      if (username) {
-        loginLink.style.display = 'none';
-        profileArea.innerHTML = `
-          Hello, <strong>${username}</strong>
-          <button id="logout-btn" aria-label="Logout">Logout</button>
-        `;
-        document.getElementById('logout-btn').addEventListener('click', () => {
-          localStorage.removeItem('username');
-          location.reload();
-        });
-      } else {
-        profileArea.innerHTML = '';
-        loginLink.style.display = '';
-      }
-    }
-
-    renderProfile();
-  </script>
 </body>
 </html>

@@ -189,53 +189,54 @@
       const username = localStorage.getItem('username');
       const appointmentsList = document.getElementById('appointments-list');
       const loginMessage = document.getElementById('login-message');
-      
+
       if (username) {
         appointmentsList.style.display = 'flex';
         loginMessage.style.display = 'none';
-        
+
         try {
-          const response = await fetch(`http://localhost:5501/appointments?username=${username}`);
+          const response = await fetch(`http://localhost:5501/my-bookings?username=${encodeURIComponent(username)}`);
           const appointments = await response.json();
 
-          if (response.ok) {
-            if (appointments.length > 0) {
-              appointmentsList.innerHTML = appointments.map(appt => `
-                <li>
-                  <span>📅 ${new Date(appt.date).toLocaleDateString()}</span>
-                  <span>🕒 ${appt.time}</span>
-                  <span>👨‍⚕️ ${appt.doctor_name}</span>
-                  <button class="cancel-btn" data-id="${appt.id}">Cancel</button>
-                </li>
-              `).join('');
+          if (!response.ok) {
+            appointmentsList.innerHTML = `<li>Error: ${appointments.error || "loading appointments"}</li>`;
+            return;
+          }
 
-              // Add event listeners to cancel buttons
-              document.querySelectorAll('.cancel-btn').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                  if (confirm('Are you sure you want to cancel this appointment?')) {
-                    try {
-                      const response = await fetch(`http://localhost:5501/appointments/${e.target.dataset.id}`, {
-                        method: 'DELETE'
-                      });
-                      
-                      if (response.ok) {
-                        e.target.parentElement.remove();
-                        alert('Appointment cancelled successfully');
-                      } else {
-                        alert('Failed to cancel appointment');
-                      }
-                    } catch (error) {
-                      console.error('Error:', error);
-                      alert('Server error, please try again later');
+          if (appointments.length > 0) {
+            appointmentsList.innerHTML = appointments.map(appt => `
+              <li>
+                <span>📅 ${new Date(appt.date).toLocaleDateString()}</span>
+                <span>🕒 ${appt.time}</span>
+                <span>👨‍⚕️ ${appt.doctor_name}</span>
+                <button class="cancel-btn" data-id="${appt.id}">Cancel</button>
+              </li>
+            `).join('');
+
+            // Add event listeners to cancel buttons
+            document.querySelectorAll('.cancel-btn').forEach(btn => {
+              btn.addEventListener('click', async (e) => {
+                if (confirm('Are you sure you want to cancel this appointment?')) {
+                  try {
+                    const response = await fetch(`http://localhost:5501/appointments/${e.target.dataset.id}`, {
+                      method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                      e.target.parentElement.remove();
+                      alert('Appointment cancelled successfully');
+                    } else {
+                      alert('Failed to cancel appointment');
                     }
+                  } catch (error) {
+                    console.error('Error:', error);
+                    alert('Server error, please try again later');
                   }
-                });
+                }
               });
-            } else {
-              appointmentsList.innerHTML = '<li>No appointments booked yet</li>';
-            }
+            });
           } else {
-            appointmentsList.innerHTML = '<li>Error loading appointments</li>';
+            appointmentsList.innerHTML = '<li>No appointments booked yet</li>';
           }
         } catch (error) {
           console.error('Error:', error);

@@ -57,7 +57,3 @@ curl -X POST http://localhost:5501/api/login -H "Content-Type: application/json"
 ```bash
 curl -X POST http://localhost:5501/api/appointments -H "Content-Type: application/json" -d '{"user_id": 1, "date": "2023-10-01 10:00:00", "description": "Consultation with Dr. Smith"}'
 ```
-
-## License
-
-This project is licensed under the MIT License. See the LICENSE file for details.

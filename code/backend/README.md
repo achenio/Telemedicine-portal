@@ -6,7 +6,7 @@ This document provides an overview of the backend for the Telemedicine Portal ap
 
 1. **Clone the Repository**
    ```
-   git clone https://github.com/yourusername/telemedicine-portal.git
+   git clone https://github.com/achenio/telemedicine-portal.git
    cd telemedicine-portal/backend
    ```
 
@@ -14,15 +14,16 @@ This document provides an overview of the backend for the Telemedicine Portal ap
    Ensure you have Python installed. Then, install the required packages using pip:
    ```
    pip install -r requirements.txt
+   npm install express bcrypt cors sqlite3
    ```
 
 3. **Run the Application**
    Start the backend server:
    ```
-   python app.py
+   node server.js
    ```
 
-   The server will be running at `http://localhost:5000`.
+   The server will be running at `http://localhost:5501`.
 
 ## API Endpoints
 
@@ -49,14 +50,10 @@ This document provides an overview of the backend for the Telemedicine Portal ap
 
 ### Login Example
 ```bash
-curl -X POST http://localhost:5000/api/login -H "Content-Type: application/json" -d '{"username": "user", "password": "pass"}'
+curl -X POST http://localhost:5501/api/login -H "Content-Type: application/json" -d '{"username": "user", "password": "pass"}'
 ```
 
 ### Book Appointment Example
 ```bash
-curl -X POST http://localhost:5000/api/appointments -H "Content-Type: application/json" -d '{"user_id": 1, "date": "2023-10-01 10:00:00", "description": "Consultation with Dr. Smith"}'
+curl -X POST http://localhost:5501/api/appointments -H "Content-Type: application/json" -d '{"user_id": 1, "date": "2023-10-01 10:00:00", "description": "Consultation with Dr. Smith"}'
 ```
-
-## License
-
-This project is licensed under the MIT License. See the LICENSE file for details.

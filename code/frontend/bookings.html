@@ -195,7 +195,7 @@
         loginMessage.style.display = 'none';
 
         try {
-          const response = await fetch(`http://localhost:5501/my-bookings?username=${encodeURIComponent(username)}`);
+          const response = await fetch(`http://localhost:5501/appointments?username=${encodeURIComponent(username)}`);
           const appointments = await response.json();
 
           if (!response.ok) {

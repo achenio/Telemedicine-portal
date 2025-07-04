@@ -2,157 +2,126 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Book Appointment</title>
   <style>
-    :root {
-      --bg: #fefefe;
-      --text: #1c1c1e;
-      --subtext: #555;
-      --primary: #007aff;
-      --card: #ffffff;
-      --error: #ff3b30;
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+      background: #fefefe; 
+      color: #1c1c1e; 
+      margin:0; 
+      padding:0;
     }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+    header, footer { 
+      padding: 1rem; 
+      background: #fff; 
+      border-bottom: 1px solid #ddd; 
+      text-align:center;
     }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
+    nav ul { 
+      list-style:none; 
+      display:flex; 
+      justify-content:center; 
+      gap:1rem; 
+      padding:0; 
+      margin:0;
     }
-
-    header {
-      background-color: var(--card);
-      padding: 2rem 1rem;
-      text-align: center;
-      border-bottom: 1px solid #ddd;
-      animation: fadeIn 1s ease-out;
+    nav ul li a { 
+      text-decoration:none; 
+      color:#007aff; 
+      font-weight:600; 
+      padding:0.5rem 1rem; 
+      border-radius:20px; 
     }
-
-    nav ul {
-      list-style: none;
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 1rem;
-      padding: 0;
-      margin-top: 1rem;
+    nav ul li a:hover { 
+      background: rgba(0, 122, 255, 0.1);
     }
-
-    nav ul li a {
-      text-decoration: none;
-      color: var(--primary);
-      font-weight: 600;
-      padding: 0.5rem 1rem;
-      border-radius: 20px;
-      transition: background-color 0.3s ease;
-    }
-
-    nav ul li a:hover {
-      background-color: rgba(0, 122, 255, 0.1);
-    }
-
-    main {
-      max-width: 500px;
-      margin: 4rem auto;
+    main { 
+      max-width: 500px; 
+      margin: 3rem auto; 
       padding: 1rem;
-      animation: fadeInUp 1s ease-out;
     }
-
-    h2 {
-      text-align: center;
-      font-size: 2rem;
-      margin-bottom: 2rem;
+    form { 
+      background:#fff; 
+      padding:2rem; 
+      border-radius:16px; 
+      box-shadow:0 8px 20px rgba(0,0,0,0.05); 
+      display:flex; 
+      flex-direction:column; 
+      gap:1.5rem;
     }
-
-    form {
-      background-color: var(--card);
+    label { 
+      font-weight:600;
+    }
+    input, select { 
+      padding:0.8rem; 
+      font-size:1rem; 
+      border:1px solid #ccc; 
+      border-radius:12px; 
+      width:100%; 
+    }
+    button { 
+      padding:0.9rem; 
+      background:#007aff; 
+      color:#fff; 
+      font-weight:600; 
+      border:none; 
+      border-radius:25px; 
+      cursor:pointer; 
+    }
+    button:hover { 
+      background:#005fcc; 
+    }
+    #login-message { 
+      color:#ff3b30; 
+      text-align:center; 
+      margin: 2rem 0; 
+      font-weight:600; 
+      display:none; 
+    }
+    
+    /* Popup modale */
+    #doctor-popup {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    #doctor-popup .popup-content {
+      background: white;
       padding: 2rem;
-      border-radius: 16px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-
-    label {
-      font-weight: 600;
-    }
-
-    input[type="date"],
-    input[type="time"],
-    select {
-      padding: 0.8rem;
-      font-size: 1rem;
-      border: 1px solid #ccc;
       border-radius: 12px;
-      background-color: #fff;
-      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
-
-    button[type="submit"] {
-      padding: 0.9rem;
-      background-color: var(--primary);
+    #doctor-popup .popup-content h3 {
+      margin-bottom: 1rem;
+      color: #ff3b30;
+    }
+    #doctor-popup button {
+      background: #007aff;
       color: white;
-      font-size: 1rem;
-      font-weight: 600;
       border: none;
-      border-radius: 25px;
+      padding: 0.7rem 1.5rem;
+      border-radius: 20px;
       cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-
-    button[type="submit"]:hover {
-      background-color: #005fcc;
-    }
-
-    #login-message {
-      text-align: center;
-      margin: 2rem 0;
       font-weight: 600;
-      color: var(--error);
+      font-size: 1rem;
     }
-
-    footer {
-      text-align: center;
-      padding: 2rem 1rem;
+    #doctor-popup button:hover {
+      background: #005fcc;
+    }
+    
+    .doctor-warning {
       font-size: 0.9rem;
-      color: #999;
-      border-top: 1px solid #eee;
-      margin-top: 4rem;
-      animation: fadeIn 1s ease-out;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @media (max-width: 600px) {
-      form {
-        padding: 1.5rem;
-      }
-
-      h2 {
-        font-size: 1.6rem;
-      }
+      color: #ff9500;
+      margin-top: 0.5rem;
+      font-style: italic;
+      text-align: center;
     }
   </style>
 </head>
@@ -170,12 +139,12 @@
 
   <main>
     <h2>Book an Appointment</h2>
-    
-    <div id="login-message" style="display: none;">
+
+    <div id="login-message">
       Please <a href="login.html">login</a> to book appointments.
     </div>
 
-    <form id="appointment-form" style="display: none;">
+    <form id="appointment-form" style="display:none;">
       <div>
         <label for="date">Date:</label><br />
         <input type="date" id="date" name="date" required min="" />
@@ -190,6 +159,9 @@
           <option value="">Loading doctors...</option>
         </select>
       </div>
+      <div id="doctor-warning" class="doctor-warning" style="display: none;">
+        Note: As a doctor, you can only book appointments with other doctors
+      </div>
       <button type="submit">Book Appointment</button>
     </form>
   </main>
@@ -202,45 +174,53 @@
     document.addEventListener('DOMContentLoaded', async () => {
       const today = new Date().toISOString().split('T')[0];
       document.getElementById('date').min = today;
-      
-      // Check if user is logged in
+
       const username = localStorage.getItem('username');
       const userId = localStorage.getItem('user_id');
+      const userType = localStorage.getItem('user_type');
       const form = document.getElementById('appointment-form');
       const loginMessage = document.getElementById('login-message');
-      
+      const doctorWarning = document.getElementById('doctor-warning');
+
       if (username && userId) {
-        form.style.display = 'block';
+        form.style.display = 'flex';
         loginMessage.style.display = 'none';
-        
-        // Load doctors list
+
+        // Mostra avviso se è un dottore
+        if (userType === 'doctor') {
+          doctorWarning.style.display = 'block';
+        }
+
+        // Carica lista dottori
         try {
           const response = await fetch('http://localhost:5501/doctors');
           if (!response.ok) throw new Error('Failed to load doctors');
-          
           const doctors = await response.json();
           const doctorSelect = document.getElementById('doctor');
-          
           doctorSelect.innerHTML = '<option value="">Select a doctor</option>';
-          doctors.forEach(doctor => {
+          
+          // Filtra se è un dottore per non mostrare se stesso
+          const filteredDoctors = userType === 'doctor' 
+            ? doctors.filter(doc => doc.id != userId)
+            : doctors;
+            
+          filteredDoctors.forEach(doc => {
             const option = document.createElement('option');
-            option.value = doctor.id;
-            option.textContent = `${doctor.nome} ${doctor.cognome} (${doctor.specialization})`;
+            option.value = doc.id;
+            option.textContent = `${doc.nome} ${doc.cognome} (${doc.specialization})`;
             doctorSelect.appendChild(option);
           });
         } catch (error) {
           console.error('Error loading doctors:', error);
-          doctorSelect.innerHTML = '<option value="">Error loading doctors</option>';
+          document.getElementById('doctor').innerHTML = '<option value="">Error loading doctors</option>';
         }
       } else {
         form.style.display = 'none';
         loginMessage.style.display = 'block';
       }
 
-      // Form submission
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
         const appointmentData = {
           date: form.date.value,
           time: form.time.value,
@@ -252,14 +232,10 @@
         try {
           const response = await fetch('http://localhost:5501/appointments', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(appointmentData)
           });
-
           const data = await response.json();
-
           if (response.ok) {
             alert('Appointment booked successfully!');
             window.location.href = 'bookings.html';

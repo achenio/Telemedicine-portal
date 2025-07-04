@@ -65,7 +65,6 @@
       background-color: rgba(0, 122, 255, 0.1);
     }
 
-    /* Posizione profilo in alto a destra */
     #profile-area {
       position: absolute;
       top: 1.2rem;
@@ -153,6 +152,13 @@
       color: var(--subtext);
     }
 
+    .doctor-warning {
+      font-size: 0.9rem;
+      color: #ff9500;
+      margin-top: 0.5rem;
+      font-style: italic;
+    }
+
     .cta {
       text-align: center;
       margin-top: 4rem;
@@ -182,7 +188,6 @@
       animation: fadeIn 1s ease-out;
     }
 
-    /* Popup Overlay */
     #ai-chat-overlay {
       display: none;
       position: fixed;
@@ -193,7 +198,6 @@
       align-items: center;
     }
 
-    /* Popup container */
     #ai-chat-popup {
       background: var(--card);
       width: 360px;
@@ -209,7 +213,6 @@
       font-family: inherit;
     }
 
-    /* Header of popup */
     #ai-chat-header {
       background-color: var(--primary);
       color: white;
@@ -221,7 +224,6 @@
       align-items: center;
     }
 
-    /* Close button */
     #ai-chat-close {
       background: transparent;
       border: none;
@@ -231,7 +233,6 @@
       line-height: 1;
     }
 
-    /* Chat messages container */
     #ai-chat-messages {
       flex: 1;
       padding: 1rem;
@@ -241,7 +242,6 @@
       color: var(--text);
     }
 
-    /* Message bubbles */
     .message {
       max-width: 80%;
       margin-bottom: 0.8rem;
@@ -265,7 +265,6 @@
       border-bottom-left-radius: 0;
     }
 
-    /* Input container */
     #ai-chat-input-container {
       border-top: 1px solid #ccc;
       padding: 0.5rem 1rem;
@@ -303,7 +302,6 @@
       background-color: #005fcc;
     }
 
-    /* Scrollbar styling for messages */
     #ai-chat-messages::-webkit-scrollbar {
       width: 8px;
     }
@@ -346,12 +344,12 @@
   <header>
     <h1>Welcome to the Telemedicine Portal</h1>
     <nav>
-      <ul>
-        <li><a href="appointments.html">Book Appointment</a></li>
+      <ul id="nav-list">
+        <li id="nav-book-appointment"><a href="appointments.html">Book Appointment</a></li>
         <li><a href="chat.html">Secure Chat</a></li>
-        <li><a id="open-ai-chat" href="javascript:void(0)">AI Chat</a></li>
-        <li><a href="login.html" id="login-link">Login</a></li>
-        <li><a href="register.html">Register</a></li>
+        <li><a href="javascript:void(0)" id="feature-ai-chat">AI Chat</a></li>
+        <li id="nav-login"><a href="login.html" id="login-link">Login</a></li>
+        <li id="nav-register"><a href="register.html">Register</a></li>
       </ul>
     </nav>
     <div id="profile-area"></div>
@@ -368,15 +366,16 @@
     <section class="section">
       <h2>What You Can Do</h2>
       <div class="features">
-        <a href="appointments.html" class="feature-card">
+        <a href="appointments.html" class="feature-card" id="card-book-appointment">
           <h3>Book Appointments</h3>
           <p>Schedule consultations with trusted professionals in just a few clicks.</p>
+          <p class="doctor-warning" id="doctor-warning-text" style="display: none;">Doctors can book appointments with other doctors</p>
         </a>
         <a href="chat.html" class="feature-card">
           <h3>Secure Chat</h3>
           <p>Chat with complete privacy using our encrypted communication system.</p>
         </a>
-        <a href="javascript:void(0)" id="feature-ai-chat" class="feature-card">
+        <a href="javascript:void(0)" id="feature-ai-chat-2" class="feature-card">
           <h3>AI Support</h3>
           <p>Get instant help with symptoms or questions using our free AI assistant.</p>
         </a>
@@ -406,104 +405,142 @@
       </div>
     </div>
   </div>
-<script>
-  const openBtn = document.getElementById('open-ai-chat');
-  const featureBtn = document.getElementById('feature-ai-chat');
-  const overlay = document.getElementById('ai-chat-overlay');
-  const closeBtn = document.getElementById('ai-chat-close');
-  const sendBtn = document.getElementById('ai-chat-send');
-  const input = document.getElementById('ai-chat-input');
-  const messages = document.getElementById('ai-chat-messages');
 
-  function openChat() {
-    overlay.style.display = 'flex';
-    input.focus();
-  }
+  <script>
+    // AI Chat Popup logic
+    const openBtns = [document.getElementById('feature-ai-chat'), document.getElementById('feature-ai-chat-2')];
+    const overlay = document.getElementById('ai-chat-overlay');
+    const closeBtn = document.getElementById('ai-chat-close');
+    const sendBtn = document.getElementById('ai-chat-send');
+    const input = document.getElementById('ai-chat-input');
+    const messages = document.getElementById('ai-chat-messages');
 
-  function closeChat() {
-    overlay.style.display = 'none';
-    input.value = '';
-    messages.innerHTML = '';
-  }
-
-  function appendMessage(text, sender) {
-    const msg = document.createElement('div');
-    msg.classList.add('message', sender);
-    msg.textContent = text;
-    messages.appendChild(msg);
-    messages.scrollTop = messages.scrollHeight;
-  }
-
-  function getAIResponse(userText) {
-    return "You said: " + userText + ". (This is a dummy AI response.)";
-  }
-
-  function sendMessage() {
-    const text = input.value.trim();
-    if (!text) return;
-    appendMessage(text, 'user');
-    input.value = '';
-    setTimeout(() => {
-      const response = getAIResponse(text);
-      appendMessage(response, 'bot');
-    }, 800);
-  }
-
-  openBtn.addEventListener('click', openChat);
-  featureBtn.addEventListener('click', openChat);
-  closeBtn.addEventListener('click', closeChat);
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) closeChat();
-  });
-  sendBtn.addEventListener('click', sendMessage);
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      sendMessage();
+    function openChat() {
+      overlay.style.display = 'flex';
+      input.focus();
     }
-  });
 
-  // USER PROFILE DISPLAY LOGIC
-  const profileArea = document.getElementById('profile-area');
-  const loginLink = document.getElementById('login-link');
-  const username = localStorage.getItem('username');
-  const userType = localStorage.getItem('user_type');
-
-  function renderProfile() {
-    if (username) {
-      loginLink.style.display = 'none';
-      const badge = userType === 'doctor'
-        ? `<span style="background:#007aff20; color:#007aff; border-radius:10px; padding:2px 8px; font-size:0.8rem; margin-left:6px;">Doctor</span>`
-        : '';
-      profileArea.innerHTML = `
-        Hello, <strong>${username}</strong>${badge}
-        <button id="logout-btn" aria-label="Logout">Logout</button>
-      `;
-      document.getElementById('logout-btn').addEventListener('click', () => {
-        localStorage.removeItem('username');
-        localStorage.removeItem('user_type');
-        localStorage.removeItem('user_id');
-        location.reload();
-      });
-    } else {
-      profileArea.innerHTML = '';
-      loginLink.style.display = '';
+    function closeChat() {
+      overlay.style.display = 'none';
+      input.value = '';
+      messages.innerHTML = '';
     }
-  }
 
-  renderProfile();
+    function appendMessage(text, sender) {
+      const msg = document.createElement('div');
+      msg.classList.add('message', sender);
+      msg.textContent = text;
+      messages.appendChild(msg);
+      messages.scrollTop = messages.scrollHeight;
+    }
 
-  // ADD LINK IF DOCTOR
-  if (userType === 'doctor') {
-    const nav = document.querySelector('nav ul');
-    const li = document.createElement('li');
-    const a = document.createElement('a');
-    a.href = 'doctor-appointments.html';
-    a.textContent = 'My Appointments';
-    li.appendChild(a);
-    nav.appendChild(li);
-  }
-</script>
+    function getAIResponse(userText) {
+      // Placeholder AI response
+      return "You said: " + userText + ". (This is a dummy AI response.)";
+    }
 
+    function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+      appendMessage(text, 'user');
+      input.value = '';
+      setTimeout(() => {
+        const response = getAIResponse(text);
+        appendMessage(response, 'bot');
+      }, 800);
+    }
+
+    openBtns.forEach(btn => {
+      if(btn) btn.addEventListener('click', openChat);
+    });
+    closeBtn.addEventListener('click', closeChat);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeChat();
+    });
+    sendBtn.addEventListener('click', sendMessage);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // USER PROFILE DISPLAY AND NAVIGATION LOGIC
+    const profileArea = document.getElementById('profile-area');
+    const navList = document.getElementById('nav-list');
+    const navLogin = document.getElementById('nav-login');
+    const navRegister = document.getElementById('nav-register');
+    const navBookAppointment = document.getElementById('nav-book-appointment');
+    const cardBookAppointment = document.getElementById('card-book-appointment');
+    const doctorWarningText = document.getElementById('doctor-warning-text');
+
+    const username = localStorage.getItem('username');
+    const userType = localStorage.getItem('user_type');
+
+    function renderProfile() {
+      if (username) {
+        // Nascondi Login/Register dal menu
+        navLogin.style.display = 'none';
+        navRegister.style.display = 'none';
+
+        // Mostra area profilo
+        const badge = userType === 'doctor'
+          ? `<span style="background:#007aff20; color:#007aff; border-radius:10px; padding:2px 8px; font-size:0.8rem; margin-left:6px;">Doctor</span>`
+          : '';
+        profileArea.innerHTML = `
+          Hello, <strong>${username}</strong>${badge}
+          <button id="logout-btn" aria-label="Logout">Logout</button>
+        `;
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+          localStorage.removeItem('username');
+          localStorage.removeItem('user_type');
+          localStorage.removeItem('user_id');
+          location.reload();
+        });
+
+        // Se è dottore, mostra comunque il link "Book Appointment" con avviso
+        if (userType === 'doctor') {
+          if (navBookAppointment) navBookAppointment.style.display = '';
+          if (cardBookAppointment) cardBookAppointment.style.display = '';
+          if (doctorWarningText) doctorWarningText.style.display = 'block';
+
+          // Aggiungi link "My Appointments" se non presente
+          if (!document.getElementById('nav-my-appointments')) {
+            const li = document.createElement('li');
+            li.id = 'nav-my-appointments';
+            const a = document.createElement('a');
+            a.href = 'doctor-appointments.html';
+            a.textContent = 'My Appointments';
+            li.appendChild(a);
+            navList.appendChild(li);
+          }
+        } else {
+          // Per pazienti mostra normalmente
+          if (navBookAppointment) navBookAppointment.style.display = '';
+          if (cardBookAppointment) cardBookAppointment.style.display = '';
+          if (doctorWarningText) doctorWarningText.style.display = 'none';
+          
+          // Rimuovi link "My Appointments" se presente
+          const myAppLi = document.getElementById('nav-my-appointments');
+          if (myAppLi) myAppLi.remove();
+        }
+      } else {
+        // Utente non loggato: mostra Login/Register, nascondi profilo e "My Appointments"
+        navLogin.style.display = '';
+        navRegister.style.display = '';
+        profileArea.innerHTML = '';
+
+        if (navBookAppointment) navBookAppointment.style.display = '';
+        if (cardBookAppointment) cardBookAppointment.style.display = '';
+        if (doctorWarningText) doctorWarningText.style.display = 'none';
+        
+        const myAppLi = document.getElementById('nav-my-appointments');
+        if (myAppLi) myAppLi.remove();
+      }
+    }
+
+    renderProfile();
+  </script>
 </body>
 </html>

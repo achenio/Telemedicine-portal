@@ -182,73 +182,51 @@
     <p>&copy; 2025 Telemedicine Portal</p>
   </footer>
 
-  <script>
-    const form = document.getElementById('login-form');
-    const loginMessage = document.getElementById('login-message');
+<script>
+  const form = document.getElementById('login-form');
+  const loginMessage = document.getElementById('login-message');
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-      const username = form.username.value.trim();
-      const password = form.password.value;
+    const username = form.username.value.trim();
+    const password = form.password.value;
 
-      try {
-        const response = await fetch('http://localhost:5501/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ username, password }),
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          // Salva username in localStorage dopo login corretto
-          localStorage.setItem('username', username);
-
-          loginMessage.style.color = 'green';
-          loginMessage.textContent = 'Login effettuato con successo! Redirezionamento...';
-          setTimeout(() => {
-            window.location.href = 'index.html'; // pagina protetta/home
-          }, 1500);
-        } else {
-          loginMessage.style.color = 'red';
-          loginMessage.textContent = data.error || 'Credenziali non valide.';
-        }
-      } catch (error) {
-        loginMessage.style.color = 'red';
-        loginMessage.textContent = 'Errore di rete o server non raggiungibile.';
-      }
-    });
-  </script>
-    <script>
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
+    try {
       const response = await fetch('http://localhost:5501/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: form.username.value.trim(),
-          password: form.password.value
-        })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
+        // Salva informazioni in localStorage
         localStorage.setItem('username', data.user.username);
         localStorage.setItem('user_type', data.user.user_type);
         localStorage.setItem('user_id', data.user.id);
-        
-        window.location.href = data.user.user_type === 'doctor' 
-          ? 'doctor-appointments.html' 
-          : 'index.html';
+
+        loginMessage.style.color = 'green';
+        loginMessage.textContent = 'Login effettuato con successo! Redirezionamento...';
+
+        setTimeout(() => {
+          window.location.href = data.user.user_type === 'doctor'
+            ? 'doctor-appointments.html'
+            : 'index.html';
+        }, 1200);
       } else {
-        // Mostra errore
+        loginMessage.style.color = 'red';
+        loginMessage.textContent = data.error || 'Credenziali non valide.';
       }
-    });
-  </script>
+    } catch (error) {
+      loginMessage.style.color = 'red';
+      loginMessage.textContent = 'Errore di rete o server non raggiungibile.';
+      console.error('Errore:', error);
+    }
+  });
+</script>
 </body>
 </html>

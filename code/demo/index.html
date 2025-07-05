@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Telemedicine Portal</title>
+  <style>
+    :root {
+      --bg: #fefefe;
+      --text: #1c1c1e;
+      --subtext: #555;
+      --primary: #007aff;
+      --card: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    header {
+      position: relative;
+      background-color: var(--card);
+      padding: 3rem 1.5rem;
+      text-align: center;
+      animation: fadeIn 1s ease-out;
+      z-index: 1;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding: 0;
+      margin-top: 1rem;
+    }
+
+    nav ul li a {
+      text-decoration: none;
+      color: var(--primary);
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      transition: background-color 0.3s ease;
+      cursor: pointer;
+    }
+
+    nav ul li a:hover {
+      background-color: rgba(0, 122, 255, 0.1);
+    }
+
+    #profile-area {
+      position: absolute;
+      top: 1.2rem;
+      right: 1.5rem;
+      font-weight: 600;
+      color: var(--primary);
+      font-size: 1rem;
+      cursor: default;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    #profile-area button {
+      background: none;
+      border: none;
+      color: var(--primary);
+      cursor: pointer;
+      font-weight: 600;
+      margin-left: 0.5rem;
+      font-size: 1rem;
+      padding: 0;
+      font-family: inherit;
+    }
+
+    #profile-area button:hover {
+      text-decoration: underline;
+    }
+
+    main {
+      padding: 3rem 1rem;
+      max-width: 1000px;
+      margin: auto;
+      animation: fadeInUp 1s ease-out;
+    }
+
+    .section {
+      margin-bottom: 4rem;
+      text-align: center;
+    }
+
+    .section h2 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .section p {
+      font-size: 1.15rem;
+      color: var(--subtext);
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    .feature-card {
+      display: block;
+      background-color: var(--card);
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+    }
+
+    .feature-card h3 {
+      margin-bottom: 0.5rem;
+      font-size: 1.3rem;
+      color: var(--primary);
+    }
+
+    .feature-card p {
+      font-size: 1rem;
+      color: var(--subtext);
+    }
+
+    .doctor-warning {
+      font-size: 0.9rem;
+      color: #ff9500;
+      margin-top: 0.5rem;
+      font-style: italic;
+    }
+
+    .cta {
+      text-align: center;
+      margin-top: 4rem;
+    }
+
+    .cta a {
+      display: inline-block;
+      padding: 0.8rem 2rem;
+      font-size: 1.1rem;
+      background-color: var(--primary);
+      color: #fff;
+      border-radius: 25px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+
+    .cta a:hover {
+      background-color: #005fcc;
+    }
+
+    footer {
+      padding: 2rem 1rem;
+      text-align: center;
+      color: #999;
+      border-top: 1px solid #eee;
+      animation: fadeIn 1s ease-out;
+    }
+
+    #ai-chat-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.4);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #ai-chat-popup {
+      background: var(--card);
+      width: 360px;
+      max-width: 90vw;
+      height: 600px;
+      max-height: 90vh;
+      border-radius: 20px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+      font-family: inherit;
+    }
+
+    #ai-chat-header {
+      background-color: var(--primary);
+      color: white;
+      padding: 1rem 1.5rem;
+      font-size: 1.25rem;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #ai-chat-close {
+      background: transparent;
+      border: none;
+      font-size: 1.5rem;
+      color: white;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    #ai-chat-messages {
+      flex: 1;
+      padding: 1rem;
+      overflow-y: auto;
+      background-color: #f5f5f7;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+
+    .message {
+      max-width: 80%;
+      margin-bottom: 0.8rem;
+      padding: 0.6rem 1rem;
+      border-radius: 16px;
+      line-height: 1.3;
+      word-wrap: break-word;
+    }
+
+    .message.user {
+      background-color: var(--primary);
+      color: white;
+      margin-left: auto;
+      border-bottom-right-radius: 0;
+    }
+
+    .message.bot {
+      background-color: #e1e1e6;
+      color: var(--text);
+      margin-right: auto;
+      border-bottom-left-radius: 0;
+    }
+
+    #ai-chat-input-container {
+      border-top: 1px solid #ccc;
+      padding: 0.5rem 1rem;
+      display: flex;
+      gap: 0.5rem;
+      background-color: var(--card);
+    }
+
+    #ai-chat-input {
+      flex: 1;
+      padding: 0.6rem 1rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+      outline: none;
+      transition: border-color 0.3s ease;
+    }
+
+    #ai-chat-input:focus {
+      border-color: var(--primary);
+    }
+
+    #ai-chat-send {
+      background-color: var(--primary);
+      border: none;
+      color: white;
+      padding: 0 1.2rem;
+      border-radius: 20px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #ai-chat-send:hover {
+      background-color: #005fcc;
+    }
+
+    #ai-chat-messages::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    #ai-chat-messages::-webkit-scrollbar-track {
+      background: #f0f0f0;
+      border-radius: 4px;
+    }
+
+    #ai-chat-messages::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 4px;
+    }
+
+    @media (max-width: 400px) {
+      #ai-chat-popup {
+        width: 90vw;
+        height: 80vh;
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Welcome to the Telemedicine Portal</h1>
+    <nav>
+      <ul id="nav-list">
+        <li id="nav-book-appointment"><a href="appointments.html">Book Appointment</a></li>
+        <li><a href="chat.html">Secure Chat</a></li>
+        <li><a href="javascript:void(0)" id="feature-ai-chat">AI Chat</a></li>
+        <li id="nav-login"><a href="login.html" id="login-link">Login</a></li>
+        <li id="nav-register"><a href="register.html">Register</a></li>
+      </ul>
+    </nav>
+    <div id="profile-area"></div>
+  </header>
+
+  <main>
+    <section class="section">
+      <h2>Your Health, Anywhere</h2>
+      <p>
+        Our platform brings healthcare directly to your screen, providing appointments, video calls, and secure chats with professionals – anytime, anywhere.
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>What You Can Do</h2>
+      <div class="features">
+        <a href="appointments.html" class="feature-card" id="card-book-appointment">
+          <h3>Book Appointments</h3>
+          <p>Schedule consultations with trusted professionals in just a few clicks.</p>
+          <p class="doctor-warning" id="doctor-warning-text" style="display: none;">Doctors can book appointments with other doctors</p>
+        </a>
+        <a href="chat.html" class="feature-card">
+          <h3>Secure Chat</h3>
+          <p>Chat with complete privacy using our encrypted communication system.</p>
+        </a>
+        <a href="javascript:void(0)" id="feature-ai-chat-2" class="feature-card">
+          <h3>AI Support</h3>
+          <p>Get instant help with symptoms or questions using our free AI assistant.</p>
+        </a>
+      </div>
+    </section>
+
+    <section class="cta">
+      <a href="register.html">Get Started Now</a>
+    </section>
+  </main>
+<section class="cta">
+  <a href="register.html">Get Started Now</a>
+  <button id="switch-to-doctor" style="margin-left: 1rem; padding: 0.8rem 2rem; font-size: 1.1rem; background-color: #34c759; color: #fff; border: none; border-radius: 25px; font-weight: bold; transition: background-color 0.3s ease; cursor: pointer;">Switch to Doctor View</button>
+</section>
+
+  <footer>
+    <p>&copy; 2025 Telemedicine Portal</p>
+  </footer>
+
+  <!-- AI Chat Popup -->
+  <div id="ai-chat-overlay" role="dialog" aria-modal="true" aria-labelledby="ai-chat-header">
+    <div id="ai-chat-popup">
+      <div id="ai-chat-header">
+        AI Chat
+        <button id="ai-chat-close" aria-label="Close AI chat popup">&times;</button>
+      </div>
+      <div id="ai-chat-messages" aria-live="polite" aria-atomic="false"></div>
+      <div id="ai-chat-input-container">
+        <input type="text" id="ai-chat-input" placeholder="Type your message..." aria-label="Type your message" />
+        <button id="ai-chat-send" aria-label="Send message">Send</button>
+      </div>
+    </div>
+  </div>
+
+<!-- Aggiungi questo nella sezione CTA, vicino al pulsante "Get Started" -->
+<section class="cta">
+  <a href="register.html">Get Started Now</a>
+  <button id="switch-to-doctor" style="margin-left: 1rem; padding: 0.8rem 2rem; font-size: 1.1rem; background-color: #34c759; color: #fff; border: none; border-radius: 25px; font-weight: bold; transition: background-color 0.3s ease; cursor: pointer;">Switch to Doctor View</button>
+</section>
+
+<!-- Aggiungi questo script alla fine del file, prima del </body> -->
+<script>
+  document.getElementById('switch-to-doctor').addEventListener('click', function() {
+    // Crea un utente demo dottore
+    const demoDoctor = {
+      username: "Dr. Smith",
+      user_type: "doctor",
+      id: "doc-demo123",
+      specialization: "Cardiology"
+    };
+
+    // Salva i dati nel localStorage
+    localStorage.setItem('username', demoDoctor.username);
+    localStorage.setItem('user_type', demoDoctor.user_type);
+    localStorage.setItem('user_id', demoDoctor.id);
+    localStorage.setItem('token', 'demo-token-doctor-123456');
+    localStorage.setItem('specialization', demoDoctor.specialization);
+
+    // Ricarica la pagina per applicare i cambiamenti
+    location.reload();
+  });
+
+  // Modifica la funzione renderProfile per gestire anche la visualizzazione dottore
+  function renderProfile() {
+    const profileArea = document.getElementById('profile-area');
+    const navList = document.getElementById('nav-list');
+    const navLogin = document.getElementById('nav-login');
+    const navRegister = document.getElementById('nav-register');
+    const doctorWarningText = document.getElementById('doctor-warning-text');
+    const switchButton = document.getElementById('switch-to-doctor');
+    
+    const username = localStorage.getItem('username');
+    const userType = localStorage.getItem('user_type');
+    const specialization = localStorage.getItem('specialization');
+
+    if (username) {
+      // Nascondi Login/Register dal menu
+      navLogin.style.display = 'none';
+      navRegister.style.display = 'none';
+
+      // Mostra area profilo
+      const badge = userType === 'doctor'
+        ? `<span style="background:#007aff20; color:#007aff; border-radius:10px; padding:2px 8px; font-size:0.8rem; margin-left:6px;">${specialization || 'Doctor'}</span>`
+        : '';
+      
+      profileArea.innerHTML = `
+        Hello, <strong>${username}</strong>${badge}
+        <button id="logout-btn" aria-label="Logout">Logout</button>
+      `;
+
+      document.getElementById('logout-btn').addEventListener('click', () => {
+        localStorage.clear();
+        location.reload();
+      });
+
+      // Se è dottore, mostra l'avviso e cambia il testo del pulsante
+      if (userType === 'doctor') {
+        if (doctorWarningText) doctorWarningText.style.display = 'block';
+        if (switchButton) switchButton.textContent = 'Switch to Patient View';
+        if (switchButton) switchButton.style.backgroundColor = '#007aff';
+        
+        // Cambia il comportamento del pulsante per tornare a paziente
+        switchButton.onclick = function() {
+          // Crea un utente demo paziente
+          const demoPatient = {
+            username: "Demo User",
+            user_type: "patient",
+            id: "demo123"
+          };
+
+          // Salva i dati nel localStorage
+          localStorage.setItem('username', demoPatient.username);
+          localStorage.setItem('user_type', demoPatient.user_type);
+          localStorage.setItem('user_id', demoPatient.id);
+          localStorage.setItem('token', 'demo-token-123456');
+          localStorage.removeItem('specialization');
+
+          // Ricarica la pagina per applicare i cambiamenti
+          location.reload();
+        };
+      } else {
+        // Se è paziente, mantieni il comportamento originale
+        if (doctorWarningText) doctorWarningText.style.display = 'none';
+        if (switchButton) switchButton.textContent = 'Switch to Doctor View';
+        if (switchButton) switchButton.style.backgroundColor = '#34c759';
+        
+        switchButton.onclick = function() {
+          // Crea un utente demo dottore (come sopra)
+          const demoDoctor = {
+            username: "Dr. Smith",
+            user_type: "doctor",
+            id: "doc-demo123",
+            specialization: "Cardiology"
+          };
+
+          localStorage.setItem('username', demoDoctor.username);
+          localStorage.setItem('user_type', demoDoctor.user_type);
+          localStorage.setItem('user_id', demoDoctor.id);
+          localStorage.setItem('token', 'demo-token-doctor-123456');
+          localStorage.setItem('specialization', demoDoctor.specialization);
+
+          location.reload();
+        };
+      }
+
+      // Aggiungi/rimuovi link "My Appointments" in base al tipo utente
+      const myAppLi = document.getElementById('nav-my-appointments');
+      if (userType === 'doctor') {
+        if (!myAppLi) {
+          const li = document.createElement('li');
+          li.id = 'nav-my-appointments';
+          const a = document.createElement('a');
+          a.href = 'doctor-appointments.html';
+          a.textContent = 'My Appointments';
+          li.appendChild(a);
+          navList.appendChild(li);
+        }
+      } else {
+        if (myAppLi) myAppLi.remove();
+      }
+    } else {
+      // Utente non loggato (non dovrebbe succedere nella demo)
+      navLogin.style.display = '';
+      navRegister.style.display = '';
+      profileArea.innerHTML = '';
+      if (doctorWarningText) doctorWarningText.style.display = 'none';
+      
+      const myAppLi = document.getElementById('nav-my-appointments');
+      if (myAppLi) myAppLi.remove();
+    }
+  }
+
+  renderProfile();
+</script>
+</body>
+</html>

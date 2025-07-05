@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Bookings</title>
+  <style>
+    :root {
+      --bg: #fefefe;
+      --text: #1c1c1e;
+      --subtext: #555;
+      --primary: #007aff;
+      --card: #ffffff;
+      --error: #ff3b30;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    header {
+      background-color: var(--card);
+      padding: 2rem 1rem;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+      animation: fadeIn 1s ease-out;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding: 0;
+      margin-top: 1rem;
+    }
+
+    nav ul li a {
+      text-decoration: none;
+      color: var(--primary);
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      transition: background-color 0.3s ease;
+    }
+
+    nav ul li a:hover {
+      background-color: rgba(0, 122, 255, 0.1);
+    }
+
+    main {
+      max-width: 800px;
+      margin: 4rem auto;
+      padding: 1rem;
+      animation: fadeInUp 1s ease-out;
+    }
+
+    h2 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    #login-message {
+      text-align: center;
+      margin: 2rem 0;
+      font-weight: 600;
+      color: var(--error);
+    }
+
+    ul#appointments-list {
+      list-style: none;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    ul#appointments-list li {
+      background-color: var(--card);
+      padding: 1.5rem;
+      border-radius: 16px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    ul#appointments-list li:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    ul#appointments-list li span {
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .cancel-btn {
+      background-color: var(--error);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: opacity 0.3s ease;
+    }
+
+    .cancel-btn:hover {
+      opacity: 0.8;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      font-size: 0.9rem;
+      color: #999;
+      border-top: 1px solid #eee;
+      margin-top: 4rem;
+      animation: fadeIn 1s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 600px) {
+      ul#appointments-list li {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="appointments.html">Book Appointment</a></li>
+        <li><a href="chat.html">Secure Chat</a></li>
+        <li><a href="ai-chat.html">AI Chat</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <h2>My Booked Appointments</h2>
+    
+    <div id="login-message" style="display: none;">
+      Please <a href="login.html">login</a> to view your appointments.
+    </div>
+
+    <ul id="appointments-list" style="display: none;">
+      <!-- Appointments will be loaded here -->
+    </ul>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Telemedicine Portal</p>
+  </footer>
+
+
+<!-- Sostituisci lo script esistente con questo: -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Nascondi il messaggio di login
+    document.getElementById('login-message').style.display = 'none';
+    
+    // Appuntamenti fittizi
+    const fakeAppointments = [
+      {
+        id: "app1",
+        date: "2025-07-10",
+        time: "10:00",
+        doctor_name: "Dr. Smith (Cardiology)",
+        status: "confirmed"
+      },
+      {
+        id: "app2",
+        date: "2025-07-15",
+        time: "14:30",
+        doctor_name: "Dr. Johnson (Pediatrics)",
+        status: "booked"
+      }
+    ];
+
+    // Mostra gli appuntamenti
+    renderAppointments(fakeAppointments);
+    document.getElementById('appointments-list').style.display = 'flex';
+    
+    // Setup dei pulsanti di cancellazione
+    document.querySelectorAll('.cancel-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to cancel this appointment?')) {
+          alert('Appointment cancelled successfully');
+          // Ricarica la pagina per aggiornare la lista
+          location.reload();
+        }
+      });
+    });
+  });
+
+  function renderAppointments(appointments) {
+    const appointmentsList = document.getElementById('appointments-list');
+    
+    if (appointments.length === 0) {
+      showNoAppointments();
+      return;
+    }
+    
+    appointmentsList.innerHTML = appointments.map(appt => {
+      const date = new Date(appt.date);
+      const formattedDate = date.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+      });
+
+      return `
+        <li>
+          <span>📅 ${formattedDate}</span>
+          <span>🕒 ${appt.time}</span>
+          <span>👨‍⚕️ ${appt.doctor_name}</span>
+          <span class="status-${appt.status.toLowerCase()}">${appt.status}</span>
+          ${appt.status !== 'cancelled' && appt.status !== 'completed' ? `
+            <button class="cancel-btn" data-id="${appt.id}">Cancel</button>
+          ` : ''}
+        </li>
+      `;
+    }).join('');
+  }
+
+  function showNoAppointments() {
+    const appointmentsList = document.getElementById('appointments-list');
+    appointmentsList.innerHTML = `
+      <li style="text-align: center; padding: 2rem;">
+        You have no upcoming appointments.<br>
+        <a href="appointments.html" style="color: var(--primary);">Book one now</a>
+      </li>
+    `;
+  }
+</script>
+</body>
+</html>

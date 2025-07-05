@@ -184,69 +184,140 @@
     <p>&copy; 2025 Telemedicine Portal</p>
   </footer>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      const username = localStorage.getItem('username');
-      const appointmentsList = document.getElementById('appointments-list');
-      const loginMessage = document.getElementById('login-message');
 
-      if (username) {
-        appointmentsList.style.display = 'flex';
-        loginMessage.style.display = 'none';
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    const token = localStorage.getItem('token');
+    const appointmentsList = document.getElementById('appointments-list');
+    const loginMessage = document.getElementById('login-message');
+
+    if (!token) {
+      showLoginPrompt();
+      return;
+    }
+
+    try {
+      const verifyResponse = await fetch('http://localhost:5501/user-data', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!verifyResponse.ok) {
+        throw new Error('Session expired');
+      }
+
+      const appointments = await loadAppointments(token);
+
+      if (appointments.length > 0) {
+        renderAppointments(appointments);
+        setupCancelButtons(token);
+      } else {
+        showNoAppointments();
+      }
+
+      appointmentsList.style.display = 'flex';
+      loginMessage.style.display = 'none';
+    } catch (error) {
+      console.error('Error:', error);
+      handleError(error);
+    }
+  });
+
+  async function loadAppointments(token) {
+    const response = await fetch('http://localhost:5501/appointments', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to load appointments');
+    }
+
+    const data = await response.json();
+    return data.appointments; // ✅ FIX
+  }
+
+  function renderAppointments(appointments) {
+    const appointmentsList = document.getElementById('appointments-list');
+
+    appointmentsList.innerHTML = appointments.map(appt => {
+      const doctorName = appt.doctor_name || `${appt.doctor_nome} ${appt.doctor_cognome}` || 'Doctor';
+      const date = new Date(appt.date);
+      const formattedDate = date.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+      });
+
+      return `
+        <li>
+          <span>📅 ${formattedDate}</span>
+          <span>🕒 ${appt.time}</span>
+          <span>👨‍⚕️ ${doctorName}</span>
+          <span class="status-${appt.status.toLowerCase()}">${appt.status}</span>
+          ${appt.status !== 'cancelled' && appt.status !== 'completed' ? `
+            <button class="cancel-btn" data-id="${appt.id}">Cancel</button>
+          ` : ''}
+        </li>
+      `;
+    }).join('');
+  }
+
+  function setupCancelButtons(token) {
+    document.querySelectorAll('.cancel-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Are you sure you want to cancel this appointment?')) return;
 
         try {
-          const response = await fetch(`http://localhost:5501/appointments?username=${encodeURIComponent(username)}`);
-          const appointments = await response.json();
+          const response = await fetch(`http://localhost:5501/appointments/${btn.dataset.id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
 
           if (!response.ok) {
-            appointmentsList.innerHTML = `<li>Error: ${appointments.error || "loading appointments"}</li>`;
-            return;
+            throw new Error('Failed to cancel appointment');
           }
 
-          if (appointments.length > 0) {
-            appointmentsList.innerHTML = appointments.map(appt => `
-              <li>
-                <span>📅 ${new Date(appt.date).toLocaleDateString()}</span>
-                <span>🕒 ${appt.time}</span>
-                <span>👨‍⚕️ ${appt.doctor_name}</span>
-                <button class="cancel-btn" data-id="${appt.id}">Cancel</button>
-              </li>
-            `).join('');
-
-            // Add event listeners to cancel buttons
-            document.querySelectorAll('.cancel-btn').forEach(btn => {
-              btn.addEventListener('click', async (e) => {
-                if (confirm('Are you sure you want to cancel this appointment?')) {
-                  try {
-                    const response = await fetch(`http://localhost:5501/appointments/${e.target.dataset.id}`, {
-                      method: 'DELETE'
-                    });
-
-                    if (response.ok) {
-                      e.target.parentElement.remove();
-                      alert('Appointment cancelled successfully');
-                    } else {
-                      alert('Failed to cancel appointment');
-                    }
-                  } catch (error) {
-                    console.error('Error:', error);
-                    alert('Server error, please try again later');
-                  }
-                }
-              });
-            });
-          } else {
-            appointmentsList.innerHTML = '<li>No appointments booked yet</li>';
-          }
+          location.reload();
         } catch (error) {
           console.error('Error:', error);
-          appointmentsList.innerHTML = '<li>Server error, please try again later</li>';
+          alert(`Error: ${error.message}`);
         }
-      } else {
-        appointmentsList.style.display = 'none';
-        loginMessage.style.display = 'block';
-      }
+      });
     });
-  </script>
+  }
+
+  function showLoginPrompt() {
+    document.getElementById('appointments-list').style.display = 'none';
+    document.getElementById('login-message').style.display = 'block';
+  }
+
+  function showNoAppointments() {
+    const appointmentsList = document.getElementById('appointments-list');
+    appointmentsList.innerHTML = `
+      <li style="text-align: center; padding: 2rem;">
+        You have no upcoming appointments.<br>
+        <a href="appointments.html" style="color: var(--primary);">Book one now</a>
+      </li>
+    `;
+  }
+
+  function handleError(error) {
+    if (error.message.includes('Session')) {
+      localStorage.clear();
+      window.location.href = 'login.html';
+      return;
+    }
+
+    const appointmentsList = document.getElementById('appointments-list');
+    appointmentsList.innerHTML = `
+      <li style="color: var(--error); text-align: center;">
+        ${error.message}<br>
+        <button onclick="location.reload()">Retry</button>
+      </li>
+    `;
+    appointmentsList.style.display = 'flex';
+    document.getElementById('login-message').style.display = 'none';
+  }
+</script>
+
 </body>
 </html>

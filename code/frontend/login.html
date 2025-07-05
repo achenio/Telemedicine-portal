@@ -1,232 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login</title>
-  <style>
-    :root {
-      --bg: #fefefe;
-      --text: #1c1c1e;
-      --subtext: #555;
-      --primary: #007aff;
-      --card: #ffffff;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-    }
-
-    header {
-      background-color: var(--card);
-      padding: 2rem 1rem;
-      text-align: center;
-      border-bottom: 1px solid #ddd;
-      animation: fadeIn 1s ease-out;
-    }
-
-    nav ul {
-      list-style: none;
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 1rem;
-      padding: 0;
-      margin-top: 1rem;
-    }
-
-    nav ul li a {
-      text-decoration: none;
-      color: var(--primary);
-      font-weight: 600;
-      padding: 0.5rem 1rem;
-      border-radius: 20px;
-      transition: background-color 0.3s ease;
-    }
-
-    nav ul li a:hover {
-      background-color: rgba(0, 122, 255, 0.1);
-    }
-
-    main {
-      max-width: 400px;
-      margin: 4rem auto;
-      padding: 1rem;
-      animation: fadeInUp 1s ease-out;
-    }
-
-    h2 {
-      text-align: center;
-      font-size: 2rem;
-      margin-bottom: 2rem;
-    }
-
-    form {
-      background-color: var(--card);
-      padding: 2rem;
-      border-radius: 16px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-
-    label {
-      font-weight: 600;
-    }
-
-    input[type="text"],
-    input[type="password"] {
-      padding: 0.8rem;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 12px;
-      background-color: #fff;
-    }
-
-    button[type="submit"] {
-      padding: 0.9rem;
-      background-color: var(--primary);
-      color: white;
-      font-size: 1rem;
-      font-weight: 600;
-      border: none;
-      border-radius: 25px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-
-    button[type="submit"]:hover {
-      background-color: #005fcc;
-    }
-
-    #login-message {
-      margin-top: 1rem;
-      text-align: center;
-      font-weight: 600;
-    }
-
-    footer {
-      text-align: center;
-      padding: 2rem 1rem;
-      font-size: 0.9rem;
-      color: #999;
-      border-top: 1px solid #eee;
-      margin-top: 4rem;
-      animation: fadeIn 1s ease-out;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @media (max-width: 600px) {
-      form {
-        padding: 1.5rem;
-      }
-
-      h2 {
-        font-size: 1.6rem;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Telemedicine Portal</title>
+    <style>
+        :root {
+            --primary: #007aff;
+            --bg: #fefefe;
+            --card: #ffffff;
+            --text: #1c1c1e;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-container {
+            background-color: var(--card);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h1 {
+            color: var(--primary);
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .error {
+            color: #ff3b30;
+            margin-top: 1rem;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
-  <header>
-    <nav>
-      <ul>
-        <li><a href="index.html">Home</a></li>
-        <li><a href="register.html">Register</a></li>
-      </ul>
-    </nav>
-  </header>
-
-  <main>
-    <h2>Login</h2>
-    <form id="login-form">
-      <div>
-        <label for="username">Username:</label><br />
-        <input type="text" id="username" name="username" required />
-      </div>
-      <div>
-        <label for="password">Password:</label><br />
-        <input type="password" id="password" name="password" required />
-      </div>
-      <button type="submit">Login</button>
-    </form>
-    <div id="login-message"></div>
-  </main>
-
-  <footer>
-    <p>&copy; 2025 Telemedicine Portal</p>
-  </footer>
+    <div class="login-container">
+        <h1>Login</h1>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required>
+            </div>
+            <button type="submit">Login</button>
+            <div id="error" class="error"></div>
+        </form>
+    </div>
 
 <script>
-  const form = document.getElementById('login-form');
-  const loginMessage = document.getElementById('login-message');
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value.trim();
+  const errorDiv = document.getElementById('error');
 
-    const username = form.username.value.trim();
-    const password = form.password.value;
+  errorDiv.textContent = '';
 
-    try {
-      const response = await fetch('http://localhost:5501/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
+  try {
+    const response = await fetch('http://localhost:5501/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ username, password })
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (response.ok) {
-        // Salva informazioni in localStorage
-        localStorage.setItem('username', data.user.username);
-        localStorage.setItem('user_type', data.user.user_type);
-        localStorage.setItem('user_id', data.user.id);
+    if (response.ok) {
+      // Salva i dati coerentemente
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('username', data.user.username);
+      localStorage.setItem('user_type', data.user.user_type);
+      localStorage.setItem('user_id', data.user.id);
 
-        loginMessage.style.color = 'green';
-        loginMessage.textContent = 'Login effettuato con successo! Redirezionamento...';
-
-        setTimeout(() => {
-          window.location.href = data.user.user_type === 'doctor'
-            ? 'doctor-appointments.html'
-            : 'index.html';
-        }, 1200);
-      } else {
-        loginMessage.style.color = 'red';
-        loginMessage.textContent = data.error || 'Credenziali non valide.';
-      }
-    } catch (error) {
-      loginMessage.style.color = 'red';
-      loginMessage.textContent = 'Errore di rete o server non raggiungibile.';
-      console.error('Errore:', error);
+      window.location.href = 'index.html';
+    } else {
+      errorDiv.textContent = data.error || 'Login failed';
     }
-  });
+  } catch (error) {
+    errorDiv.textContent = 'Connection error';
+  }
+});
 </script>
 </body>
 </html>

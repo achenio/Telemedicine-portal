@@ -224,6 +224,77 @@
         flex-direction: column;
       }
     }
+    /* Add these new styles for the popup */
+    .popup-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      backdrop-filter: blur(5px);
+    }
+    
+    .popup-content {
+      background-color: var(--card);
+      padding: 2rem;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      animation: popIn 0.3s ease-out;
+    }
+    
+    .popup-content h3 {
+      color: var(--error);
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+    }
+    
+    .popup-content p {
+      margin-bottom: 2rem;
+      color: var(--text);
+    }
+    
+    .popup-btn {
+      padding: 0.75rem 1.5rem;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 20px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    
+    .popup-btn:hover {
+      background-color: #0062cc;
+    }
+    
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    
+    /* Add this to hide the main content when popup is shown */
+    body.popup-active main,
+    body.popup-active header,
+    body.popup-active footer {
+      filter: blur(5px);
+      pointer-events: none;
+      user-select: none;
+    }
   </style>
 </head>
 <body>
@@ -265,117 +336,169 @@
     <p>&copy; 2025 Telemedicine Portal</p>
   </footer>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      const username = localStorage.getItem('username');
-      const userId = localStorage.getItem('user_id');
-      
-      if (!username || !userId) {
-        window.location.href = 'login.html';
+
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    const token = localStorage.getItem('token');
+    const userId = localStorage.getItem('user_id');
+    const userType = localStorage.getItem('user_type');
+
+    if (!token || !userId) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    if (userType !== 'doctor') {
+      showAccessDeniedPopup();
+      return;
+    }
+
+    document.getElementById('username-display').textContent = localStorage.getItem('username');
+
+    try {
+      const response = await fetch(`http://localhost:5501/doctor/appointments`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const appointments = data.appointments; // ✅ FIX
+      const tbody = document.getElementById('appointments-body');
+
+      if (!appointments.length) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">No appointments scheduled</td></tr>`;
         return;
       }
 
-      document.getElementById('username-display').textContent = username;
+      tbody.innerHTML = appointments.map(appt => {
+        const statusClass = `status-${appt.status.toLowerCase()}`;
+        const patientName = appt.patient_nome ? 
+          `${appt.patient_nome} ${appt.patient_cognome}` : 
+          `${appt.nome} ${appt.cognome}`;
+        const taxCode = appt.patient_codice_fiscale || appt.codice_fiscale || 'N/A';
 
-      try {
-        const response = await fetch(`http://localhost:5501/doctor/appointments?doctorId=${userId}`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch appointments');
-        }
-
-        const appointments = await response.json();
-        const tbody = document.getElementById('appointments-body');
-
-        if (appointments.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">No appointments scheduled</td></tr>`;
-          return;
-        }
-
-        tbody.innerHTML = appointments.map(appt => {
-          const statusClass = `status-${appt.status.toLowerCase()}`;
-          const isConfirmed = appt.status === 'confirmed';
-          const isCompleted = appt.status === 'completed';
-          
-          return `
-            <tr>
-              <td>${new Date(appt.date).toLocaleDateString()}</td>
-              <td>${appt.time}</td>
-              <td>${appt.nome} ${appt.cognome}</td>
-              <td>${appt.codice_fiscale}</td>
-              <td class="${statusClass}">${appt.status}</td>
-              <td>
-                <div class="action-buttons">
-                  ${appt.status === 'booked' ? `
-                    <button class="confirm-btn" data-id="${appt.id}">Accept</button>
-                    <button class="reject-btn" data-id="${appt.id}">Reject</button>
-                  ` : ''}
-                  ${isConfirmed ? `
-                    <button class="complete-btn" data-id="${appt.id}">Complete</button>
-                  ` : ''}
-                  ${isCompleted ? `
-                    <button class="complete-btn" disabled>Completed</button>
-                  ` : ''}
-                </div>
-              </td>
-            </tr>
-          `;
-        }).join('');
-
-        // Add event listeners to buttons
-        document.querySelectorAll('.confirm-btn').forEach(btn => {
-          btn.addEventListener('click', async (e) => {
-            if (confirm('Accept this appointment?')) {
-              await updateAppointmentStatus(e.target.dataset.id, 'confirmed');
-            }
-          });
-        });
-
-        document.querySelectorAll('.reject-btn').forEach(btn => {
-          btn.addEventListener('click', async (e) => {
-            if (confirm('Reject this appointment?')) {
-              await updateAppointmentStatus(e.target.dataset.id, 'cancelled');
-            }
-          });
-        });
-
-        document.querySelectorAll('.complete-btn:not(:disabled)').forEach(btn => {
-          btn.addEventListener('click', async (e) => {
-            if (confirm('Mark this appointment as completed?')) {
-              await updateAppointmentStatus(e.target.dataset.id, 'completed');
-            }
-          });
-        });
-
-      } catch (error) {
-        console.error('Error loading appointments:', error);
-        document.getElementById('appointments-body').innerHTML = `
-          <tr><td colspan="6" style="text-align: center; color: var(--error);">Error loading appointments</td></tr>
+        return `
+          <tr>
+            <td>${formatDate(appt.date)}</td>
+            <td>${appt.time}</td>
+            <td>${patientName}</td>
+            <td>${taxCode}</td>
+            <td class="${statusClass}">${appt.status}</td>
+            <td>
+              <div class="action-buttons">
+                ${getActionButtons(appt)}
+              </div>
+            </td>
+          </tr>
         `;
-      }
+      }).join('');
+
+      setupActionButtons();
+    } catch (error) {
+      console.error('Error loading appointments:', error);
+      showError(error.message);
+    }
+  });
+
+  function formatDate(dateString) {
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  }
+
+  function getActionButtons(appt) {
+    switch(appt.status) {
+      case 'booked':
+        return `
+          <button class="confirm-btn" data-id="${appt.id}">Accept</button>
+          <button class="reject-btn" data-id="${appt.id}">Reject</button>
+        `;
+      case 'confirmed':
+        return `<button class="complete-btn" data-id="${appt.id}">Complete</button>`;
+      case 'completed':
+        return `<button class="complete-btn" disabled>Completed</button>`;
+      default:
+        return '';
+    }
+  }
+
+  function setupActionButtons() {
+    document.querySelectorAll('.confirm-btn').forEach(btn => {
+      btn.addEventListener('click', () => handleStatusChange(btn.dataset.id, 'confirmed'));
     });
 
-    async function updateAppointmentStatus(appointmentId, newStatus) {
-      try {
-        const response = await fetch(`http://localhost:5501/appointments/${appointmentId}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ status: newStatus })
-        });
+    document.querySelectorAll('.reject-btn').forEach(btn => {
+      btn.addEventListener('click', () => handleStatusChange(btn.dataset.id, 'cancelled'));
+    });
 
-        if (response.ok) {
-          location.reload(); // Refresh to show updated status
-        } else {
-          const error = await response.json();
-          alert(error.error || 'Failed to update appointment');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Failed to update appointment');
+    document.querySelectorAll('.complete-btn:not(:disabled)').forEach(btn => {
+      btn.addEventListener('click', () => handleStatusChange(btn.dataset.id, 'completed'));
+    });
+  }
+
+  async function handleStatusChange(appointmentId, newStatus) {
+    const actions = {
+      'confirmed': 'Accept',
+      'cancelled': 'Reject',
+      'completed': 'Complete'
+    };
+
+    if (!confirm(`${actions[newStatus]} this appointment?`)) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5501/appointments/${appointmentId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update appointment');
       }
+
+      location.reload();
+    } catch (error) {
+      console.error('Error:', error);
+      alert(`Error: ${error.message}`);
     }
-  </script>
+  }
+
+  function showError(message) {
+    const tbody = document.getElementById('appointments-body');
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; color: var(--error);">
+          ${message}
+        </td>
+      </tr>
+    `;
+  }
+
+  function showAccessDeniedPopup() {
+    document.body.classList.add('popup-active');
+
+    const popup = document.createElement('div');
+    popup.className = 'popup-overlay';
+    popup.innerHTML = `
+      <div class="popup-content">
+        <h3>Access Denied</h3>
+        <p>This page is only accessible to doctors.</p>
+        <button class="popup-btn" onclick="window.location.href='index.html'">
+          Return to Home
+        </button>
+      </div>
+    `;
+
+    document.body.appendChild(popup);
+  }
+</script>
+
 </body>
 </html>

@@ -2,9 +2,11 @@ import express from 'express';
 import sqlite3 from 'sqlite3';
 import bcrypt from 'bcrypt';
 import cors from 'cors';
+import jwt from 'jsonwebtoken';
 
 const app = express();
 const PORT = 5501;
+const JWT_SECRET = 'your-secret-key-here';
 
 app.use(cors());
 app.use(express.json());
@@ -14,7 +16,7 @@ const db = new sqlite3.Database('./utenti.db', (err) => {
   else console.log('Connected to SQLite DB.');
 });
 
-// Crea tabelle
+// Create tables
 db.serialize(() => {
   db.run(`
     CREATE TABLE IF NOT EXISTS utenti (
@@ -49,7 +51,19 @@ db.serialize(() => {
   `);
 });
 
-// REGISTER
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) return res.sendStatus(401);
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    next();
+  });
+}
+
 app.post('/register', async (req, res) => {
   try {
     const { nome, cognome, codice_fiscale, luogo_nascita, data_nascita, email, telefono, username, password, user_type, specialization } = req.body;
@@ -80,7 +94,23 @@ app.post('/register', async (req, res) => {
           }
           return res.status(500).json({ error: "Database error" });
         }
-        res.json({ success: true, userId: this.lastID });
+
+        const user = {
+          id: this.lastID,
+          username,
+          user_type,
+          nome,
+          cognome
+        };
+
+        const token = jwt.sign(user, JWT_SECRET, { expiresIn: '1h' });
+
+        res.json({ 
+          success: true, 
+          userId: this.lastID,
+          token,
+          user
+        });
       }
     );
 
@@ -89,7 +119,6 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// LOGIN
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
 
@@ -105,20 +134,67 @@ app.post('/login', (req, res) => {
       if (err) return res.status(500).json({ error: 'Password verification error' });
       if (!match) return res.status(401).json({ error: 'Invalid password' });
 
+      const tokenUser = {
+        id: user.id,
+        username: user.username,
+        user_type: user.user_type,
+        nome: user.nome,
+        cognome: user.cognome
+      };
+
+      const token = jwt.sign(tokenUser, JWT_SECRET, { expiresIn: '1h' });
+
       res.json({
-        user: {
-          id: user.id,
-          username: user.username,
-          user_type: user.user_type,
-          nome: user.nome,
-          cognome: user.cognome,
-        }
+        token,
+        user: tokenUser
       });
     });
   });
 });
 
-// LISTA DOTTORI
+app.get('/user-data', authenticateToken, (req, res) => {
+  db.get('SELECT * FROM utenti WHERE id = ?', [req.user.id], (err, user) => {
+    if (err) return res.status(500).json({ error: "Database error" });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const { password_hash, ...userData } = user;
+    res.json(userData);
+  });
+});
+
+app.put('/users/:id', authenticateToken, (req, res) => {
+  const { nome, cognome, email, telefono, luogo_nascita, specialization } = req.body;
+  const userId = req.params.id;
+
+  if (req.user.id != userId) {
+    return res.status(403).json({ error: "Unauthorized" });
+  }
+
+  if (!nome || !cognome) {
+    return res.status(400).json({ error: "First and last name are required" });
+  }
+
+  db.run(
+    `UPDATE utenti SET 
+      nome = ?, 
+      cognome = ?, 
+      email = ?, 
+      telefono = ?, 
+      luogo_nascita = ?,
+      specialization = ?
+     WHERE id = ?`,
+    [nome, cognome, email || null, telefono || null, luogo_nascita || null, specialization || null, userId],
+    function(err) {
+      if (err) return res.status(500).json({ error: "Database error" });
+      db.get('SELECT * FROM utenti WHERE id = ?', [userId], (err, user) => {
+        if (err || !user) return res.status(500).json({ error: "Failed to fetch updated user" });
+        const { password_hash, ...userData } = user;
+        res.json(userData);
+      });
+    }
+  );
+});
+
 app.get('/doctors', (req, res) => {
   db.all('SELECT id, nome, cognome, specialization FROM utenti WHERE user_type = "doctor"', (err, rows) => {
     if (err) return res.status(500).json({ error: "Database error" });
@@ -126,11 +202,12 @@ app.get('/doctors', (req, res) => {
   });
 });
 
-// PRENOTAZIONE APPUNTAMENTO
-app.post('/appointments', (req, res) => {
-  const { user_id, doctor_id, date, time, username } = req.body;
+app.post('/appointments', authenticateToken, (req, res) => {
+  const { doctor_id, date, time } = req.body;
+  const user_id = req.user.id;
+  const username = req.user.username;
 
-  if (!user_id || !doctor_id || !date || !time || !username) {
+  if (!doctor_id || !date || !time) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
@@ -169,100 +246,82 @@ app.post('/appointments', (req, res) => {
   });
 });
 
-// GET APPUNTAMENTI PAZIENTE (my bookings)
-app.get('/appointments', (req, res) => {
-  const username = req.query.username;
-  if (!username) return res.status(400).json({ error: "Username required" });
+// Updated GET /appointments with filters and pagination
+app.get('/appointments', authenticateToken, (req, res) => {
+  const user_id = req.user.id;
+  const { date, status, page = 1, limit = 10, order = 'asc' } = req.query;
 
-  db.get('SELECT id FROM utenti WHERE username = ?', [username], (err, user) => {
-    if (err) return res.status(500).json({ error: "Database error" });
-    if (!user) return res.status(404).json({ error: "User not found" });
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+  const whereClauses = [`a.user_id = ?`, `a.status != 'cancelled'`];
+  const params = [user_id];
 
-    db.all(
-      `SELECT a.*, d.nome as doctor_nome, d.cognome as doctor_cognome 
-       FROM appointments a
-       JOIN utenti d ON a.doctor_id = d.id
-       WHERE a.user_id = ? AND a.status != 'cancelled'
-       ORDER BY a.date, a.time`,
-      [user.id],
-      (err, appointments) => {
-        if (err) return res.status(500).json({ error: "Database error" });
-        res.json(appointments);
-      }
-    );
-  });
+  if (date) {
+    whereClauses.push('a.date = ?');
+    params.push(date);
+  }
+
+  if (status) {
+    whereClauses.push('a.status = ?');
+    params.push(status);
+  }
+
+  const where = whereClauses.length ? 'WHERE ' + whereClauses.join(' AND ') : '';
+
+  db.all(
+    `SELECT a.*, d.nome as doctor_nome, d.cognome as doctor_cognome, d.specialization
+     FROM appointments a
+     JOIN utenti d ON a.doctor_id = d.id
+     ${where}
+     ORDER BY a.date ${order.toUpperCase()}, a.time ${order.toUpperCase()}
+     LIMIT ? OFFSET ?`,
+    [...params, parseInt(limit), offset],
+    (err, appointments) => {
+      if (err) return res.status(500).json({ error: "Database error" });
+      res.json({ page: parseInt(page), limit: parseInt(limit), appointments });
+    }
+  );
 });
 
-// GET APPUNTAMENTI DOTTORI (tutti gli stati)
-app.get('/doctor/appointments', (req, res) => {
-  const doctorId = req.query.doctorId;
-  if (!doctorId) return res.status(400).json({ error: "Doctor ID required" });
+// Updated GET /doctor/appointments with filters and pagination
+app.get('/doctor/appointments', authenticateToken, (req, res) => {
+  const doctorId = req.user.id;
+  const { date, status, page = 1, limit = 10, order = 'asc' } = req.query;
+
+  if (req.user.user_type !== 'doctor') {
+    return res.status(403).json({ error: "Only doctors can access this endpoint" });
+  }
+
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+  const whereClauses = [`a.doctor_id = ?`];
+  const params = [doctorId];
+
+  if (date) {
+    whereClauses.push('a.date = ?');
+    params.push(date);
+  }
+
+  if (status) {
+    whereClauses.push('a.status = ?');
+    params.push(status);
+  }
+
+  const where = whereClauses.length ? 'WHERE ' + whereClauses.join(' AND ') : '';
 
   db.all(
     `SELECT a.id, a.date, a.time, a.status,
-            u.nome, u.cognome, u.codice_fiscale
+            u.nome, u.cognome, u.codice_fiscale, u.telefono
      FROM appointments a
      JOIN utenti u ON a.user_id = u.id
-     WHERE a.doctor_id = ?
-     ORDER BY a.date, a.time`,
-    [doctorId],
+     ${where}
+     ORDER BY a.date ${order.toUpperCase()}, a.time ${order.toUpperCase()}
+     LIMIT ? OFFSET ?`,
+    [...params, parseInt(limit), offset],
     (err, appointments) => {
       if (err) return res.status(500).json({ error: "Database error" });
-      res.json(appointments);
+      res.json({ page: parseInt(page), limit: parseInt(limit), appointments });
     }
   );
 });
-
-// AGGIORNA STATO APPUNTAMENTO
-app.patch('/appointments/:id', (req, res) => {
-  const { status } = req.body;
-  const validStatuses = ['booked', 'confirmed', 'cancelled', 'completed'];
-
-  if (!validStatuses.includes(status)) {
-    return res.status(400).json({ error: "Invalid status" });
-  }
-
-  db.run(
-    `UPDATE appointments SET status = ? WHERE id = ?`,
-    [status, req.params.id],
-    function(err) {
-      if (err) return res.status(500).json({ error: "Database error" });
-      if (this.changes === 0) {
-        return res.status(404).json({ error: "Appointment not found" });
-      }
-      res.json({ success: true });
-    }
-  );
-});
-
-// CANCELLA APPUNTAMENTO (soft delete)
-app.delete('/appointments/:id', (req, res) => {
-  db.run(
-    `UPDATE appointments SET status = 'cancelled' WHERE id = ?`,
-    [req.params.id],
-    function(err) {
-      if (err) return res.status(500).json({ error: "Database error" });
-      res.json({ success: true });
-    }
-  );
-});
-
-// ADMIN: tutte le prenotazioni
-app.get('/admin/all-appointments', (req, res) => {
-  db.all(`
-    SELECT a.id, a.date, a.time, a.status,
-           u.nome AS patient_nome, u.cognome AS patient_cognome, u.username AS patient_username,
-           d.nome AS doctor_nome, d.cognome AS doctor_cognome, d.username AS doctor_username
-    FROM appointments a
-    JOIN utenti u ON a.user_id = u.id
-    JOIN utenti d ON a.doctor_id = d.id
-    ORDER BY a.date, a.time
-  `, [], (err, rows) => {
-    if (err) return res.status(500).json({ error: "Database error" });
-    res.json(rows);
-  });
-});
-
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);

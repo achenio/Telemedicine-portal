@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>User Dashboard | Telemedicine Portal</title>
+  <style>
+    :root {
+      --bg: #fefefe;
+      --text: #1c1c1e;
+      --subtext: #555;
+      --primary: #007aff;
+      --card: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Header styles */
+    header {
+      position: relative;
+      background-color: var(--card);
+      padding: 1.5rem;
+      text-align: center;
+      animation: fadeIn 1s ease-out;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+    }
+
+    .header-left h1 {
+      font-size: 1.5rem;
+      color: var(--primary);
+      margin: 0;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding: 0;
+      margin: 0;
+    }
+
+    nav ul li a {
+      text-decoration: none;
+      color: var(--primary);
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      transition: background-color 0.3s ease;
+      cursor: pointer;
+    }
+
+    nav ul li a:hover {
+      background-color: rgba(0, 122, 255, 0.1);
+    }
+
+    nav ul li a.active {
+      background-color: rgba(0, 122, 255, 0.1);
+    }
+
+    #profile-area {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    #profile-area img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--primary);
+    }
+
+    /* Dashboard content */
+    .dashboard-main {
+      padding: 3rem 1rem;
+      max-width: 1000px;
+      margin: auto;
+      animation: fadeInUp 1s ease-out;
+    }
+
+    .section {
+      margin-bottom: 4rem;
+    }
+
+    .section h2 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: var(--primary);
+    }
+
+    /* Profile card */
+    .profile-card {
+      background-color: var(--card);
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+      margin-bottom: 2rem;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .profile-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+    }
+
+    .profile-info {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .profile-avatar {
+      position: relative;
+    }
+
+    .profile-avatar img {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--primary);
+    }
+
+    .avatar-upload {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background-color: var(--primary);
+      color: white;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .avatar-upload input {
+      display: none;
+    }
+
+    .profile-details {
+      flex: 1;
+    }
+
+    .profile-name {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+      color: var(--primary);
+    }
+
+    .profile-email {
+      color: var(--subtext);
+      margin-bottom: 1rem;
+    }
+
+    /* Form styles */
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      transition: border-color 0.3s ease;
+    }
+
+    .form-control:focus {
+      border-color: var(--primary);
+      outline: none;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: none;
+      font-weight: 600;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #005fcc;
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-outline:hover {
+      background-color: rgba(0, 122, 255, 0.1);
+    }
+
+    /* Stats cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .stat-card {
+      background-color: var(--card);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .stat-card h3 {
+      font-size: 0.9rem;
+      color: var(--subtext);
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-card p {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* Appointments table */
+    .appointments-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 2rem;
+    }
+
+    .appointments-table th, 
+    .appointments-table td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    .appointments-table th {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .appointments-table tr:hover {
+      background-color: rgba(0, 122, 255, 0.05);
+    }
+
+    .status-badge {
+      padding: 0.25rem 0.5rem;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .status-booked {
+      background-color: #ffcc00;
+      color: #1c1c1e;
+    }
+
+    .status-confirmed {
+      background-color: #34c759;
+      color: white;
+    }
+
+    .status-cancelled {
+      background-color: #ff3b30;
+      color: white;
+    }
+
+    .status-completed {
+      background-color: #007aff;
+      color: white;
+    }
+
+    /* Book appointment form */
+    .book-appointment-form {
+      background-color: var(--card);
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+      margin-bottom: 2rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+      }
+      
+      nav ul {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .profile-info {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .appointments-table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <h1>Telemedicine Portal</h1>
+    </div>
+    
+    <nav>
+      <ul>
+        <li><a href="#" class="active" id="nav-profile"><i class="fas fa-user"></i> Profile</a></li>
+        <li><a href="#" id="nav-appointments"><i class="fas fa-calendar-check"></i> Appointments</a></li>
+        <li><a href="#" id="nav-patients" style="display:none;"><i class="fas fa-user-friends"></i> Patients</a></li>
+        <li><a href="#" id="nav-messages"><i class="fas fa-comments"></i> Messages</a></li>
+      </ul>
+    </nav>
+    
+    <div id="profile-area">
+      <span id="username-display">Loading...</span>
+      <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Profile" id="header-avatar">
+      <button id="logout-btn" class="btn-outline" style="padding: 0.5rem 1rem; font-size: 0.9rem;">Logout</button>
+    </div>
+  </header>
+
+  <main class="dashboard-main">
+    <!-- Profile Section -->
+    <section class="section" id="profile-section">
+      <h2>My Profile</h2>
+      
+      <div class="profile-card">
+        <div class="profile-info">
+          <div class="profile-avatar">
+            <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Profile Photo" id="profile-avatar">
+            <label class="avatar-upload" for="avatar-input">
+              <i class="fas fa-camera"></i>
+              <input type="file" id="avatar-input" accept="image/*">
+            </label>
+          </div>
+          <div class="profile-details">
+            <h3 class="profile-name" id="profile-name-display">Loading...</h3>
+            <p class="profile-email" id="profile-email">Loading...</p>
+            <p id="profile-since">Member since: Loading...</p>
+          </div>
+        </div>
+
+        <form id="profile-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="first-name">First Name</label>
+              <input type="text" id="first-name" class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="last-name">Last Name</label>
+              <input type="text" id="last-name" class="form-control">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" class="form-control">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="codice-fiscale">Codice Fiscale</label>
+              <input type="text" id="codice-fiscale" class="form-control" readonly>
+            </div>
+            <div class="form-group">
+              <label for="phone">Phone</label>
+              <input type="tel" id="phone" class="form-control">
+            </div>
+          </div>
+
+          <div class="form-group" id="specialization-group" style="display:none;">
+            <label for="specialization">Specialization</label>
+            <input type="text" id="specialization" class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="address">Address</label>
+            <input type="text" id="address" class="form-control">
+          </div>
+
+          <div class="btn-group" style="display: flex; gap: 1rem; justify-content: flex-end;">
+            <button type="button" class="btn btn-outline" id="cancel-changes">Cancel</button>
+            <button type="button" class="btn btn-primary" id="save-profile">Save Changes</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="stats-grid" id="stats-grid">
+        <!-- Stats will be populated by JavaScript -->
+      </div>
+    </section>
+
+    <!-- Appointments Section -->
+    <section class="section" id="appointments-section" style="display:none;">
+      <h2>My Appointments</h2>
+      
+      <div class="profile-card">
+        <div id="appointments-container">
+          <table class="appointments-table" id="appointments-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Doctor</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="appointments-body">
+              <!-- Appointments will be populated by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Doctor Appointments Section -->
+    <section class="section" id="doctor-appointments-section" style="display:none;">
+      <h2>Patient Appointments</h2>
+      
+      <div class="profile-card">
+        <div id="doctor-appointments-container">
+          <table class="appointments-table" id="doctor-appointments-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Patient</th>
+                <th>Codice Fiscale</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="doctor-appointments-body">
+              <!-- Appointments will be populated by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Book Appointment Section -->
+    <section class="section" id="book-appointment-section" style="display:none;">
+      <h2>Book New Appointment</h2>
+      
+      <div class="book-appointment-form">
+        <form id="book-appointment-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="appointment-doctor">Doctor</label>
+              <select id="appointment-doctor" class="form-control" required>
+                <option value="">Select a doctor</option>
+                <!-- Doctors will be populated by JavaScript -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="appointment-date">Date</label>
+              <input type="date" id="appointment-date" class="form-control" required>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="appointment-time">Time</label>
+              <input type="time" id="appointment-time" class="form-control" required>
+            </div>
+          </div>
+          
+          <div class="btn-group" style="display: flex; gap: 1rem; justify-content: flex-end;">
+            <button type="button" class="btn btn-outline" id="cancel-booking">Cancel</button>
+            <button type="submit" class="btn btn-primary">Book Appointment</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script>
+document.addEventListener('DOMContentLoaded', async function() {
+    // Check if user is logged in
+    const token = localStorage.getItem('userToken');
+    const userData = JSON.parse(localStorage.getItem('userData'));
+    
+    if (!token || !userData) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    // Set user data
+    document.getElementById('username-display').textContent = `${userData.nome} ${userData.cognome}`;
+    document.getElementById('profile-name-display').textContent = `${userData.nome} ${userData.cognome}`;
+
+    // Load user details from API
+    try {
+        const response = await fetch('http://localhost:5501/user-data', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) throw new Error('Failed to fetch user data');
+        
+        const userDetails = await response.json();
+        populateProfileForm(userDetails);
+        
+        // Load appropriate content based on user type
+        if (userDetails.user_type === 'doctor') {
+            loadDoctorContent();
+        } else {
+            loadPatientContent();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        window.location.href = 'login.html';
+    }
+
+    // Logout button
+    document.getElementById('logout-btn').addEventListener('click', () => {
+        localStorage.removeItem('userToken');
+        localStorage.removeItem('userData');
+        window.location.href = 'login.html';
+    });
+});
+
+function populateProfileForm(user) {
+    document.getElementById('first-name').value = user.nome || '';
+    document.getElementById('last-name').value = user.cognome || '';
+    document.getElementById('email').value = user.email || '';
+    document.getElementById('codice-fiscale').value = user.codice_fiscale || '';
+    document.getElementById('phone').value = user.telefono || '';
+    document.getElementById('address').value = user.luogo_nascita || '';
+    
+    if (user.user_type === 'doctor') {
+        document.getElementById('specialization-group').style.display = 'block';
+        document.getElementById('specialization').value = user.specialization || '';
+    }
+}
+
+async function loadDoctorContent() {
+    // Show doctor-specific navigation
+    document.getElementById('nav-patients').style.display = '';
+    document.getElementById('nav-prescriptions').style.display = '';
+    
+    // Load doctor stats and appointments
+    try {
+        const token = localStorage.getItem('userToken');
+        const response = await fetch('http://localhost:5501/doctor/appointments', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load appointments');
+        
+        const appointments = await response.json();
+        renderDoctorAppointments(appointments);
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Failed to load appointments', 'error');
+    }
+}
+
+async function loadPatientContent() {
+    // Load patient stats and appointments
+    try {
+        const token = localStorage.getItem('userToken');
+        const response = await fetch('http://localhost:5501/appointments', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load appointments');
+        
+        const appointments = await response.json();
+        renderPatientAppointments(appointments);
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Failed to load appointments', 'error');
+    }
+}
+
+function renderDoctorAppointments(appointments) {
+    const tbody = document.getElementById('doctor-appointments-body');
+    tbody.innerHTML = '';
+    
+    appointments.forEach(appointment => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${new Date(appointment.date).toLocaleDateString()}</td>
+            <td>${appointment.time}</td>
+            <td>${appointment.nome} ${appointment.cognome}</td>
+            <td>${appointment.codice_fiscale}</td>
+            <td><span class="status-badge status-${appointment.status}">${appointment.status}</span></td>
+            <td>
+                <button class="btn btn-primary confirm-appointment" data-id="${appointment.id}">Confirm</button>
+                <button class="btn btn-outline cancel-appointment" data-id="${appointment.id}">Cancel</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function renderPatientAppointments(appointments) {
+    const tbody = document.getElementById('appointments-body');
+    tbody.innerHTML = '';
+    
+    appointments.forEach(appointment => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${new Date(appointment.date).toLocaleDateString()}</td>
+            <td>${appointment.time}</td>
+            <td>${appointment.doctor_name}</td>
+            <td><span class="status-badge status-${appointment.status}">${appointment.status}</span></td>
+            <td>
+                <button class="btn btn-outline cancel-appointment" data-id="${appointment.id}">Cancel</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.position = 'fixed';
+    notification.style.bottom = '20px';
+    notification.style.right = '20px';
+    notification.style.padding = '12px 24px';
+    notification.style.borderRadius = '8px';
+    notification.style.backgroundColor = type === 'success' ? '#007aff' : '#ff3b30';
+    notification.style.color = 'white';
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+  </script>
+</body>
+</html>

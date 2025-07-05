@@ -123,6 +123,23 @@
       font-style: italic;
       text-align: center;
     }
+
+    /* Loading spinner */
+    .loading-spinner {
+      display: none;
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top: 4px solid #007aff;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
@@ -162,7 +179,10 @@
       <div id="doctor-warning" class="doctor-warning" style="display: none;">
         Note: As a doctor, you can only book appointments with other doctors
       </div>
-      <button type="submit">Book Appointment</button>
+      <button type="submit" id="submit-btn">
+        <span id="btn-text">Book Appointment</span>
+        <div class="loading-spinner" id="submit-spinner"></div>
+      </button>
     </form>
   </main>
 
@@ -172,34 +192,73 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
+      // Set minimum date to today
       const today = new Date().toISOString().split('T')[0];
       document.getElementById('date').min = today;
 
-      const username = localStorage.getItem('username');
-      const userId = localStorage.getItem('user_id');
-      const userType = localStorage.getItem('user_type');
+      // Get DOM elements
       const form = document.getElementById('appointment-form');
       const loginMessage = document.getElementById('login-message');
       const doctorWarning = document.getElementById('doctor-warning');
+      const submitBtn = document.getElementById('submit-btn');
+      const btnText = document.getElementById('btn-text');
+      const submitSpinner = document.getElementById('submit-spinner');
 
-      if (username && userId) {
+      // Check authentication
+      const token = localStorage.getItem('token');
+      const userId = localStorage.getItem('user_id');
+      const userType = localStorage.getItem('user_type');
+      const username = localStorage.getItem('username');
+
+      if (!token || !userId || !username) {
+        // Not logged in
+        form.style.display = 'none';
+        loginMessage.style.display = 'block';
+        return;
+      }
+
+      // Verify token with server
+      try {
+        const verifyResponse = await fetch('http://localhost:5501/user-data', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!verifyResponse.ok) {
+          // Token is invalid
+          localStorage.removeItem('token');
+          localStorage.removeItem('username');
+          localStorage.removeItem('user_id');
+          localStorage.removeItem('user_type');
+          window.location.href = 'login.html';
+          return;
+        }
+
+        // User is authenticated
         form.style.display = 'flex';
         loginMessage.style.display = 'none';
 
-        // Mostra avviso se è un dottore
+        // Show warning if user is a doctor
         if (userType === 'doctor') {
           doctorWarning.style.display = 'block';
         }
 
-        // Carica lista dottori
+        // Load doctors list
         try {
-          const response = await fetch('http://localhost:5501/doctors');
+          const response = await fetch('http://localhost:5501/doctors', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
           if (!response.ok) throw new Error('Failed to load doctors');
+          
           const doctors = await response.json();
           const doctorSelect = document.getElementById('doctor');
           doctorSelect.innerHTML = '<option value="">Select a doctor</option>';
           
-          // Filtra se è un dottore per non mostrare se stesso
+          // Filter out current user if they're a doctor
           const filteredDoctors = userType === 'doctor' 
             ? doctors.filter(doc => doc.id != userId)
             : doctors;
@@ -214,28 +273,42 @@
           console.error('Error loading doctors:', error);
           document.getElementById('doctor').innerHTML = '<option value="">Error loading doctors</option>';
         }
-      } else {
-        form.style.display = 'none';
-        loginMessage.style.display = 'block';
+      } catch (error) {
+        console.error('Error verifying token:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        localStorage.removeItem('user_id');
+        localStorage.removeItem('user_type');
+        window.location.href = 'login.html';
       }
 
+      // Form submission handler
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        
+        // Show loading state
+        btnText.style.display = 'none';
+        submitSpinner.style.display = 'block';
+        submitBtn.disabled = true;
+
         const appointmentData = {
           date: form.date.value,
           time: form.time.value,
-          doctor_id: form.doctor.value,
-          user_id: userId,
-          username: username
+          doctor_id: form.doctor.value
         };
 
         try {
           const response = await fetch('http://localhost:5501/appointments', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify(appointmentData)
           });
+          
           const data = await response.json();
+          
           if (response.ok) {
             alert('Appointment booked successfully!');
             window.location.href = 'bookings.html';
@@ -245,6 +318,11 @@
         } catch (error) {
           console.error('Error:', error);
           alert('Server error, please try again later');
+        } finally {
+          // Reset button state
+          btnText.style.display = 'block';
+          submitSpinner.style.display = 'none';
+          submitBtn.disabled = false;
         }
       });
     });

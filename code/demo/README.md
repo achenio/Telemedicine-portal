@@ -2,7 +2,7 @@
 
 ![Screenshot](/screenshots/screenshot_home.png)  
 
-A demo version of a telemedicine portal that simulates a fully functional healthcare platform without requiring backend authentication. Perfect for presentations and testing.
+A demo version of a Telemedicine Portal that simulates a fully functional healthcare platform without requiring backend authentication. Perfect for presentations and testing.
 Features
 <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin: 1rem 0;"> <div style="background: #f0f7ff; padding: 1rem; border-radius: 8px; flex: 1; min-width: 200px;"> <h3>🎯 No Login Required</h3> <p>All features accessible without authentication</p> <button style="background: #007aff; color: white; border: none; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer;">Try It Out</button> </div> <div style="background: #f0f7ff; padding: 1rem; border-radius: 8px; flex: 1; min-width: 200px;"> <h3>👨‍⚕️ Doctor/Patient View</h3> <p>Switch between doctor and patient perspectives</p> <button style="background: #34c759; color: white; border: none; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer;">Switch Views</button> </div> <div style="background: #f0f7ff; padding: 1rem; border-radius: 8px; flex: 1; min-width: 200px;"> <h3>📅 Appointment System</h3> <p>Book and manage demo appointments</p> <button style="background: #5856d6; color: white; border: none; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer;">Book Demo</button> </div> </div>
 How to Use

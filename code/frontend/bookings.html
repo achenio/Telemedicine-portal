@@ -205,10 +205,14 @@
         throw new Error('Session expired');
       }
 
+      const userData = await verifyResponse.json();
+      const userId = userData.id;
+      const userType = userData.type;
+
       const appointments = await loadAppointments(token);
 
       if (appointments.length > 0) {
-        renderAppointments(appointments);
+        renderAppointments(appointments, userId, userType);
         setupCancelButtons(token);
       } else {
         showNoAppointments();
@@ -232,10 +236,11 @@
     }
 
     const data = await response.json();
-    return data.appointments; // ✅ FIX
+    return data.appointments;
   }
 
-  function renderAppointments(appointments) {
+  // Modified to show medical report link if present
+  function renderAppointments(appointments, userId, userType) {
     const appointmentsList = document.getElementById('appointments-list');
 
     appointmentsList.innerHTML = appointments.map(appt => {
@@ -247,12 +252,25 @@
         day: 'numeric'
       });
 
+      // Show report link if exists and user is patient or doctor involved
+      let reportLink = '';
+      if (appt.medical_report_url) {
+        reportLink = `
+          <span>
+            <a href="${appt.medical_report_url}" target="_blank" style="color: var(--primary); text-decoration: underline;">
+              📄 View Medical Report
+            </a>
+          </span>
+        `;
+      }
+
       return `
         <li>
           <span>📅 ${formattedDate}</span>
           <span>🕒 ${appt.time}</span>
           <span>👨‍⚕️ ${doctorName}</span>
           <span class="status-${appt.status.toLowerCase()}">${appt.status}</span>
+          ${reportLink}
           ${appt.status !== 'cancelled' && appt.status !== 'completed' ? `
             <button class="cancel-btn" data-id="${appt.id}">Cancel</button>
           ` : ''}

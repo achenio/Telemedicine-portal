@@ -476,35 +476,35 @@
 
     const username = localStorage.getItem('username');
     const userType = localStorage.getItem('user_type');
-
     function renderProfile() {
       if (username) {
         // Nascondi Login/Register dal menu
         navLogin.style.display = 'none';
         navRegister.style.display = 'none';
-
+      
         // Mostra area profilo
         const badge = userType === 'doctor'
           ? `<span style="background:#007aff20; color:#007aff; border-radius:10px; padding:2px 8px; font-size:0.8rem; margin-left:6px;">Doctor</span>`
           : '';
+      
         profileArea.innerHTML = `
-          Hello, <strong>${username}</strong>${badge}
+          Hello, <a href="dashboard.html" style="font-weight:bold; text-decoration:none; color:inherit;">${username}</a>${badge}
           <button id="logout-btn" aria-label="Logout">Logout</button>
         `;
-
+      
         document.getElementById('logout-btn').addEventListener('click', () => {
           localStorage.removeItem('username');
           localStorage.removeItem('user_type');
           localStorage.removeItem('user_id');
           location.reload();
         });
-
+      
         // Se è dottore, mostra comunque il link "Book Appointment" con avviso
         if (userType === 'doctor') {
           if (navBookAppointment) navBookAppointment.style.display = '';
           if (cardBookAppointment) cardBookAppointment.style.display = '';
           if (doctorWarningText) doctorWarningText.style.display = 'block';
-
+        
           // Aggiungi link "My Appointments" se non presente
           if (!document.getElementById('nav-my-appointments')) {
             const li = document.createElement('li');
@@ -520,7 +520,7 @@
           if (navBookAppointment) navBookAppointment.style.display = '';
           if (cardBookAppointment) cardBookAppointment.style.display = '';
           if (doctorWarningText) doctorWarningText.style.display = 'none';
-          
+        
           // Rimuovi link "My Appointments" se presente
           const myAppLi = document.getElementById('nav-my-appointments');
           if (myAppLi) myAppLi.remove();
@@ -530,17 +530,18 @@
         navLogin.style.display = '';
         navRegister.style.display = '';
         profileArea.innerHTML = '';
-
+      
         if (navBookAppointment) navBookAppointment.style.display = '';
         if (cardBookAppointment) cardBookAppointment.style.display = '';
         if (doctorWarningText) doctorWarningText.style.display = 'none';
-        
+      
         const myAppLi = document.getElementById('nav-my-appointments');
         if (myAppLi) myAppLi.remove();
       }
     }
 
     renderProfile();
+
   </script>
 </body>
 </html>

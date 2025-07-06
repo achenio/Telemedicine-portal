@@ -3,6 +3,9 @@ import sqlite3 from 'sqlite3';
 import bcrypt from 'bcrypt';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
+import multer from 'multer'; // <--- aggiungi questa riga
+import path from 'path';     // <--- aggiungi questa riga
+import fs from 'fs';         // <--- aggiungi questa riga
 
 const app = express();
 const PORT = 5501;
@@ -45,6 +48,7 @@ db.serialize(() => {
       doctor_id INTEGER NOT NULL,
       doctor_name TEXT NOT NULL,
       status TEXT DEFAULT 'booked' CHECK(status IN ('booked', 'confirmed', 'cancelled', 'completed')),
+      medical_report_url TEXT,
       FOREIGN KEY(user_id) REFERENCES utenti(id),
       FOREIGN KEY(doctor_id) REFERENCES utenti(id)
     )
@@ -202,7 +206,21 @@ app.get('/doctors', (req, res) => {
   });
 });
 
-app.post('/appointments', authenticateToken, (req, res) => {
+const upload = multer({
+  dest: './uploads/',
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf') cb(null, true);
+    else cb(new Error('Only PDF files are allowed'));
+  }
+});
+
+// Assicurati che la cartella uploads esista
+if (!fs.existsSync('/code/backend/uploads')) {
+  fs.mkdirSync('/uploads');
+}
+
+// Modifica la rotta POST /appointments per accettare file
+app.post('/appointments', authenticateToken, upload.single('medical_report'), (req, res) => {
   const { doctor_id, date, time } = req.body;
   const user_id = req.user.id;
   const username = req.user.username;
@@ -231,13 +249,24 @@ app.post('/appointments', authenticateToken, (req, res) => {
           if (err) return res.status(500).json({ error: "Database error" });
           if (existing) return res.status(409).json({ error: "Time slot already booked" });
 
+          // Salva il percorso del file se presente
+          let medicalReportUrl = null;
+          if (req.file) {
+            // Salva il file con un nome unico e fornisci l'URL di accesso
+            const ext = path.extname(req.file.originalname);
+            const newFilename = `report_${Date.now()}_${user_id}${ext}`;
+            const newPath = path.join('./uploads', newFilename);
+            fs.renameSync(req.file.path, newPath);
+            medicalReportUrl = `/uploads/${newFilename}`;
+          }
+
           db.run(
-            `INSERT INTO appointments (user_id, username, date, time, doctor_id, doctor_name, status) 
-             VALUES (?, ?, ?, ?, ?, ?, 'booked')`,
-            [user_id, username, date, time, doctor_id, `${doctor.nome} ${doctor.cognome}`],
+            `INSERT INTO appointments (user_id, username, date, time, doctor_id, doctor_name, status, medical_report_url) 
+             VALUES (?, ?, ?, ?, ?, ?, 'booked', ?)`,
+            [user_id, username, date, time, doctor_id, `${doctor.nome} ${doctor.cognome}`, medicalReportUrl],
             function(err) {
               if (err) return res.status(500).json({ error: "Database error" });
-              res.json({ success: true, appointmentId: this.lastID });
+              res.json({ success: true, appointmentId: this.lastID, medical_report_url: medicalReportUrl });
             }
           );
         }
@@ -245,6 +274,12 @@ app.post('/appointments', authenticateToken, (req, res) => {
     });
   });
 });
+
+// Servi i file PDF caricati
+app.use(
+  '/uploads',
+  express.static('/code/backend/uploads')
+);
 
 // Updated GET /appointments with filters and pagination
 app.get('/appointments', authenticateToken, (req, res) => {

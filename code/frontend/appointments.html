@@ -179,6 +179,10 @@
       <div id="doctor-warning" class="doctor-warning" style="display: none;">
         Note: As a doctor, you can only book appointments with other doctors
       </div>
+      <div>
+        <label for="medical-report">Upload your medical reports (PDF only, optional):</label><br />
+        <input type="file" id="medical-report" name="medical-report" accept="application/pdf" />
+      </div>
       <button type="submit" id="submit-btn">
         <span id="btn-text">Book Appointment</span>
         <div class="loading-spinner" id="submit-spinner"></div>
@@ -285,30 +289,35 @@
       // Form submission handler
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         // Show loading state
         btnText.style.display = 'none';
         submitSpinner.style.display = 'block';
         submitBtn.disabled = true;
 
-        const appointmentData = {
-          date: form.date.value,
-          time: form.time.value,
-          doctor_id: form.doctor.value
-        };
+        const formData = new FormData();
+        formData.append('date', form.date.value);
+        formData.append('time', form.time.value);
+        formData.append('doctor_id', form.doctor.value);
+
+        // Add the PDF file if selected
+        const reportFile = form['medical-report'].files[0];
+        if (reportFile) {
+          formData.append('medical_report', reportFile);
+        }
 
         try {
           const response = await fetch('http://localhost:5501/appointments', {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`
+              // Do NOT add 'Content-Type', FormData sets it automatically
             },
-            body: JSON.stringify(appointmentData)
+            body: formData
           });
-          
+
           const data = await response.json();
-          
+
           if (response.ok) {
             alert('Appointment booked successfully!');
             window.location.href = 'bookings.html';

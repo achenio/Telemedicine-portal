@@ -13,8 +13,6 @@ How to Use
 
     Explore Features - All functionality works with demo data
 
-html
-
 <!-- Sample code to access directly -->
 <a href="doctor-appointments.html">View Doctor Dashboard</a>
 <a href="bookings.html">View Patient Appointments</a>

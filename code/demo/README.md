@@ -1,6 +1,6 @@
 # Telemedicine Portal Demo
 
-![Screenshot](./screenshots/screenshot_home.png)  
+![Screenshot](/screenshots/screenshot_home.png)  
 
 A demo version of a telemedicine portal that simulates a fully functional healthcare platform without requiring backend authentication. Perfect for presentations and testing.
 Features

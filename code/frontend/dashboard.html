@@ -381,7 +381,8 @@
 <body>
   <header>
     <div class="header-left">
-      <h1>Telemedicine Portal</h1>
+      <h1><a href="index.html">Telemedicine Portal</a></h1>
+      
     </div>
     
     <nav>
@@ -389,7 +390,7 @@
         <li><a href="#" class="active" id="nav-profile"><i class="fas fa-user"></i> Profile</a></li>
         <li><a href="#" id="nav-appointments"><i class="fas fa-calendar-check"></i> Appointments</a></li>
         <li><a href="#" id="nav-patients" style="display:none;"><i class="fas fa-user-friends"></i> Patients</a></li>
-        <li><a href="#" id="nav-messages"><i class="fas fa-comments"></i> Messages</a></li>
+        <li><a href="chat.html" id="nav-messages"><i class="fas fa-comments"></i> Messages</a></li>
       </ul>
     </nav>
     
@@ -559,7 +560,7 @@
   <script>
 document.addEventListener('DOMContentLoaded', async function() {
     // Check if user is logged in
-    const token = localStorage.getItem('userToken');
+    const token = localStorage.getItem('token'); // Modificato da 'userToken' a 'token'
     const userData = JSON.parse(localStorage.getItem('userData'));
     
     if (!token || !userData) {
@@ -567,64 +568,64 @@ document.addEventListener('DOMContentLoaded', async function() {
         return;
     }
 
-    // Set user data
-    document.getElementById('username-display').textContent = `${userData.nome} ${userData.cognome}`;
-    document.getElementById('profile-name-display').textContent = `${userData.nome} ${userData.cognome}`;
-
-    // Load user details from API
+    // Verify token with backend
     try {
-        const response = await fetch('http://localhost:5501/user-data', {
+        const verifyResponse = await fetch('http://localhost:5501/user-data', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         });
         
-        if (!response.ok) throw new Error('Failed to fetch user data');
-        
-        const userDetails = await response.json();
-        populateProfileForm(userDetails);
-        
-        // Load appropriate content based on user type
-        if (userDetails.user_type === 'doctor') {
-            loadDoctorContent();
-        } else {
-            loadPatientContent();
+        if (!verifyResponse.ok) {
+            throw new Error('Invalid or expired token');
         }
+        
+        const currentUser = await verifyResponse.json();
+        
+        // Update UI with user data
+        document.getElementById('username-display').textContent = `${currentUser.nome} ${currentUser.cognome}`;
+        document.getElementById('profile-name-display').textContent = `${currentUser.nome} ${currentUser.cognome}`;
+        document.getElementById('profile-email').textContent = currentUser.email || 'No email provided';
+        
+        // Populate form fields
+        document.getElementById('first-name').value = currentUser.nome || '';
+        document.getElementById('last-name').value = currentUser.cognome || '';
+        document.getElementById('email').value = currentUser.email || '';
+        document.getElementById('codice-fiscale').value = currentUser.codice_fiscale || '';
+        document.getElementById('phone').value = currentUser.telefono || '';
+        document.getElementById('address').value = currentUser.luogo_nascita || '';
+        
+        // Show specialization field for doctors
+        if (currentUser.user_type === 'doctor') {
+            document.getElementById('specialization-group').style.display = 'block';
+            document.getElementById('specialization').value = currentUser.specialization || '';
+            document.getElementById('nav-patients').style.display = '';
+            loadDoctorAppointments();
+        } else {
+            loadPatientAppointments();
+        }
+        
+        // Setup navigation
+        setupNavigation();
+        
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Authentication error:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('userData');
         window.location.href = 'login.html';
     }
 
     // Logout button
     document.getElementById('logout-btn').addEventListener('click', () => {
-        localStorage.removeItem('userToken');
+        localStorage.removeItem('token');
         localStorage.removeItem('userData');
         window.location.href = 'login.html';
     });
 });
 
-function populateProfileForm(user) {
-    document.getElementById('first-name').value = user.nome || '';
-    document.getElementById('last-name').value = user.cognome || '';
-    document.getElementById('email').value = user.email || '';
-    document.getElementById('codice-fiscale').value = user.codice_fiscale || '';
-    document.getElementById('phone').value = user.telefono || '';
-    document.getElementById('address').value = user.luogo_nascita || '';
-    
-    if (user.user_type === 'doctor') {
-        document.getElementById('specialization-group').style.display = 'block';
-        document.getElementById('specialization').value = user.specialization || '';
-    }
-}
-
-async function loadDoctorContent() {
-    // Show doctor-specific navigation
-    document.getElementById('nav-patients').style.display = '';
-    document.getElementById('nav-prescriptions').style.display = '';
-    
-    // Load doctor stats and appointments
+async function loadDoctorAppointments() {
     try {
-        const token = localStorage.getItem('userToken');
+        const token = localStorage.getItem('token');
         const response = await fetch('http://localhost:5501/doctor/appointments', {
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -634,17 +635,16 @@ async function loadDoctorContent() {
         if (!response.ok) throw new Error('Failed to load appointments');
         
         const appointments = await response.json();
-        renderDoctorAppointments(appointments);
+        renderDoctorAppointments(appointments.appointments); // Modificato per gestire la risposta paginata
     } catch (error) {
         console.error('Error:', error);
         showNotification('Failed to load appointments', 'error');
     }
 }
 
-async function loadPatientContent() {
-    // Load patient stats and appointments
+async function loadPatientAppointments() {
     try {
-        const token = localStorage.getItem('userToken');
+        const token = localStorage.getItem('token');
         const response = await fetch('http://localhost:5501/appointments', {
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -654,10 +654,57 @@ async function loadPatientContent() {
         if (!response.ok) throw new Error('Failed to load appointments');
         
         const appointments = await response.json();
-        renderPatientAppointments(appointments);
+        renderPatientAppointments(appointments.appointments); // Modificato per gestire la risposta paginata
     } catch (error) {
         console.error('Error:', error);
         showNotification('Failed to load appointments', 'error');
+    }
+}
+
+function setupNavigation() {
+    // Show profile section by default
+    document.getElementById('profile-section').style.display = 'block';
+    
+    // Navigation click handlers
+    document.getElementById('nav-profile').addEventListener('click', (e) => {
+        e.preventDefault();
+        showSection('profile');
+    });
+    
+    document.getElementById('nav-appointments').addEventListener('click', (e) => {
+        e.preventDefault();
+        showSection('appointments');
+    });
+    
+    document.getElementById('nav-patients').addEventListener('click', (e) => {
+        e.preventDefault();
+        showSection('doctor-appointments');
+    });
+    
+    // Add active class to clicked nav item
+    const navItems = document.querySelectorAll('nav ul li a');
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            navItems.forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+        });
+    });
+}
+
+function showSection(sectionId) {
+    // Hide all sections
+    document.querySelectorAll('.section').forEach(section => {
+        section.style.display = 'none';
+    });
+    
+    // Show selected section
+    document.getElementById(`${sectionId}-section`).style.display = 'block';
+    
+    // Reload data if needed
+    if (sectionId === 'appointments') {
+        loadPatientAppointments();
+    } else if (sectionId === 'doctor-appointments') {
+        loadDoctorAppointments();
     }
 }
 
@@ -665,20 +712,42 @@ function renderDoctorAppointments(appointments) {
     const tbody = document.getElementById('doctor-appointments-body');
     tbody.innerHTML = '';
     
+    if (!appointments || appointments.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">No appointments found</td></tr>`;
+        return;
+    }
+    
     appointments.forEach(appointment => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${new Date(appointment.date).toLocaleDateString()}</td>
+            <td>${formatDate(appointment.date)}</td>
             <td>${appointment.time}</td>
             <td>${appointment.nome} ${appointment.cognome}</td>
-            <td>${appointment.codice_fiscale}</td>
-            <td><span class="status-badge status-${appointment.status}">${appointment.status}</span></td>
+            <td>${appointment.codice_fiscale || 'N/A'}</td>
+            <td><span class="status-badge status-${appointment.status.toLowerCase()}">${appointment.status}</span></td>
             <td>
-                <button class="btn btn-primary confirm-appointment" data-id="${appointment.id}">Confirm</button>
-                <button class="btn btn-outline cancel-appointment" data-id="${appointment.id}">Cancel</button>
+                ${appointment.status === 'booked' ? 
+                    `<button class="btn btn-primary confirm-appointment" data-id="${appointment.id}">Confirm</button>
+                     <button class="btn btn-outline cancel-appointment" data-id="${appointment.id}">Cancel</button>` :
+                    appointment.status === 'confirmed' ?
+                    `<button class="btn btn-primary complete-appointment" data-id="${appointment.id}">Complete</button>` :
+                    `<button class="btn btn-outline" disabled>${appointment.status}</button>`}
             </td>
         `;
         tbody.appendChild(row);
+    });
+    
+    // Add event listeners to buttons
+    document.querySelectorAll('.confirm-appointment').forEach(btn => {
+        btn.addEventListener('click', () => updateAppointmentStatus(btn.dataset.id, 'confirmed'));
+    });
+    
+    document.querySelectorAll('.cancel-appointment').forEach(btn => {
+        btn.addEventListener('click', () => updateAppointmentStatus(btn.dataset.id, 'cancelled'));
+    });
+    
+    document.querySelectorAll('.complete-appointment').forEach(btn => {
+        btn.addEventListener('click', () => updateAppointmentStatus(btn.dataset.id, 'completed'));
     });
 }
 
@@ -686,19 +755,68 @@ function renderPatientAppointments(appointments) {
     const tbody = document.getElementById('appointments-body');
     tbody.innerHTML = '';
     
+    if (!appointments || appointments.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">No appointments found</td></tr>`;
+        return;
+    }
+    
     appointments.forEach(appointment => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${new Date(appointment.date).toLocaleDateString()}</td>
+            <td>${formatDate(appointment.date)}</td>
             <td>${appointment.time}</td>
             <td>${appointment.doctor_name}</td>
-            <td><span class="status-badge status-${appointment.status}">${appointment.status}</span></td>
+            <td><span class="status-badge status-${appointment.status.toLowerCase()}">${appointment.status}</span></td>
             <td>
-                <button class="btn btn-outline cancel-appointment" data-id="${appointment.id}">Cancel</button>
+                ${appointment.status === 'booked' || appointment.status === 'confirmed' ?
+                    `<button class="btn btn-outline cancel-appointment" data-id="${appointment.id}">Cancel</button>` :
+                    `<button class="btn btn-outline" disabled>${appointment.status}</button>`}
             </td>
         `;
         tbody.appendChild(row);
     });
+    
+    // Add event listeners to buttons
+    document.querySelectorAll('.cancel-appointment').forEach(btn => {
+        btn.addEventListener('click', () => updateAppointmentStatus(btn.dataset.id, 'cancelled'));
+    });
+}
+
+async function updateAppointmentStatus(appointmentId, status) {
+    if (!confirm(`Are you sure you want to ${status} this appointment?`)) return;
+    
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`http://localhost:5501/appointments/${appointmentId}`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status })
+        });
+        
+        if (!response.ok) throw new Error('Failed to update appointment');
+        
+        showNotification(`Appointment ${status} successfully`);
+        
+        // Reload appointments
+        const userData = JSON.parse(localStorage.getItem('userData'));
+        if (userData.user_type === 'doctor') {
+            loadDoctorAppointments();
+        } else {
+            loadPatientAppointments();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Failed to update appointment', 'error');
+    }
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString('en-US', options);
 }
 
 function showNotification(message, type = 'success') {
@@ -709,8 +827,9 @@ function showNotification(message, type = 'success') {
     notification.style.right = '20px';
     notification.style.padding = '12px 24px';
     notification.style.borderRadius = '8px';
-    notification.style.backgroundColor = type === 'success' ? '#007aff' : '#ff3b30';
+    notification.style.backgroundColor = type === 'success' ? '#34c759' : '#ff3b30';
     notification.style.color = 'white';
+    notification.style.zIndex = '1000';
     document.body.appendChild(notification);
     
     setTimeout(() => {
@@ -718,5 +837,5 @@ function showNotification(message, type = 'success') {
     }, 3000);
 }
   </script>
-</body>
+  </body>
 </html>

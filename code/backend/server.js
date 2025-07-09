@@ -3,9 +3,9 @@ import sqlite3 from 'sqlite3';
 import bcrypt from 'bcrypt';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
-import multer from 'multer'; // <--- aggiungi questa riga
-import path from 'path';     // <--- aggiungi questa riga
-import fs from 'fs';         // <--- aggiungi questa riga
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 const app = express();
 const PORT = 5501;
@@ -13,6 +13,21 @@ const JWT_SECRET = 'your-secret-key-here';
 
 app.use(cors());
 app.use(express.json());
+
+// Assicurati che la cartella uploads esista
+const uploadsDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configurazione upload file
+const upload = multer({
+  dest: uploadsDir,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf') cb(null, true);
+    else cb(new Error('Only PDF files are allowed'));
+  }
+});
 
 const db = new sqlite3.Database('./utenti.db', (err) => {
   if (err) console.error("DB Error:", err);
@@ -68,6 +83,41 @@ function authenticateToken(req, res, next) {
   });
 }
 
+// Endpoint per il login
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Username and password required' });
+  }
+
+  db.get('SELECT * FROM utenti WHERE username = ?', [username], (err, user) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    if (!user) return res.status(401).json({ error: 'User not found' });
+
+    bcrypt.compare(password, user.password_hash, (err, match) => {
+      if (err) return res.status(500).json({ error: 'Password verification error' });
+      if (!match) return res.status(401).json({ error: 'Invalid password' });
+
+      const tokenUser = {
+        id: user.id,
+        username: user.username,
+        user_type: user.user_type,
+        nome: user.nome,
+        cognome: user.cognome
+      };
+
+      const token = jwt.sign(tokenUser, JWT_SECRET, { expiresIn: '1h' });
+
+      res.json({
+        token,
+        user: tokenUser
+      });
+    });
+  });
+});
+
+// Endpoint per la registrazione
 app.post('/register', async (req, res) => {
   try {
     const { nome, cognome, codice_fiscale, luogo_nascita, data_nascita, email, telefono, username, password, user_type, specialization } = req.body;
@@ -117,45 +167,12 @@ app.post('/register', async (req, res) => {
         });
       }
     );
-
   } catch (e) {
     res.status(500).json({ error: "Server error" });
   }
 });
 
-app.post('/login', (req, res) => {
-  const { username, password } = req.body;
-
-  if (!username || !password) {
-    return res.status(400).json({ error: 'Username and password required' });
-  }
-
-  db.get('SELECT * FROM utenti WHERE username = ?', [username], (err, user) => {
-    if (err) return res.status(500).json({ error: 'Database error' });
-    if (!user) return res.status(401).json({ error: 'User not found' });
-
-    bcrypt.compare(password, user.password_hash, (err, match) => {
-      if (err) return res.status(500).json({ error: 'Password verification error' });
-      if (!match) return res.status(401).json({ error: 'Invalid password' });
-
-      const tokenUser = {
-        id: user.id,
-        username: user.username,
-        user_type: user.user_type,
-        nome: user.nome,
-        cognome: user.cognome
-      };
-
-      const token = jwt.sign(tokenUser, JWT_SECRET, { expiresIn: '1h' });
-
-      res.json({
-        token,
-        user: tokenUser
-      });
-    });
-  });
-});
-
+// Endpoint per ottenere i dati dell'utente
 app.get('/user-data', authenticateToken, (req, res) => {
   db.get('SELECT * FROM utenti WHERE id = ?', [req.user.id], (err, user) => {
     if (err) return res.status(500).json({ error: "Database error" });
@@ -166,6 +183,7 @@ app.get('/user-data', authenticateToken, (req, res) => {
   });
 });
 
+// Endpoint per aggiornare i dati dell'utente
 app.put('/users/:id', authenticateToken, (req, res) => {
   const { nome, cognome, email, telefono, luogo_nascita, specialization } = req.body;
   const userId = req.params.id;
@@ -199,6 +217,7 @@ app.put('/users/:id', authenticateToken, (req, res) => {
   );
 });
 
+// Endpoint per ottenere la lista dei dottori
 app.get('/doctors', (req, res) => {
   db.all('SELECT id, nome, cognome, specialization FROM utenti WHERE user_type = "doctor"', (err, rows) => {
     if (err) return res.status(500).json({ error: "Database error" });
@@ -206,20 +225,7 @@ app.get('/doctors', (req, res) => {
   });
 });
 
-const upload = multer({
-  dest: './uploads/',
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'application/pdf') cb(null, true);
-    else cb(new Error('Only PDF files are allowed'));
-  }
-});
-
-// Assicurati che la cartella uploads esista
-if (!fs.existsSync('/code/backend/uploads')) {
-  fs.mkdirSync('/uploads');
-}
-
-// Modifica la rotta POST /appointments per accettare file
+// Endpoint per creare un appuntamento con upload file
 app.post('/appointments', authenticateToken, upload.single('medical_report'), (req, res) => {
   const { doctor_id, date, time } = req.body;
   const user_id = req.user.id;
@@ -249,15 +255,13 @@ app.post('/appointments', authenticateToken, upload.single('medical_report'), (r
           if (err) return res.status(500).json({ error: "Database error" });
           if (existing) return res.status(409).json({ error: "Time slot already booked" });
 
-          // Salva il percorso del file se presente
           let medicalReportUrl = null;
           if (req.file) {
-            // Salva il file con un nome unico e fornisci l'URL di accesso
             const ext = path.extname(req.file.originalname);
             const newFilename = `report_${Date.now()}_${user_id}${ext}`;
-            const newPath = path.join('./uploads', newFilename);
+            const newPath = path.join(uploadsDir, newFilename);
             fs.renameSync(req.file.path, newPath);
-            medicalReportUrl = `/uploads/${newFilename}`;
+            medicalReportUrl = `/code/backend/uploads/${newFilename}`; // <-- Percorso corretto
           }
 
           db.run(
@@ -275,13 +279,7 @@ app.post('/appointments', authenticateToken, upload.single('medical_report'), (r
   });
 });
 
-// Servi i file PDF caricati
-app.use(
-  '/uploads',
-  express.static('/code/backend/uploads')
-);
-
-// Updated GET /appointments with filters and pagination
+// Endpoint per ottenere gli appuntamenti del paziente
 app.get('/appointments', authenticateToken, (req, res) => {
   const user_id = req.user.id;
   const { date, status, page = 1, limit = 10, order = 'asc' } = req.query;
@@ -317,14 +315,14 @@ app.get('/appointments', authenticateToken, (req, res) => {
   );
 });
 
-// Updated GET /doctor/appointments with filters and pagination
+// Endpoint per ottenere gli appuntamenti del dottore (versione corretta)
 app.get('/doctor/appointments', authenticateToken, (req, res) => {
-  const doctorId = req.user.id;
-  const { date, status, page = 1, limit = 10, order = 'asc' } = req.query;
-
   if (req.user.user_type !== 'doctor') {
     return res.status(403).json({ error: "Only doctors can access this endpoint" });
   }
+
+  const doctorId = req.user.id;
+  const { date, status, page = 1, limit = 10, order = 'asc' } = req.query;
 
   const offset = (parseInt(page) - 1) * parseInt(limit);
   const whereClauses = [`a.doctor_id = ?`];
@@ -343,8 +341,7 @@ app.get('/doctor/appointments', authenticateToken, (req, res) => {
   const where = whereClauses.length ? 'WHERE ' + whereClauses.join(' AND ') : '';
 
   db.all(
-    `SELECT a.id, a.date, a.time, a.status,
-            u.nome, u.cognome, u.codice_fiscale, u.telefono
+    `SELECT a.*, u.nome, u.cognome, u.codice_fiscale, u.telefono
      FROM appointments a
      JOIN utenti u ON a.user_id = u.id
      ${where}
@@ -353,11 +350,72 @@ app.get('/doctor/appointments', authenticateToken, (req, res) => {
     [...params, parseInt(limit), offset],
     (err, appointments) => {
       if (err) return res.status(500).json({ error: "Database error" });
-      res.json({ page: parseInt(page), limit: parseInt(limit), appointments });
+      res.json(appointments); // Modificato per restituire direttamente l'array
     }
   );
 });
 
+// Endpoint per cancellare un appuntamento
+app.delete('/appointments/:id', authenticateToken, (req, res) => {
+  const appointmentId = req.params.id;
+  const userId = req.user.id;
+
+  db.get('SELECT * FROM appointments WHERE id = ?', [appointmentId], (err, appointment) => {
+    if (err) return res.status(500).json({ error: "Database error" });
+    if (!appointment) return res.status(404).json({ error: "Appointment not found" });
+
+    if (appointment.user_id !== userId && appointment.doctor_id !== userId) {
+      return res.status(403).json({ error: "Unauthorized to cancel this appointment" });
+    }
+
+    db.run(
+      'UPDATE appointments SET status = "cancelled" WHERE id = ?',
+      [appointmentId],
+      function(err) {
+        if (err) return res.status(500).json({ error: "Database error" });
+        res.json({ success: true });
+      }
+    );
+  });
+});
+
+
+// Endpoint per aggiornare lo stato di un appuntamento
+app.patch('/appointments/:id', authenticateToken, (req, res) => {
+  const { status } = req.body;
+  const appointmentId = req.params.id;
+  const userId = req.user.id;
+
+  if (!status || !['confirmed', 'cancelled', 'completed'].includes(status)) {
+    return res.status(400).json({ error: "Invalid status" });
+  }
+
+  db.get('SELECT * FROM appointments WHERE id = ?', [appointmentId], (err, appointment) => {
+    if (err) return res.status(500).json({ error: "Database error" });
+    if (!appointment) return res.status(404).json({ error: "Appointment not found" });
+
+    // Solo il dottore può cambiare lo stato
+    if (appointment.doctor_id !== userId) {
+      return res.status(403).json({ error: "Only the assigned doctor can update appointment status" });
+    }
+
+    db.run(
+      'UPDATE appointments SET status = ? WHERE id = ?',
+      [status, appointmentId],
+      function(err) {
+        if (err) return res.status(500).json({ error: "Database error" });
+        res.json({ success: true });
+      }
+    );
+  });
+});
+
+
+// Servi i file PDF caricati con percorso accessibile da /uploads/filename.pdf
+app.use('/uploads', express.static(uploadsDir));
+
+
+// Avvio del server
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });

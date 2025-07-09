@@ -184,158 +184,156 @@
     <p>&copy; 2025 Telemedicine Portal</p>
   </footer>
 
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const token = localStorage.getItem('token');
+      const appointmentsList = document.getElementById('appointments-list');
+      const loginMessage = document.getElementById('login-message');
 
-<script>
-  document.addEventListener('DOMContentLoaded', async () => {
-    const token = localStorage.getItem('token');
-    const appointmentsList = document.getElementById('appointments-list');
-    const loginMessage = document.getElementById('login-message');
+      if (!token) {
+        showLoginPrompt();
+        return;
+      }
 
-    if (!token) {
-      showLoginPrompt();
-      return;
-    }
+      try {
+        const verifyResponse = await fetch('http://localhost:5501/user-data', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
 
-    try {
-      const verifyResponse = await fetch('http://localhost:5501/user-data', {
+        if (!verifyResponse.ok) {
+          throw new Error('Session expired');
+        }
+
+        const userData = await verifyResponse.json();
+        const userId = userData.id;
+        const userType = userData.type;
+
+        const appointments = await loadAppointments(token);
+
+        if (appointments.length > 0) {
+          renderAppointments(appointments, userId, userType);
+          setupCancelButtons(token);
+        } else {
+          showNoAppointments();
+        }
+
+        appointmentsList.style.display = 'flex';
+        loginMessage.style.display = 'none';
+      } catch (error) {
+        console.error('Error:', error);
+        handleError(error);
+      }
+    });
+
+    async function loadAppointments(token) {
+      const response = await fetch('http://localhost:5501/appointments', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      if (!verifyResponse.ok) {
-        throw new Error('Session expired');
+      if (!response.ok) {
+        throw new Error('Failed to load appointments');
       }
 
-      const userData = await verifyResponse.json();
-      const userId = userData.id;
-      const userType = userData.type;
-
-      const appointments = await loadAppointments(token);
-
-      if (appointments.length > 0) {
-        renderAppointments(appointments, userId, userType);
-        setupCancelButtons(token);
-      } else {
-        showNoAppointments();
-      }
-
-      appointmentsList.style.display = 'flex';
-      loginMessage.style.display = 'none';
-    } catch (error) {
-      console.error('Error:', error);
-      handleError(error);
-    }
-  });
-
-  async function loadAppointments(token) {
-    const response = await fetch('http://localhost:5501/appointments', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to load appointments');
+      const data = await response.json();
+      return data.appointments;
     }
 
-    const data = await response.json();
-    return data.appointments;
-  }
+    function renderAppointments(appointments, userId, userType) {
+      const appointmentsList = document.getElementById('appointments-list');
 
-  // Modified to show medical report link if present
-  function renderAppointments(appointments, userId, userType) {
-    const appointmentsList = document.getElementById('appointments-list');
+      appointmentsList.innerHTML = appointments.map(appt => {
+        const doctorName = appt.doctor_name || `${appt.doctor_nome} ${appt.doctor_cognome}` || 'Doctor';
+        const date = new Date(appt.date);
+        const formattedDate = date.toLocaleDateString('en-US', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric'
+        });
 
-    appointmentsList.innerHTML = appointments.map(appt => {
-      const doctorName = appt.doctor_name || `${appt.doctor_nome} ${appt.doctor_cognome}` || 'Doctor';
-      const date = new Date(appt.date);
-      const formattedDate = date.toLocaleDateString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric'
-      });
+        // Modificato il percorso del report
+        let reportLink = '';
+        if (appt.medical_report_url) {
+          const reportUrl = `http://localhost:5501${appt.medical_report_url}`;
+          reportLink = `
+            <span>
+              <a href="${reportUrl}" target="_blank" style="color: var(--primary); text-decoration: underline;">
+                📄 View Medical Report
+              </a>
+            </span>
+          `;
+        }
 
-      // Show report link if exists and user is patient or doctor involved
-      let reportLink = '';
-      if (appt.medical_report_url) {
-        reportLink = `
-          <span>
-            <a href="${appt.medical_report_url}" target="_blank" style="color: var(--primary); text-decoration: underline;">
-              📄 View Medical Report
-            </a>
-          </span>
+        return `
+          <li>
+            <span>📅 ${formattedDate}</span>
+            <span>🕒 ${appt.time}</span>
+            <span>👨‍⚕️ ${doctorName}</span>
+            <span class="status-${appt.status.toLowerCase()}">${appt.status}</span>
+            ${reportLink}
+            ${appt.status !== 'cancelled' && appt.status !== 'completed' ? `
+              <button class="cancel-btn" data-id="${appt.id}">Cancel</button>
+            ` : ''}
+          </li>
         `;
-      }
+      }).join('');
+    }
 
-      return `
-        <li>
-          <span>📅 ${formattedDate}</span>
-          <span>🕒 ${appt.time}</span>
-          <span>👨‍⚕️ ${doctorName}</span>
-          <span class="status-${appt.status.toLowerCase()}">${appt.status}</span>
-          ${reportLink}
-          ${appt.status !== 'cancelled' && appt.status !== 'completed' ? `
-            <button class="cancel-btn" data-id="${appt.id}">Cancel</button>
-          ` : ''}
+    function setupCancelButtons(token) {
+      document.querySelectorAll('.cancel-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!confirm('Are you sure you want to cancel this appointment?')) return;
+
+          try {
+            const response = await fetch(`http://localhost:5501/appointments/${btn.dataset.id}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!response.ok) {
+              throw new Error('Failed to cancel appointment');
+            }
+
+            location.reload();
+          } catch (error) {
+            console.error('Error:', error);
+            alert(`Error: ${error.message}`);
+          }
+        });
+      });
+    }
+
+    function showLoginPrompt() {
+      document.getElementById('appointments-list').style.display = 'none';
+      document.getElementById('login-message').style.display = 'block';
+    }
+
+    function showNoAppointments() {
+      const appointmentsList = document.getElementById('appointments-list');
+      appointmentsList.innerHTML = `
+        <li style="text-align: center; padding: 2rem;">
+          You have no upcoming appointments.<br>
+          <a href="appointments.html" style="color: var(--primary);">Book one now</a>
         </li>
       `;
-    }).join('');
-  }
-
-  function setupCancelButtons(token) {
-    document.querySelectorAll('.cancel-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        if (!confirm('Are you sure you want to cancel this appointment?')) return;
-
-        try {
-          const response = await fetch(`http://localhost:5501/appointments/${btn.dataset.id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-
-          if (!response.ok) {
-            throw new Error('Failed to cancel appointment');
-          }
-
-          location.reload();
-        } catch (error) {
-          console.error('Error:', error);
-          alert(`Error: ${error.message}`);
-        }
-      });
-    });
-  }
-
-  function showLoginPrompt() {
-    document.getElementById('appointments-list').style.display = 'none';
-    document.getElementById('login-message').style.display = 'block';
-  }
-
-  function showNoAppointments() {
-    const appointmentsList = document.getElementById('appointments-list');
-    appointmentsList.innerHTML = `
-      <li style="text-align: center; padding: 2rem;">
-        You have no upcoming appointments.<br>
-        <a href="appointments.html" style="color: var(--primary);">Book one now</a>
-      </li>
-    `;
-  }
-
-  function handleError(error) {
-    if (error.message.includes('Session')) {
-      localStorage.clear();
-      window.location.href = 'login.html';
-      return;
     }
 
-    const appointmentsList = document.getElementById('appointments-list');
-    appointmentsList.innerHTML = `
-      <li style="color: var(--error); text-align: center;">
-        ${error.message}<br>
-        <button onclick="location.reload()">Retry</button>
-      </li>
-    `;
-    appointmentsList.style.display = 'flex';
-    document.getElementById('login-message').style.display = 'none';
-  }
-</script>
+    function handleError(error) {
+      if (error.message.includes('Session')) {
+        localStorage.clear();
+        window.location.href = 'login.html';
+        return;
+      }
 
+      const appointmentsList = document.getElementById('appointments-list');
+      appointmentsList.innerHTML = `
+        <li style="color: var(--error); text-align: center;">
+          ${error.message}<br>
+          <button onclick="location.reload()">Retry</button>
+        </li>
+      `;
+      appointmentsList.style.display = 'flex';
+      document.getElementById('login-message').style.display = 'none';
+    }
+  </script>
 </body>
 </html>

@@ -295,6 +295,59 @@
       pointer-events: none;
       user-select: none;
     }
+    .view-report-btn {
+    padding: 0.5rem 1rem;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.view-report-btn:hover {
+    background-color: #005fcc;
+}
+
+/* Stile per il PDF viewer */
+.pdf-viewer-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 2rem;
+}
+
+.pdf-viewer-iframe {
+    width: 80%;
+    height: 80%;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.pdf-viewer-toolbar {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.pdf-viewer-close {
+    padding: 0.75rem 1.5rem;
+    background-color: var(--error);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 600;
+}
   </style>
 </head>
 <body>
@@ -315,21 +368,22 @@
 
     <h2>Your Appointments</h2>
     
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Time</th>
-          <th>Patient Name</th>
-          <th>Tax Code</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="appointments-body">
-        <!-- Appointments will be loaded here -->
-      </tbody>
-    </table>
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Patient Name</th>
+        <th>Tax Code</th>
+        <th>Status</th>
+        <th>Medical Report</th> <!-- Nuova colonna -->
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="appointments-body">
+      <!-- Appointments will be loaded here -->
+    </tbody>
+  </table>
   </main>
 
   <footer>
@@ -338,167 +392,301 @@
 
 
 <script>
-  document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Verifica autenticazione
     const token = localStorage.getItem('token');
     const userId = localStorage.getItem('user_id');
     const userType = localStorage.getItem('user_type');
+    const username = localStorage.getItem('username');
 
-    if (!token || !userId) {
-      window.location.href = 'login.html';
-      return;
+    if (!token || !userId || !userType) {
+        window.location.href = 'login.html';
+        return;
     }
 
     if (userType !== 'doctor') {
-      showAccessDeniedPopup();
-      return;
+        showAccessDeniedPopup();
+        return;
     }
 
-    document.getElementById('username-display').textContent = localStorage.getItem('username');
+    document.getElementById('username-display').textContent = username || 'Doctor';
 
     try {
-      const response = await fetch(`http://localhost:5501/doctor/appointments`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+        // Carica gli appuntamenti
+        const response = await fetch(`http://localhost:5501/doctor/appointments`, {
+            headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-      const data = await response.json();
-      const appointments = data.appointments; // ✅ FIX
-      const tbody = document.getElementById('appointments-body');
+        const data = await response.json();
+        const appointments = Array.isArray(data) ? data : (data.appointments || []);
+        const tbody = document.getElementById('appointments-body');
 
-      if (!appointments.length) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">No appointments scheduled</td></tr>`;
-        return;
-      }
+        if (appointments.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem;">No appointments found</td></tr>`;
+            return;
+        }
 
-      tbody.innerHTML = appointments.map(appt => {
-        const statusClass = `status-${appt.status.toLowerCase()}`;
-        const patientName = appt.patient_nome ? 
-          `${appt.patient_nome} ${appt.patient_cognome}` : 
-          `${appt.nome} ${appt.cognome}`;
-        const taxCode = appt.patient_codice_fiscale || appt.codice_fiscale || 'N/A';
+        // Popola la tabella
+        tbody.innerHTML = appointments.map(appt => {
+            const status = appt.status || 'unknown';
+            const statusClass = `status-${status.toLowerCase()}`;
+            const date = appt.date ? formatDate(appt.date) : 'N/A';
+            const time = appt.time || 'N/A';
+            
+            const patientName = appt.patient_nome ? 
+                `${appt.patient_nome} ${appt.patient_cognome || ''}` : 
+                (appt.nome ? `${appt.nome} ${appt.cognome || ''}` : 'Unknown Patient');
+                
+            const taxCode = appt.patient_codice_fiscale || appt.codice_fiscale || 'N/A';
+            const reportUrl = appt.medical_report_url;
+            const reportButton = reportUrl ? 
+                `<button class="view-report-btn" data-url="${reportUrl}">View Report</button>` : 
+                'No report';
 
-        return `
-          <tr>
-            <td>${formatDate(appt.date)}</td>
-            <td>${appt.time}</td>
-            <td>${patientName}</td>
-            <td>${taxCode}</td>
-            <td class="${statusClass}">${appt.status}</td>
-            <td>
-              <div class="action-buttons">
-                ${getActionButtons(appt)}
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('');
+            return `
+                <tr>
+                    <td>${date}</td>
+                    <td>${time}</td>
+                    <td>${patientName}</td>
+                    <td>${taxCode}</td>
+                    <td class="${statusClass}">${status}</td>
+                    <td>${reportButton}</td>
+                    <td>
+                        <div class="action-buttons">
+                            ${getActionButtons(appt)}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
 
-      setupActionButtons();
+        // Configura gli event listeners
+        setupActionButtons();
+        setupReportButtons(); // Nuova funzione per i pulsanti dei referti
+
     } catch (error) {
-      console.error('Error loading appointments:', error);
-      showError(error.message);
+        console.error('Error loading appointments:', error);
+        showError(error.message || 'Failed to load appointments');
     }
-  });
+});
 
-  function formatDate(dateString) {
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString(undefined, options);
-  }
+// Nuova funzione per gestire i pulsanti dei referti
+function setupReportButtons() {
+    document.querySelectorAll('.view-report-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const reportUrl = btn.getAttribute('data-url');
+            if (reportUrl) {
+                showPdfViewer(reportUrl);
+            }
+        });
+    });
+}
 
-  function getActionButtons(appt) {
-    switch(appt.status) {
-      case 'booked':
-        return `
-          <button class="confirm-btn" data-id="${appt.id}">Accept</button>
-          <button class="reject-btn" data-id="${appt.id}">Reject</button>
-        `;
-      case 'confirmed':
-        return `<button class="complete-btn" data-id="${appt.id}">Complete</button>`;
-      case 'completed':
-        return `<button class="complete-btn" disabled>Completed</button>`;
-      default:
-        return '';
+// Visualizzatore PDF
+function showPdfViewer(pdfUrl) {
+    // Crea il container
+    const viewer = document.createElement('div');
+    viewer.style.position = 'fixed';
+    viewer.style.top = '0';
+    viewer.style.left = '0';
+    viewer.style.width = '100%';
+    viewer.style.height = '100%';
+    viewer.style.backgroundColor = 'rgba(0,0,0,0.8)';
+    viewer.style.display = 'flex';
+    viewer.style.flexDirection = 'column';
+    viewer.style.justifyContent = 'center';
+    viewer.style.alignItems = 'center';
+    viewer.style.zIndex = '1000';
+    
+    // Crea l'iframe
+    const iframe = document.createElement('iframe');
+    iframe.src = `http://localhost:5501${pdfUrl}`;
+    iframe.style.width = '80%';
+    iframe.style.height = '80%';
+    iframe.style.border = 'none';
+    iframe.style.borderRadius = '8px';
+    
+    // Pulsante di chiusura
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = 'Close';
+    closeBtn.style.marginTop = '20px';
+    closeBtn.style.padding = '10px 20px';
+    closeBtn.style.backgroundColor = 'var(--error)';
+    closeBtn.style.color = 'white';
+    closeBtn.style.border = 'none';
+    closeBtn.style.borderRadius = '5px';
+    closeBtn.style.cursor = 'pointer';
+    closeBtn.addEventListener('click', () => {
+        document.body.removeChild(viewer);
+    });
+    
+    // Aggiungi elementi al DOM
+    viewer.appendChild(iframe);
+    viewer.appendChild(closeBtn);
+    document.body.appendChild(viewer);
+}
+
+// Formatta la data
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    try {
+        const options = { year: 'numeric', month: 'short', day: 'numeric' };
+        const date = new Date(dateString);
+        return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString(undefined, options);
+    } catch (e) {
+        return 'Invalid Date';
     }
-  }
+}
 
-  function setupActionButtons() {
+// Restituisce i pulsanti delle azioni
+function getActionButtons(appt) {
+    const status = (appt.status || '').toLowerCase();
+    const appointmentId = appt.id || '';
+
+    switch(status) {
+        case 'booked':
+            return `
+                <button class="confirm-btn" data-id="${appointmentId}">Accept</button>
+                <button class="reject-btn" data-id="${appointmentId}">Reject</button>
+            `;
+        case 'confirmed':
+            return `<button class="complete-btn" data-id="${appointmentId}">Complete</button>`;
+        case 'completed':
+            return `<button class="complete-btn" disabled>Completed</button>`;
+        default:
+            return `<span>No actions</span>`;
+    }
+}
+
+// Configura i pulsanti delle azioni
+function setupActionButtons() {
+    // Pulsante Conferma
     document.querySelectorAll('.confirm-btn').forEach(btn => {
-      btn.addEventListener('click', () => handleStatusChange(btn.dataset.id, 'confirmed'));
+        btn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            try {
+                await updateAppointmentStatus(btn.dataset.id, 'confirmed');
+            } catch (error) {
+                console.error('Error confirming appointment:', error);
+                showError('Failed to confirm appointment');
+            }
+        });
     });
 
+    // Pulsante Rifiuta
     document.querySelectorAll('.reject-btn').forEach(btn => {
-      btn.addEventListener('click', () => handleStatusChange(btn.dataset.id, 'cancelled'));
+        btn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            try {
+                await updateAppointmentStatus(btn.dataset.id, 'cancelled');
+            } catch (error) {
+                console.error('Error rejecting appointment:', error);
+                showError('Failed to reject appointment');
+            }
+        });
     });
 
+    // Pulsante Completa
     document.querySelectorAll('.complete-btn:not(:disabled)').forEach(btn => {
-      btn.addEventListener('click', () => handleStatusChange(btn.dataset.id, 'completed'));
+        btn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            try {
+                await updateAppointmentStatus(btn.dataset.id, 'completed');
+            } catch (error) {
+                console.error('Error completing appointment:', error);
+                showError('Failed to complete appointment');
+            }
+        });
     });
-  }
+}
 
-  async function handleStatusChange(appointmentId, newStatus) {
+// Aggiorna lo stato dell'appuntamento
+async function updateAppointmentStatus(appointmentId, newStatus) {
+    if (!appointmentId) {
+        throw new Error('Invalid appointment ID');
+    }
+
     const actions = {
-      'confirmed': 'Accept',
-      'cancelled': 'Reject',
-      'completed': 'Complete'
+        'confirmed': 'accept',
+        'cancelled': 'reject',
+        'completed': 'complete'
     };
 
-    if (!confirm(`${actions[newStatus]} this appointment?`)) return;
+    if (!confirm(`Are you sure you want to ${actions[newStatus]} this appointment?`)) {
+        return;
+    }
 
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5501/appointments/${appointmentId}`, {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`http://localhost:5501/appointments/${appointmentId}`, {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ status: newStatus })
-      });
+    });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update appointment');
-      }
-
-      location.reload();
-    } catch (error) {
-      console.error('Error:', error);
-      alert(`Error: ${error.message}`);
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update appointment');
     }
-  }
 
-  function showError(message) {
+    window.location.reload();
+}
+
+// Mostra errore
+function showError(message) {
     const tbody = document.getElementById('appointments-body');
     tbody.innerHTML = `
-      <tr>
-        <td colspan="6" style="text-align: center; color: var(--error);">
-          ${message}
-        </td>
-      </tr>
+        <tr>
+            <td colspan="7" style="text-align: center; color: var(--error); padding: 2rem;">
+                ${message}
+                <button onclick="window.location.reload()" style="
+                    margin-top: 1rem;
+                    padding: 0.5rem 1rem;
+                    background: var(--primary);
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    cursor: pointer;
+                ">
+                    Retry
+                </button>
+            </td>
+        </tr>
     `;
-  }
+}
 
-  function showAccessDeniedPopup() {
-    document.body.classList.add('popup-active');
-
+// Mostra popup accesso negato
+function showAccessDeniedPopup() {
     const popup = document.createElement('div');
     popup.className = 'popup-overlay';
     popup.innerHTML = `
-      <div class="popup-content">
-        <h3>Access Denied</h3>
-        <p>This page is only accessible to doctors.</p>
-        <button class="popup-btn" onclick="window.location.href='index.html'">
-          Return to Home
-        </button>
-      </div>
+        <div class="popup-content">
+            <h3>Access Denied</h3>
+            <p>This page is only accessible to doctors.</p>
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
+                <button class="popup-btn" onclick="window.location.href='index.html'">
+                    Return to Home
+                </button>
+                <button class="popup-btn" onclick="window.location.href='login.html'" 
+                    style="background-color: var(--error)">
+                    Login as Doctor
+                </button>
+            </div>
+        </div>
     `;
-
     document.body.appendChild(popup);
-  }
+    document.body.classList.add('popup-active');
+}
 </script>
-
 </body>
 </html>

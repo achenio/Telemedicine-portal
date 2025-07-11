@@ -346,7 +346,7 @@
     <nav>
       <ul id="nav-list">
         <li id="nav-book-appointment"><a href="appointments.html">Book Appointment</a></li>
-        <li><a href="chat.html">Secure Chat</a></li>
+        <li><a href="chat.html" id="secure-chat-link">Secure Chat</a></li>
         <li><a href="javascript:void(0)" id="feature-ai-chat">AI Chat</a></li>
         <li id="nav-login"><a href="login.html" id="login-link">Login</a></li>
         <li id="nav-register"><a href="register.html">Register</a></li>
@@ -371,7 +371,7 @@
           <p>Schedule consultations with trusted professionals in just a few clicks.</p>
           <p class="doctor-warning" id="doctor-warning-text" style="display: none;">Doctors can book appointments with other doctors</p>
         </a>
-        <a href="chat.html" class="feature-card">
+        <a href="chat.html" class="feature-card" id="card-secure-chat">
           <h3>Secure Chat</h3>
           <p>Chat with complete privacy using our encrypted communication system.</p>
         </a>
@@ -473,9 +473,23 @@
     const navBookAppointment = document.getElementById('nav-book-appointment');
     const cardBookAppointment = document.getElementById('card-book-appointment');
     const doctorWarningText = document.getElementById('doctor-warning-text');
+    const secureChatLink = document.getElementById('secure-chat-link');
+    const cardSecureChat = document.getElementById('card-secure-chat');
 
     const username = localStorage.getItem('username');
     const userType = localStorage.getItem('user_type');
+    const userId = localStorage.getItem('user_id');
+  
+    function updateChatLinks() {
+      if (userType === 'doctor') {
+        if (secureChatLink) secureChatLink.href = 'doctor-chat.html';
+        if (cardSecureChat) cardSecureChat.href = 'doctor-chat.html';
+      } else {
+        if (secureChatLink) secureChatLink.href = 'chat.html';
+        if (cardSecureChat) cardSecureChat.href = 'chat.html';
+      }
+    }
+
     function renderProfile() {
       if (username) {
         // Nascondi Login/Register dal menu
@@ -498,6 +512,9 @@
           localStorage.removeItem('user_id');
           location.reload();
         });
+
+        // Aggiorna i link per la chat
+        updateChatLinks();
       
         // Se è dottore, mostra comunque il link "Book Appointment" con avviso
         if (userType === 'doctor') {
@@ -530,18 +547,21 @@
         navLogin.style.display = '';
         navRegister.style.display = '';
         profileArea.innerHTML = '';
-      
+        
+        // Reset dei link della chat
+        if (secureChatLink) secureChatLink.href = 'chat.html';
+        if (cardSecureChat) cardSecureChat.href = 'chat.html';
+        
         if (navBookAppointment) navBookAppointment.style.display = '';
         if (cardBookAppointment) cardBookAppointment.style.display = '';
         if (doctorWarningText) doctorWarningText.style.display = 'none';
-      
+        
         const myAppLi = document.getElementById('nav-my-appointments');
         if (myAppLi) myAppLi.remove();
       }
     }
 
     renderProfile();
-
   </script>
 </body>
 </html>

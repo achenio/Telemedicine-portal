@@ -355,6 +355,33 @@ app.get('/doctor/appointments', authenticateToken, (req, res) => {
   );
 });
 
+// Aggiungi questo endpoint per ottenere i dottori con cui il paziente ha interagito
+app.get('/patient/doctors-with-conversations', authenticateToken, (req, res) => {
+  if (req.user.user_type !== 'patient') {
+    return res.status(403).json({ error: "Only patients can access this endpoint" });
+  }
+
+  db.all(`
+    SELECT DISTINCT u.id, u.nome, u.cognome, u.specialization
+    FROM messages m
+    JOIN utenti u ON m.sender_id = u.id OR m.receiver_id = u.id
+    WHERE (m.sender_id = ? OR m.receiver_id = ?) 
+    AND u.user_type = 'doctor'
+    UNION
+    SELECT DISTINCT u.id, u.nome, u.cognome, u.specialization
+    FROM appointments a
+    JOIN utenti u ON a.doctor_id = u.id
+    WHERE a.user_id = ? AND u.user_type = 'doctor'
+    ORDER BY cognome, nome
+  `, [req.user.id, req.user.id, req.user.id], (err, doctors) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ error: "Database error" });
+    }
+    res.json(doctors);
+  });
+});
+
 // Endpoint per cancellare un appuntamento
 app.delete('/appointments/:id', authenticateToken, (req, res) => {
   const appointmentId = req.params.id;
@@ -409,7 +436,130 @@ app.patch('/appointments/:id', authenticateToken, (req, res) => {
     );
   });
 });
+// Aggiungi questa parte al server.js prima dell'avvio del server
 
+// Creazione tabella messaggi
+db.run(`
+  CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sender_id INTEGER NOT NULL,
+    receiver_id INTEGER NOT NULL,
+    content TEXT NOT NULL,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_read BOOLEAN DEFAULT FALSE,
+    sender_type TEXT NOT NULL CHECK(sender_type IN ('patient', 'doctor')),
+    FOREIGN KEY(sender_id) REFERENCES utenti(id),
+    FOREIGN KEY(receiver_id) REFERENCES utenti(id)
+  )
+`);
+
+// Endpoint per inviare un messaggio
+app.post('/messages', authenticateToken, (req, res) => {
+  const { receiver_id, content } = req.body;
+  const sender_id = req.user.id;
+  
+  if (!receiver_id || !content) {
+    return res.status(400).json({ error: "Receiver ID and content are required" });
+  }
+
+  db.run(
+    `INSERT INTO messages (sender_id, receiver_id, content, sender_type) 
+     VALUES (?, ?, ?, ?)`,
+    [sender_id, receiver_id, content, req.user.user_type],
+    function(err) {
+      if (err) return res.status(500).json({ error: "Database error" });
+      
+      res.json({
+        id: this.lastID,
+        sender_id,
+        receiver_id,
+        content,
+        timestamp: new Date().toISOString()
+      });
+    }
+  );
+});
+
+// Endpoint per ottenere i messaggi di una conversazione
+app.get('/messages/conversation/:otherUserId', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const otherUserId = req.params.otherUserId;
+
+  db.all(
+    `SELECT id, sender_id, content, timestamp, sender_type
+     FROM messages
+     WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
+     ORDER BY timestamp ASC`,
+    [userId, otherUserId, otherUserId, userId],
+    (err, messages) => {
+      if (err) return res.status(500).json({ error: "Database error" });
+      
+      // Segna i messaggi come letti
+      db.run(
+        `UPDATE messages SET is_read = TRUE 
+         WHERE receiver_id = ? AND sender_id = ? AND is_read = FALSE`,
+        [userId, otherUserId]
+      );
+      
+      res.json(messages);
+    }
+  );
+});
+
+// Endpoint per ottenere il conteggio dei messaggi non letti
+app.get('/messages/unread-count', authenticateToken, (req, res) => {
+  db.get(
+    `SELECT COUNT(*) as unread_count 
+     FROM messages 
+     WHERE receiver_id = ? AND is_read = FALSE`,
+    [req.user.id],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: "Database error" });
+      res.json({ unread_count: row.unread_count });
+    }
+  );
+});
+
+// Endpoint per ottenere le conversazioni
+app.get('/messages/conversations', authenticateToken, (req, res) => {
+  db.all(
+    `SELECT 
+       CASE 
+         WHEN sender_id = ? THEN receiver_id 
+         ELSE sender_id 
+       END as other_user_id,
+       MAX(timestamp) as last_message_time,
+       SUM(CASE WHEN receiver_id = ? AND is_read = FALSE THEN 1 ELSE 0 END) as unread_count
+     FROM messages
+     WHERE sender_id = ? OR receiver_id = ?
+     GROUP BY other_user_id
+     ORDER BY last_message_time DESC`,
+    [req.user.id, req.user.id, req.user.id, req.user.id],
+    (err, conversations) => {
+      if (err) return res.status(500).json({ error: "Database error" });
+      res.json(conversations);
+    }
+  );
+});
+
+// Add this endpoint to server.js to get only patients with appointments for a doctor
+app.get('/doctor/patients', authenticateToken, (req, res) => {
+  if (req.user.user_type !== 'doctor') {
+    return res.status(403).json({ error: "Only doctors can access this endpoint" });
+  }
+
+  db.all(
+    `SELECT DISTINCT u.id, u.nome, u.cognome, u.codice_fiscale, u.email, u.telefono
+     FROM appointments a
+     JOIN utenti u ON a.user_id = u.id
+     WHERE a.doctor_id = ? AND u.user_type = 'patient'`,
+    [req.user.id],
+    (err, patients) => {
+      if (err) return res.status(500).json({ error: "Database error" });
+      res.json(patients);
+    }
+  );
+});
 
 // Servi i file PDF caricati con percorso accessibile da /uploads/filename.pdf
 app.use('/uploads', express.static(uploadsDir));

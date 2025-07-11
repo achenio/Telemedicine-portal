@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Patient Portal - Doctor Chat</title>
+  <title>Doctor Portal - Patient Chat</title>
   <style>
     :root {
       --bg: #f8f9fa;
@@ -53,7 +53,7 @@
       gap: 2rem;
     }
 
-    .doctors-sidebar {
+    .patients-sidebar {
       width: 300px;
       background-color: var(--card);
       border-radius: 0.5rem;
@@ -62,7 +62,7 @@
       height: fit-content;
     }
 
-    .doctors-sidebar h2 {
+    .patients-sidebar h2 {
       color: var(--primary);
       margin-bottom: 1.5rem;
       font-size: 1.25rem;
@@ -74,7 +74,7 @@
       position: relative;
     }
 
-    #search-doctors {
+    #search-patients {
       width: 100%;
       padding: 0.75rem 1rem;
       font-size: 1rem;
@@ -85,7 +85,7 @@
       padding-right: 2.5rem;
     }
 
-    #search-doctors:focus {
+    #search-patients:focus {
       border-color: var(--primary);
     }
 
@@ -97,12 +97,12 @@
       color: var(--subtext);
     }
 
-    .doctors-list {
+    .patients-list {
       max-height: 500px;
       overflow-y: auto;
     }
 
-    .doctor-item {
+    .patient-item {
       display: flex;
       align-items: center;
       padding: 1rem;
@@ -112,16 +112,16 @@
       transition: background-color 0.3s ease;
     }
 
-    .doctor-item:hover {
+    .patient-item:hover {
       background-color: var(--input-bg);
     }
 
-    .doctor-item.active {
+    .patient-item.active {
       background-color: rgba(13, 110, 253, 0.1);
       border-left: 3px solid var(--primary);
     }
 
-    .doctor-avatar {
+    .patient-avatar {
       width: 40px;
       height: 40px;
       border-radius: 50%;
@@ -135,16 +135,16 @@
       flex-shrink: 0;
     }
 
-    .doctor-info {
+    .patient-info {
       flex-grow: 1;
     }
 
-    .doctor-info h3 {
+    .patient-info h3 {
       margin: 0;
       font-size: 1rem;
     }
 
-    .doctor-info p {
+    .patient-info p {
       margin: 0.2rem 0 0;
       font-size: 0.8rem;
       color: var(--subtext);
@@ -168,7 +168,7 @@
       align-items: center;
     }
 
-    .chat-header .doctor-avatar {
+    .chat-header .patient-avatar {
       margin-right: 1rem;
       background-color: white;
       color: var(--primary);
@@ -185,7 +185,7 @@
       opacity: 0.9;
     }
 
-    .no-doctor-selected {
+    .no-patient-selected {
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -196,7 +196,7 @@
       color: var(--subtext);
     }
 
-    .no-doctor-selected svg {
+    .no-patient-selected svg {
       width: 80px;
       height: 80px;
       margin-bottom: 1rem;
@@ -229,14 +229,14 @@
       word-wrap: break-word;
     }
 
-    .message.patient {
+    .message.doctor {
       background-color: var(--primary);
       color: white;
       margin-left: auto;
       border-bottom-right-radius: 0.25rem;
     }
 
-    .message.doctor {
+    .message.patient {
       background-color: var(--card);
       color: var(--text);
       margin-right: auto;
@@ -304,7 +304,7 @@
         flex-direction: column;
       }
 
-      .doctors-sidebar {
+      .patients-sidebar {
         width: 100%;
       }
 
@@ -316,36 +316,36 @@
 </head>
 <body>
   <header>
-    <h1 class="header-title">Patient Portal - Doctor Communications</h1>
+    <h1 class="header-title">Doctor Portal - Patient Communications</h1>
   </header>
 
   <div class="container">
-    <div class="doctors-sidebar">
-      <h2>My Doctors</h2>
+    <div class="patients-sidebar">
+      <h2>My Patients</h2>
       <div class="search-container">
-        <input type="text" id="search-doctors" placeholder="Search doctors...">
+        <input type="text" id="search-patients" placeholder="Search patients...">
         <span class="search-icon">🔍</span>
       </div>
-      <div class="doctors-list" id="doctors-list">
-        <!-- Doctors will be loaded here -->
+      <div class="patients-list" id="patients-list">
+        <!-- Patients will be loaded here -->
       </div>
     </div>
 
     <div class="chat-container" id="chat-container">
-      <div id="no-doctor-selected" class="no-doctor-selected">
+      <div id="no-patient-selected" class="no-patient-selected">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
         </svg>
-        <h3>Select a doctor to start chatting</h3>
-        <p>Choose a doctor from your list to view your conversation history</p>
+        <h3>Select a patient to start chatting</h3>
+        <p>Choose a patient from your list to view your conversation history</p>
       </div>
 
       <div id="chat-interface" style="display: none;">
         <div class="chat-header">
-          <div class="doctor-avatar" id="current-doctor-avatar">DR</div>
+          <div class="patient-avatar" id="current-patient-avatar">PT</div>
           <div class="chat-header-info">
-            <h2 id="current-doctor-name">Doctor Name</h2>
-            <p id="current-doctor-info">Specialization</p>
+            <h2 id="current-patient-name">Patient Name</h2>
+            <p id="current-patient-info">Patient Information</p>
           </div>
         </div>
         <div id="chat-window">
@@ -362,13 +362,13 @@
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       // DOM Elements
-      const searchInput = document.getElementById('search-doctors');
+      const searchInput = document.getElementById('search-patients');
       const chatInput = document.getElementById('chat-input');
       const sendButton = document.getElementById('send-message');
       const messagesContainer = document.getElementById('messages');
       
       // State variables
-      let currentDoctor = null;
+      let currentPatient = null;
       let currentUser = null;
       let socket = null;
       let isSocketConnected = false;
@@ -395,17 +395,17 @@
           }
           
           const newMessage = {
-            sender: 'doctor',
+            sender: 'patient',
             sender_id: message.sender_id,
             content: message.content,
             timestamp: message.timestamp || new Date().toISOString(),
-            isRead: currentDoctor && currentDoctor.id === message.sender_id
+            isRead: currentPatient && currentPatient.id === message.sender_id
           };
           
           conversations[message.sender_id].push(newMessage);
           
           // Update UI if viewing this conversation
-          if (currentDoctor && currentDoctor.id === message.sender_id) {
+          if (currentPatient && currentPatient.id === message.sender_id) {
             addMessageToChat(newMessage);
           } else {
             updateUnreadBadge(message.sender_id);
@@ -423,12 +423,12 @@
         };
       }
 
-      // Update unread badge for doctor
-      function updateUnreadBadge(doctorId) {
-        const doctorItems = document.querySelectorAll('.doctor-item');
-        doctorItems.forEach(item => {
-          if (item.dataset.doctorId === doctorId.toString()) {
-            const unreadCount = conversations[doctorId]?.filter(m => !m.isRead).length || 0;
+      // Update unread badge for patient
+      function updateUnreadBadge(patientId) {
+        const patientItems = document.querySelectorAll('.patient-item');
+        patientItems.forEach(item => {
+          if (item.dataset.patientId === patientId.toString()) {
+            const unreadCount = conversations[patientId]?.filter(m => !m.isRead).length || 0;
             let badge = item.querySelector('.unread-badge');
             
             if (unreadCount > 0) {
@@ -448,8 +448,8 @@
       // Add message to chat UI
       function addMessageToChat(message) {
         const messageDiv = document.createElement('div');
-        const isPatient = message.sender === 'patient';
-        messageDiv.className = `message ${isPatient ? 'patient' : 'doctor'}`;
+        const isDoctor = message.sender === 'doctor';
+        messageDiv.className = `message ${isDoctor ? 'doctor' : 'patient'}`;
         
         const timestamp = new Date(message.timestamp);
         const timeString = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -473,7 +473,7 @@
         return true;
       }
       
-      // Load current patient data
+      // Load current doctor data
       async function loadCurrentUser() {
         try {
           const token = localStorage.getItem('token');
@@ -493,54 +493,28 @@
         }
       }
       
-async function loadDoctors() {
-  try {
-    const token = localStorage.getItem('token');
-    console.log('Loading doctors with token:', token);
-    
-    const response = await fetch('http://localhost:5501/patient/doctors-with-conversations', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    
-    if (!response.ok) {
-      console.error('Failed to load doctors, status:', response.status);
-      throw new Error(`Failed to load doctors: ${response.statusText}`);
-    }
-    
-    const doctors = await response.json();
-    console.log('Doctors loaded:', doctors);
-    return doctors;
-    
-  } catch (error) {
-    console.error('Error loading doctors:', error);
-    
-    // Fallback: carica tutti i dottori se l'endpoint specifico fallisce
-    try {
-      const token = localStorage.getItem('token');
-      const fallbackResponse = await fetch('http://localhost:5501/doctors', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!fallbackResponse.ok) throw new Error('Fallback failed');
-      
-      return await fallbackResponse.json();
-      
-    } catch (fallbackError) {
-      console.error('Fallback loading failed:', fallbackError);
-      return [];
-    }
-  }
-}
-      
-      // Load conversation messages
-      async function loadDoctorMessages(doctorId) {
+      // Load patient list
+      // In your existing frontend code, modify the loadPatients function:
+      async function loadPatients() {
         try {
           const token = localStorage.getItem('token');
-          const response = await fetch(`http://localhost:5501/messages/conversation/${doctorId}`, {
+          const response = await fetch('http://localhost:5501/doctor/patients', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          if (!response.ok) throw new Error('Failed to load patients');
+          return await response.json();
+        } catch (error) {
+          console.error('Error loading patients:', error);
+          return [];
+        }
+      }      
+      // Load conversation messages
+      async function loadPatientMessages(patientId) {
+        try {
+          const token = localStorage.getItem('token');
+          const response = await fetch(`http://localhost:5501/messages/conversation/${patientId}`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -550,7 +524,7 @@ async function loadDoctors() {
           return messages.map(msg => ({
             ...msg,
             isRead: true,
-            sender: msg.sender_type === 'patient' ? 'patient' : 'doctor'
+            sender: msg.sender_type === 'doctor' ? 'doctor' : 'patient'
           }));
         } catch (error) {
           console.error('Error loading messages:', error);
@@ -561,22 +535,22 @@ async function loadDoctors() {
       // Send message
       async function sendMessage() {
         const messageText = chatInput.value.trim();
-        if (messageText === '' || !currentDoctor || !currentUser) return;
+        if (messageText === '' || !currentPatient || !currentUser) return;
         
         const newMessage = {
-          sender: 'patient',
+          sender: 'doctor',
           sender_id: currentUser.id,
-          receiver_id: currentDoctor.id,
+          receiver_id: currentPatient.id,
           content: messageText,
           timestamp: new Date().toISOString(),
           isRead: true
         };
         
         // Add to current conversation
-        if (!conversations[currentDoctor.id]) {
-          conversations[currentDoctor.id] = [];
+        if (!conversations[currentPatient.id]) {
+          conversations[currentPatient.id] = [];
         }
-        conversations[currentDoctor.id].push(newMessage);
+        conversations[currentPatient.id].push(newMessage);
         
         // Update UI
         addMessageToChat(newMessage);
@@ -586,7 +560,7 @@ async function loadDoctors() {
         try {
           if (isSocketConnected) {
             socket.send(JSON.stringify({
-              receiver_id: currentDoctor.id,
+              receiver_id: currentPatient.id,
               content: messageText
             }));
           } else {
@@ -598,7 +572,7 @@ async function loadDoctors() {
                 'Authorization': `Bearer ${token}`
               },
               body: JSON.stringify({
-                receiver_id: currentDoctor.id,
+                receiver_id: currentPatient.id,
                 content: messageText
               })
             });
@@ -612,62 +586,63 @@ async function loadDoctors() {
         }
       }
       
-      // Select doctor and load conversation
-      async function selectDoctor(doctor) {
-        currentDoctor = doctor;
-        
-        // Update UI
-        document.getElementById('no-doctor-selected').style.display = 'none';
-        document.getElementById('chat-interface').style.display = 'block';
-        
-        const initials = (doctor.nome ? doctor.nome[0] : '') + (doctor.cognome ? doctor.cognome[0] : '');
-        document.getElementById('current-doctor-avatar').textContent = initials;
-        document.getElementById('current-doctor-name').textContent = `Dr. ${doctor.nome} ${doctor.cognome}`;
-        document.getElementById('current-doctor-info').textContent = doctor.specialization || 'General Practitioner';
-        
-        // Load messages if not in memory
-        if (!conversations[doctor.id]) {
-          conversations[doctor.id] = await loadDoctorMessages(doctor.id);
-        } else {
-          // Mark all messages as read when selecting doctor
-          conversations[doctor.id].forEach(msg => {
-            if (msg.sender === 'doctor') {
-              msg.isRead = true;
-            }
-          });
-          markMessagesAsRead(doctor.id);
-        }
-        
-        // Render messages
-        renderMessages(conversations[doctor.id]);
-        
-        // Update active state in doctor list
-        document.querySelectorAll('.doctor-item').forEach(item => {
-          item.classList.remove('active');
-          if (item.dataset.doctorId === doctor.id.toString()) {
-            item.classList.add('active');
-            // Remove unread badge when selecting doctor
-            const badge = item.querySelector('.unread-badge');
-            if (badge) badge.remove();
-          }
-        });
+// Modifica la funzione selectPatient
+async function selectPatient(patient) {
+  currentPatient = patient;
+  
+  // Update UI
+  document.getElementById('no-patient-selected').style.display = 'none';
+  document.getElementById('chat-interface').style.display = 'block';
+  
+  const initials = (patient.nome ? patient.nome[0] : '') + (patient.cognome ? patient.cognome[0] : '');
+  document.getElementById('current-patient-avatar').textContent = initials;
+  document.getElementById('current-patient-name').textContent = `${patient.nome} ${patient.cognome}`;
+  document.getElementById('current-patient-info').textContent = `ID: ${patient.id} | ${patient.codice_fiscale || ''}`;
+  
+  // Carica i messaggi solo se non sono già in memoria
+  if (!conversations[patient.id]) {
+    conversations[patient.id] = await loadPatientMessages(patient.id);
+  } else {
+    // Segna i messaggi come letti
+    conversations[patient.id].forEach(msg => {
+      if (msg.sender === 'patient') {
+        msg.isRead = true;
       }
+    });
+    
+    // Aggiorna lo stato sul server (opzionale)
+    markMessagesAsRead(patient.id);
+  }
+  
+  // Mostra i messaggi esistenti
+  renderMessages(conversations[patient.id]);
+  
+  // Update active state in patient list
+  document.querySelectorAll('.patient-item').forEach(item => {
+    item.classList.remove('active');
+    if (item.dataset.patientId === patient.id.toString()) {
+      item.classList.add('active');
+      // Remove unread badge when selecting patient
+      const badge = item.querySelector('.unread-badge');
+      if (badge) badge.remove();
+    }
+  });
+}
 
-      // Mark messages as read on server
-      async function markMessagesAsRead(doctorId) {
-        try {
-          const token = localStorage.getItem('token');
-          await fetch(`http://localhost:5501/messages/mark-as-read/${doctorId}`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-        } catch (error) {
-          console.error('Error marking messages as read:', error);
-        }
+// Aggiungi questa funzione per segnare i messaggi come letti sul server
+async function markMessagesAsRead(patientId) {
+  try {
+    const token = localStorage.getItem('token');
+    await fetch(`http://localhost:5501/messages/mark-as-read/${patientId}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
       }
-
+    });
+  } catch (error) {
+    console.error('Error marking messages as read:', error);
+  }
+}
       // Render messages in chat
       function renderMessages(messages) {
         messagesContainer.innerHTML = '';
@@ -675,53 +650,48 @@ async function loadDoctors() {
         if (!messages || messages.length === 0) {
           messagesContainer.innerHTML = `
             <div style="text-align: center; color: var(--subtext); padding: 2rem;">
-              No messages yet. Start your conversation with this doctor.
+              No messages yet. Start your conversation with this patient.
             </div>
           `;
           return;
         }
         
-        // Sort messages by timestamp
-        const sortedMessages = [...messages].sort((a, b) => 
-          new Date(a.timestamp) - new Date(b.timestamp)
-        );
-        
-        sortedMessages.forEach(msg => {
+        messages.forEach(msg => {
           addMessageToChat(msg);
         });
       }
 
-      // Render doctor list
-      function renderDoctorsList(doctors) {
-        const doctorsList = document.getElementById('doctors-list');
-        doctorsList.innerHTML = '';
+      // Render patient list
+      function renderPatientsList(patients) {
+        const patientsList = document.getElementById('patients-list');
+        patientsList.innerHTML = '';
 
-        doctors.forEach(doctor => {
-          const doctorItem = document.createElement('div');
-          doctorItem.className = 'doctor-item';
-          doctorItem.dataset.doctorId = doctor.id;
+        patients.forEach(patient => {
+          const patientItem = document.createElement('div');
+          patientItem.className = 'patient-item';
+          patientItem.dataset.patientId = patient.id;
           
-          const initials = (doctor.nome ? doctor.nome[0] : '') + (doctor.cognome ? doctor.cognome[0] : '');
+          const initials = (patient.nome ? patient.nome[0] : '') + (patient.cognome ? patient.cognome[0] : '');
           
-          doctorItem.innerHTML = `
-            <div class="doctor-avatar">${initials}</div>
-            <div class="doctor-info">
-              <h3>Dr. ${doctor.nome} ${doctor.cognome}</h3>
-              <p>${doctor.specialization || 'General Practitioner'}</p>
+          patientItem.innerHTML = `
+            <div class="patient-avatar">${initials}</div>
+            <div class="patient-info">
+              <h3>${patient.nome} ${patient.cognome}</h3>
+              <p>${patient.codice_fiscale || ''}</p>
             </div>
           `;
 
           // Add unread badge if there are unread messages
-          if (conversations[doctor.id]?.some(m => !m.isRead)) {
-            const unreadCount = conversations[doctor.id].filter(m => !m.isRead).length;
+          if (conversations[patient.id]?.some(m => !m.isRead)) {
+            const unreadCount = conversations[patient.id].filter(m => !m.isRead).length;
             const badge = document.createElement('span');
             badge.className = 'unread-badge';
             badge.textContent = unreadCount;
-            doctorItem.appendChild(badge);
+            patientItem.appendChild(badge);
           }
 
-          doctorItem.addEventListener('click', () => selectDoctor(doctor));
-          doctorsList.appendChild(doctorItem);
+          patientItem.addEventListener('click', () => selectPatient(patient));
+          patientsList.appendChild(patientItem);
         });
       }
 
@@ -730,8 +700,8 @@ async function loadDoctors() {
         if (!checkAuth()) return;
         
         await loadCurrentUser();
-        const doctors = await loadDoctors();
-        renderDoctorsList(doctors);
+        const patients = await loadPatients();
+        renderPatientsList(patients);
         
         // Connect WebSocket
         connectWebSocket();
@@ -739,12 +709,12 @@ async function loadDoctors() {
         // Event listeners
         searchInput.addEventListener('input', async function() {
           const searchTerm = this.value.toLowerCase();
-          const doctors = await loadDoctors();
-          const filteredDoctors = doctors.filter(doctor => 
-            `${doctor.nome} ${doctor.cognome}`.toLowerCase().includes(searchTerm) || 
-            (doctor.specialization && doctor.specialization.toLowerCase().includes(searchTerm))
+          const patients = await loadPatients();
+          const filteredPatients = patients.filter(patient => 
+            `${patient.nome} ${patient.cognome}`.toLowerCase().includes(searchTerm) || 
+            (patient.codice_fiscale && patient.codice_fiscale.toLowerCase().includes(searchTerm))
           );
-          renderDoctorsList(filteredDoctors);
+          renderPatientsList(filteredPatients);
         });
         
         sendButton.addEventListener('click', sendMessage);

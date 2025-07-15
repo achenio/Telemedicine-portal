@@ -4,66 +4,133 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Telemedicine Portal</title>
-    <style>
-        :root {
-            --primary: #007aff;
-            --bg: #fefefe;
-            --card: #ffffff;
-            --text: #1c1c1e;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .login-container {
-            background-color: var(--card);
-            padding: 2rem;
-            border-radius: 16px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 400px;
-        }
-        h1 {
-            color: var(--primary);
-            text-align: center;
-        }
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-        input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-        button {
-            width: 100%;
-            padding: 0.75rem;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .error {
-            color: #ff3b30;
-            margin-top: 1rem;
-            text-align: center;
-        }
-    </style>
+<style>
+    :root {
+        --primary: #007aff;
+        --bg: #fefefe;
+        --card: #ffffff;
+        --text: #1c1c1e;
+        --border: #e5e5ea;
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background-color: var(--bg);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
+
+    .login-container {
+        background-color: var(--card);
+        padding: 2.2rem 2rem;
+        border-radius: 20px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+        width: 100%;
+        max-width: 340px;
+        transition: all 0.3s ease;
+    }
+
+    h1 {
+        color: var(--primary);
+        text-align: center;
+        margin-bottom: 2rem;
+        font-size: 1.8rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.4rem;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: var(--text);
+    }
+
+    input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        font-size: 1rem;
+        background: #fafafa;
+        transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    input:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+        border-color: var(--primary);
+        background: #fff;
+    }
+
+    button {
+        width: 100%;
+        padding: 0.85rem;
+        background-color: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        position: relative;
+        transition: background-color 0.2s ease;
+    }
+
+    button:disabled {
+        background-color: #a0cfff;
+        cursor: not-allowed;
+    }
+
+    .loader {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid white;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        animation: spin 1s linear infinite;
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: none; /* Attivabile via JS */
+    }
+
+    @keyframes spin {
+        0% { transform: translateY(-50%) rotate(0deg); }
+        100% { transform: translateY(-50%) rotate(360deg); }
+    }
+
+    .error {
+        color: #ff3b30;
+        margin-top: 1rem;
+        text-align: center;
+        font-size: 0.95rem;
+    }
+
+    .register-link {
+        margin-top: 1.5rem;
+        text-align: center;
+        font-size: 0.9rem;
+    }
+
+    .register-link a {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s ease;
+    }
+
+    .register-link a:hover {
+        color: #0051c7;
+    }
+</style>
+
 </head>
 <body>
     <div class="login-container">
@@ -71,16 +138,21 @@
         <form id="loginForm">
             <div class="form-group">
                 <label for="username">Username</label>
-                <input type="text" id="username" required>
+                <input type="text" id="username" required style="max-width: 300px; margin: 0 auto; display: block;">
             </div>
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" required>
+                <input type="password" id="password" required style="max-width: 300px; margin: 0 auto; display: block;">
             </div>
-            <button type="submit">Login</button>
+            <button type="submit" style="max-width: 300px; margin: 0 auto; display: block;">Login</button>
             <div id="error" class="error"></div>
+
+            <div class="register-link" style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem;">
+                Non hai un account? <a href="register.html" style="color: #007aff; text-decoration: none; font-weight: 500;">Registrati</a>
+            </div>
         </form>
     </div>
+
 
 <script>
 document.getElementById('loginForm').addEventListener('submit', async function(e) {

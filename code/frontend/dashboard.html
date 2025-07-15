@@ -556,20 +556,20 @@
       </div>
     </section>
   </main>
-
-  <script>
+<script>
 document.addEventListener('DOMContentLoaded', async function() {
     // Check if user is logged in
-    const token = localStorage.getItem('token'); // Modificato da 'userToken' a 'token'
+    const token = localStorage.getItem('token');
     const userData = JSON.parse(localStorage.getItem('userData'));
     
-    if (!token || !userData) {
+    // Redirect immediately if no token
+    if (!token) {
         window.location.href = 'login.html';
         return;
     }
 
-    // Verify token with backend
     try {
+        // Verify token with backend
         const verifyResponse = await fetch('http://localhost:5501/user-data', {
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -577,25 +577,18 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
         
         if (!verifyResponse.ok) {
-            throw new Error('Invalid or expired token');
+            throw new Error('Token verification failed');
         }
         
         const currentUser = await verifyResponse.json();
         
+        // Store user data in localStorage for consistency
+        localStorage.setItem('userData', JSON.stringify(currentUser));
+        
         // Update UI with user data
-        document.getElementById('username-display').textContent = `${currentUser.nome} ${currentUser.cognome}`;
-        document.getElementById('profile-name-display').textContent = `${currentUser.nome} ${currentUser.cognome}`;
-        document.getElementById('profile-email').textContent = currentUser.email || 'No email provided';
+        updateUserInterface(currentUser);
         
-        // Populate form fields
-        document.getElementById('first-name').value = currentUser.nome || '';
-        document.getElementById('last-name').value = currentUser.cognome || '';
-        document.getElementById('email').value = currentUser.email || '';
-        document.getElementById('codice-fiscale').value = currentUser.codice_fiscale || '';
-        document.getElementById('phone').value = currentUser.telefono || '';
-        document.getElementById('address').value = currentUser.luogo_nascita || '';
-        
-        // Show specialization field for doctors
+        // Load appropriate data based on user type
         if (currentUser.user_type === 'doctor') {
             document.getElementById('specialization-group').style.display = 'block';
             document.getElementById('specialization').value = currentUser.specialization || '';
@@ -623,219 +616,24 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
 });
 
-async function loadDoctorAppointments() {
-    try {
-        const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:5501/doctor/appointments', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (!response.ok) throw new Error('Failed to load appointments');
-        
-        const appointments = await response.json();
-        renderDoctorAppointments(appointments.appointments); // Modificato per gestire la risposta paginata
-    } catch (error) {
-        console.error('Error:', error);
-        showNotification('Failed to load appointments', 'error');
+function updateUserInterface(user) {
+    document.getElementById('username-display').textContent = `${user.nome} ${user.cognome}`;
+    document.getElementById('profile-name-display').textContent = `${user.nome} ${user.cognome}`;
+    document.getElementById('profile-email').textContent = user.email || 'No email provided';
+    
+    // Populate form fields
+    document.getElementById('first-name').value = user.nome || '';
+    document.getElementById('last-name').value = user.cognome || '';
+    document.getElementById('email').value = user.email || '';
+    document.getElementById('codice-fiscale').value = user.codice_fiscale || '';
+    document.getElementById('phone').value = user.telefono || '';
+    document.getElementById('address').value = user.luogo_nascita || '';
+    
+    // Set member since date if available
+    if (user.created_at) {
+        document.getElementById('profile-since').textContent = `Member since: ${new Date(user.created_at).toLocaleDateString()}`;
     }
 }
-
-async function loadPatientAppointments() {
-    try {
-        const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:5501/appointments', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (!response.ok) throw new Error('Failed to load appointments');
-        
-        const appointments = await response.json();
-        renderPatientAppointments(appointments.appointments); // Modificato per gestire la risposta paginata
-    } catch (error) {
-        console.error('Error:', error);
-        showNotification('Failed to load appointments', 'error');
-    }
-}
-
-function setupNavigation() {
-    // Show profile section by default
-    document.getElementById('profile-section').style.display = 'block';
-    
-    // Navigation click handlers
-    document.getElementById('nav-profile').addEventListener('click', (e) => {
-        e.preventDefault();
-        showSection('profile');
-    });
-    
-    document.getElementById('nav-appointments').addEventListener('click', (e) => {
-        e.preventDefault();
-        showSection('appointments');
-    });
-    
-    document.getElementById('nav-patients').addEventListener('click', (e) => {
-        e.preventDefault();
-        showSection('doctor-appointments');
-    });
-    
-    // Add active class to clicked nav item
-    const navItems = document.querySelectorAll('nav ul li a');
-    navItems.forEach(item => {
-        item.addEventListener('click', () => {
-            navItems.forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
-        });
-    });
-}
-
-function showSection(sectionId) {
-    // Hide all sections
-    document.querySelectorAll('.section').forEach(section => {
-        section.style.display = 'none';
-    });
-    
-    // Show selected section
-    document.getElementById(`${sectionId}-section`).style.display = 'block';
-    
-    // Reload data if needed
-    if (sectionId === 'appointments') {
-        loadPatientAppointments();
-    } else if (sectionId === 'doctor-appointments') {
-        loadDoctorAppointments();
-    }
-}
-
-function renderDoctorAppointments(appointments) {
-    const tbody = document.getElementById('doctor-appointments-body');
-    tbody.innerHTML = '';
-    
-    if (!appointments || appointments.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">No appointments found</td></tr>`;
-        return;
-    }
-    
-    appointments.forEach(appointment => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${formatDate(appointment.date)}</td>
-            <td>${appointment.time}</td>
-            <td>${appointment.nome} ${appointment.cognome}</td>
-            <td>${appointment.codice_fiscale || 'N/A'}</td>
-            <td><span class="status-badge status-${appointment.status.toLowerCase()}">${appointment.status}</span></td>
-            <td>
-                ${appointment.status === 'booked' ? 
-                    `<button class="btn btn-primary confirm-appointment" data-id="${appointment.id}">Confirm</button>
-                     <button class="btn btn-outline cancel-appointment" data-id="${appointment.id}">Cancel</button>` :
-                    appointment.status === 'confirmed' ?
-                    `<button class="btn btn-primary complete-appointment" data-id="${appointment.id}">Complete</button>` :
-                    `<button class="btn btn-outline" disabled>${appointment.status}</button>`}
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
-    
-    // Add event listeners to buttons
-    document.querySelectorAll('.confirm-appointment').forEach(btn => {
-        btn.addEventListener('click', () => updateAppointmentStatus(btn.dataset.id, 'confirmed'));
-    });
-    
-    document.querySelectorAll('.cancel-appointment').forEach(btn => {
-        btn.addEventListener('click', () => updateAppointmentStatus(btn.dataset.id, 'cancelled'));
-    });
-    
-    document.querySelectorAll('.complete-appointment').forEach(btn => {
-        btn.addEventListener('click', () => updateAppointmentStatus(btn.dataset.id, 'completed'));
-    });
-}
-
-function renderPatientAppointments(appointments) {
-    const tbody = document.getElementById('appointments-body');
-    tbody.innerHTML = '';
-    
-    if (!appointments || appointments.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center;">No appointments found</td></tr>`;
-        return;
-    }
-    
-    appointments.forEach(appointment => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${formatDate(appointment.date)}</td>
-            <td>${appointment.time}</td>
-            <td>${appointment.doctor_name}</td>
-            <td><span class="status-badge status-${appointment.status.toLowerCase()}">${appointment.status}</span></td>
-            <td>
-                ${appointment.status === 'booked' || appointment.status === 'confirmed' ?
-                    `<button class="btn btn-outline cancel-appointment" data-id="${appointment.id}">Cancel</button>` :
-                    `<button class="btn btn-outline" disabled>${appointment.status}</button>`}
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
-    
-    // Add event listeners to buttons
-    document.querySelectorAll('.cancel-appointment').forEach(btn => {
-        btn.addEventListener('click', () => updateAppointmentStatus(btn.dataset.id, 'cancelled'));
-    });
-}
-
-async function updateAppointmentStatus(appointmentId, status) {
-    if (!confirm(`Are you sure you want to ${status} this appointment?`)) return;
-    
-    try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5501/appointments/${appointmentId}`, {
-            method: 'PATCH',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ status })
-        });
-        
-        if (!response.ok) throw new Error('Failed to update appointment');
-        
-        showNotification(`Appointment ${status} successfully`);
-        
-        // Reload appointments
-        const userData = JSON.parse(localStorage.getItem('userData'));
-        if (userData.user_type === 'doctor') {
-            loadDoctorAppointments();
-        } else {
-            loadPatientAppointments();
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        showNotification('Failed to update appointment', 'error');
-    }
-}
-
-function formatDate(dateString) {
-    if (!dateString) return 'N/A';
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString('en-US', options);
-}
-
-function showNotification(message, type = 'success') {
-    const notification = document.createElement('div');
-    notification.textContent = message;
-    notification.style.position = 'fixed';
-    notification.style.bottom = '20px';
-    notification.style.right = '20px';
-    notification.style.padding = '12px 24px';
-    notification.style.borderRadius = '8px';
-    notification.style.backgroundColor = type === 'success' ? '#34c759' : '#ff3b30';
-    notification.style.color = 'white';
-    notification.style.zIndex = '1000';
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
-}
-  </script>
+</script>
   </body>
 </html>

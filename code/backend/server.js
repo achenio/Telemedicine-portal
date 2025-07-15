@@ -116,7 +116,6 @@ app.post('/login', (req, res) => {
     });
   });
 });
-
 // Endpoint per la registrazione
 app.post('/register', async (req, res) => {
   try {

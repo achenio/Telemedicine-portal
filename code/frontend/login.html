@@ -104,18 +104,26 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     const data = await response.json();
 
     if (response.ok) {
-      // Salva i dati coerentemente
+      // Salva i dati correttamente nel localStorage
       localStorage.setItem('token', data.token);
-      localStorage.setItem('username', data.user.username);
-      localStorage.setItem('user_type', data.user.user_type);
       localStorage.setItem('user_id', data.user.id);
-
-      window.location.href = 'index.html';
+      localStorage.setItem('user_type', data.user.user_type);
+      localStorage.setItem('username', data.user.username);
+      localStorage.setItem('nome', data.user.nome);
+      localStorage.setItem('cognome', data.user.cognome);
+      
+      // Reindirizza alla pagina corretta in base al tipo di utente
+      if (data.user.user_type === 'doctor') {
+        window.location.href = 'index.html';
+      } else {
+        window.location.href = 'index.html';
+      }
     } else {
       errorDiv.textContent = data.error || 'Login failed';
     }
   } catch (error) {
     errorDiv.textContent = 'Connection error';
+    console.error('Login error:', error);
   }
 });
 </script>

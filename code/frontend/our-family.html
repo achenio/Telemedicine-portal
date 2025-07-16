@@ -1,87 +1,294 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Our Family</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 2em; background: #f7f7f7; }
-        h1 { color: #2c3e50; }
-        .filter { margin-bottom: 1em; }
-        .doctor-list { list-style: none; padding: 0; }
-        .doctor-card {
-            background: #fff;
-            margin-bottom: 1em;
-            padding: 1em;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-        }
-        .specialization { color: #2980b9; font-weight: bold; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Our Medical Team</title>
+  <style>
+    :root {
+      --bg: #fefefe;
+      --text: #1c1c1e;
+      --subtext: #555;
+      --primary: #007aff;
+      --card: #ffffff;
+      --error: #ff3b30;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    header {
+      background-color: var(--card);
+      padding: 2rem 1rem;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+      animation: fadeIn 1s ease-out;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding: 0;
+      margin-top: 1rem;
+    }
+
+    nav ul li a {
+      text-decoration: none;
+      color: var(--primary);
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      transition: background-color 0.3s ease;
+    }
+
+    nav ul li a:hover {
+      background-color: rgba(0, 122, 255, 0.1);
+    }
+
+    main {
+      max-width: 800px;
+      margin: 4rem auto;
+      padding: 1rem;
+      animation: fadeInUp 1s ease-out;
+    }
+
+    h2 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .filter-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+
+    .filter {
+      background-color: var(--card);
+      padding: 1rem;
+      border-radius: 16px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .filter label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    .filter select {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      font-size: 1rem;
+      background-color: var(--bg);
+    }
+
+    .doctor-list {
+      list-style: none;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .doctor-card {
+      background-color: var(--card);
+      padding: 1.5rem;
+      border-radius: 16px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .doctor-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .doctor-card strong {
+      font-size: 1.2rem;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .specialization {
+      color: var(--primary);
+      font-weight: 600;
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      background-color: rgba(0, 122, 255, 0.1);
+      border-radius: 20px;
+      margin-top: 0.5rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      font-size: 0.9rem;
+      color: #999;
+      border-top: 1px solid #eee;
+      margin-top: 4rem;
+      animation: fadeIn 1s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 600px) {
+      main {
+        margin: 2rem auto;
+      }
+      
+      .doctor-card {
+        padding: 1rem;
+      }
+    }
+  </style>
 </head>
 <body>
-    <h1>Our Family</h1>
-    <div class="filter">
+  <header>
+    <h1>Our Medical Team</h1>
+    <nav>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="appointments.html">Book Appointment</a></li>
+        <li><a href="chat.html">Secure Chat</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <div class="filter-container">
+      <div class="filter">
         <label for="specialization">Filter by specialization:</label>
         <select id="specialization">
-            <option value="all">All</option>
-            <option>Cardiology</option>
-            <option>Dermatology</option>
-            <option>Endocrinology</option>
-            <option>Gastroenterology</option>
-            <option>General Surgery</option>
-            <option>Gynecology</option>
-            <option>Neurology</option>
-            <option>Ophthalmology</option>
-            <option>Orthopedics</option>
-            <option>Otolaryngology (ENT)</option>
-            <option>Pediatrics</option>
-            <option>Psychiatry</option>
-            <option>Pulmonology</option>
-            <option>Radiology</option>
-            <option>Urology</option>
-            <option>Oncology</option>
-            <option>Rheumatology</option>
-            <option>Nephrology</option>
-            <option>Hematology</option>
-            <option>Infectious Diseases</option>
-            <option>Other</option>
+          <option value="all">All Specializations</option>
+          <option>Cardiology</option>
+          <option>Dermatology</option>
+          <option>Endocrinology</option>
+          <option>Gastroenterology</option>
+          <option>General Surgery</option>
+          <option>Gynecology</option>
+          <option>Neurology</option>
+          <option>Ophthalmology</option>
+          <option>Orthopedics</option>
+          <option>Otolaryngology (ENT)</option>
+          <option>Pediatrics</option>
+          <option>Psychiatry</option>
+          <option>Pulmonology</option>
+          <option>Radiology</option>
+          <option>Urology</option>
+          <option>Oncology</option>
+          <option>Rheumatology</option>
+          <option>Nephrology</option>
+          <option>Hematology</option>
+          <option>Infectious Diseases</option>
+          <option>Other</option>
         </select>
+      </div>
     </div>
-    <ul class="doctor-list" id="doctorList"></ul>
-    <script>
-        // Cambia la porta se necessario
-        const API_URL = "http://localhost:5501/doctors";
 
-        async function loadDoctors() {
-            const res = await fetch(API_URL);
-            const doctors = await res.json();
-            const list = document.getElementById('doctorList');
-            list.innerHTML = '';
-            doctors.forEach(doc => {
-                const li = document.createElement('li');
-                li.className = 'doctor-card';
-                li.dataset.specialization = doc.specialization;
-                li.innerHTML = `<div><strong>${doc.nome} ${doc.cognome}</strong></div>
-                                <div class="specialization">${doc.specialization || ''}</div>`;
-                list.appendChild(li);
-            });
-            applyFilter();
+    <ul class="doctor-list" id="doctorList">
+      <!-- Doctors will be loaded here -->
+    </ul>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Telemedicine Portal</p>
+  </footer>
+
+  <script>
+    // Cambia la porta se necessario
+    const API_URL = "http://localhost:5501/doctors";
+
+    async function loadDoctors() {
+      try {
+        const res = await fetch(API_URL);
+        if (!res.ok) {
+          throw new Error('Failed to load doctors');
         }
-
-        function applyFilter() {
-            const value = document.getElementById('specialization').value;
-            document.querySelectorAll('.doctor-card').forEach(card => {
-                if (value === 'all' || card.dataset.specialization === value) {
-                    card.style.display = '';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
+        
+        const doctors = await res.json();
+        const list = document.getElementById('doctorList');
+        list.innerHTML = '';
+        
+        if (doctors.length === 0) {
+          list.innerHTML = `
+            <li class="doctor-card" style="text-align: center;">
+              No doctors found. Please check back later.
+            </li>
+          `;
+          return;
         }
+        
+        doctors.forEach(doc => {
+          const li = document.createElement('li');
+          li.className = 'doctor-card';
+          li.dataset.specialization = doc.specialization;
+          li.innerHTML = `
+            <strong>Dr. ${doc.nome} ${doc.cognome}</strong>
+            ${doc.specialization ? `<div class="specialization">${doc.specialization}</div>` : ''}
+          `;
+          list.appendChild(li);
+        });
+        
+        applyFilter();
+      } catch (error) {
+        console.error('Error:', error);
+        const list = document.getElementById('doctorList');
+        list.innerHTML = `
+          <li class="doctor-card" style="color: var(--error); text-align: center;">
+            ${error.message}<br>
+            <button onclick="location.reload()">Retry</button>
+          </li>
+        `;
+      }
+    }
 
-        document.getElementById('specialization').addEventListener('change', applyFilter);
+    function applyFilter() {
+      const value = document.getElementById('specialization').value;
+      document.querySelectorAll('.doctor-card').forEach(card => {
+        if (value === 'all' || card.dataset.specialization === value) {
+          card.style.display = '';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
 
-        window.onload = loadDoctors;
-    </script>
+    document.getElementById('specialization').addEventListener('change', applyFilter);
+
+    document.addEventListener('DOMContentLoaded', loadDoctors);
+  </script>
 </body>
 </html>

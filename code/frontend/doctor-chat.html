@@ -13,6 +13,7 @@
       --card: #ffffff;
       --input-bg: #f1f3f5;
       --input-border: #ced4da;
+      --error: #dc3545;
     }
 
     * {
@@ -33,15 +34,56 @@
 
     header {
       background-color: var(--card);
-      padding: 1.5rem;
-      text-align: center;
+      padding: 1rem 1.5rem;
       border-bottom: 1px solid #dee2e6;
       box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
     }
 
     .header-title {
       font-size: 1.5rem;
       color: var(--primary);
+      margin: 0;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      margin-left: auto;
+    }
+
+    .nav-link {
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 500;
+      padding: 0.5rem 0;
+      position: relative;
+      transition: color 0.3s ease;
+    }
+
+    .nav-link:hover {
+      color: var(--primary);
+    }
+
+    .nav-link.home-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .home-icon {
+      width: 20px;
+      height: 20px;
     }
 
     .container {
@@ -299,6 +341,77 @@
       margin-left: 0.5rem;
     }
 
+    /* Popup styles */
+    .popup-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      backdrop-filter: blur(5px);
+    }
+    
+    .popup-content {
+      background-color: var(--card);
+      padding: 2rem;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      animation: popIn 0.3s ease-out;
+    }
+    
+    .popup-content h3 {
+      color: var(--error);
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+    }
+    
+    .popup-content p {
+      margin-bottom: 2rem;
+      color: var(--text);
+    }
+    
+    .popup-btn {
+      padding: 0.75rem 1.5rem;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 20px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    
+    .popup-btn:hover {
+      background-color: #0062cc;
+    }
+    
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    
+    body.popup-active main,
+    body.popup-active header,
+    body.popup-active footer {
+      filter: blur(5px);
+      pointer-events: none;
+      user-select: none;
+    }
+
     @media (max-width: 768px) {
       .container {
         flex-direction: column;
@@ -311,12 +424,34 @@
       .chat-container {
         height: 500px;
       }
+
+      .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+
+      .nav-links {
+        margin-left: 0;
+        width: 100%;
+        justify-content: flex-end;
+      }
     }
   </style>
 </head>
 <body>
   <header>
-    <h1 class="header-title">Doctor Portal - Patient Communications</h1>
+    <div class="header-content">
+      <h1 class="header-title">Doctor Portal - Patient Communications</h1>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link home-link">
+          <svg class="home-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+          </svg>
+          Home
+        </a>
+      </div>
+    </div>
   </header>
 
   <div class="container">
@@ -373,6 +508,29 @@
       let socket = null;
       let isSocketConnected = false;
       let conversations = {}; // Stores all conversations
+
+      // Function to show access denied popup
+      function showAccessDeniedPopup() {
+        const popup = document.createElement('div');
+        popup.className = 'popup-overlay';
+        popup.innerHTML = `
+          <div class="popup-content">
+            <h3>Access Denied</h3>
+            <p>This page is only accessible to doctors.</p>
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
+              <button class="popup-btn" onclick="window.location.href='index.html'">
+                Return to Home
+              </button>
+              <button class="popup-btn" onclick="window.location.href='login.html'" 
+                style="background-color: var(--error)">
+                Login as Doctor
+              </button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(popup);
+        document.body.classList.add('popup-active');
+      }
 
       // WebSocket connection
       function connectWebSocket() {
@@ -494,7 +652,6 @@
       }
       
       // Load patient list
-      // In your existing frontend code, modify the loadPatients function:
       async function loadPatients() {
         try {
           const token = localStorage.getItem('token');
@@ -510,6 +667,7 @@
           return [];
         }
       }      
+      
       // Load conversation messages
       async function loadPatientMessages(patientId) {
         try {
@@ -586,63 +744,64 @@
         }
       }
       
-// Modifica la funzione selectPatient
-async function selectPatient(patient) {
-  currentPatient = patient;
-  
-  // Update UI
-  document.getElementById('no-patient-selected').style.display = 'none';
-  document.getElementById('chat-interface').style.display = 'block';
-  
-  const initials = (patient.nome ? patient.nome[0] : '') + (patient.cognome ? patient.cognome[0] : '');
-  document.getElementById('current-patient-avatar').textContent = initials;
-  document.getElementById('current-patient-name').textContent = `${patient.nome} ${patient.cognome}`;
-  document.getElementById('current-patient-info').textContent = `ID: ${patient.id} | ${patient.codice_fiscale || ''}`;
-  
-  // Carica i messaggi solo se non sono già in memoria
-  if (!conversations[patient.id]) {
-    conversations[patient.id] = await loadPatientMessages(patient.id);
-  } else {
-    // Segna i messaggi come letti
-    conversations[patient.id].forEach(msg => {
-      if (msg.sender === 'patient') {
-        msg.isRead = true;
+      // Select patient and load conversation
+      async function selectPatient(patient) {
+        currentPatient = patient;
+        
+        // Update UI
+        document.getElementById('no-patient-selected').style.display = 'none';
+        document.getElementById('chat-interface').style.display = 'block';
+        
+        const initials = (patient.nome ? patient.nome[0] : '') + (patient.cognome ? patient.cognome[0] : '');
+        document.getElementById('current-patient-avatar').textContent = initials;
+        document.getElementById('current-patient-name').textContent = `${patient.nome} ${patient.cognome}`;
+        document.getElementById('current-patient-info').textContent = `ID: ${patient.id} | ${patient.codice_fiscale || ''}`;
+        
+        // Load messages if not already in memory
+        if (!conversations[patient.id]) {
+          conversations[patient.id] = await loadPatientMessages(patient.id);
+        } else {
+          // Mark messages as read
+          conversations[patient.id].forEach(msg => {
+            if (msg.sender === 'patient') {
+              msg.isRead = true;
+            }
+          });
+          
+          // Update read status on server (optional)
+          markMessagesAsRead(patient.id);
+        }
+        
+        // Show existing messages
+        renderMessages(conversations[patient.id]);
+        
+        // Update active state in patient list
+        document.querySelectorAll('.patient-item').forEach(item => {
+          item.classList.remove('active');
+          if (item.dataset.patientId === patient.id.toString()) {
+            item.classList.add('active');
+            // Remove unread badge when selecting patient
+            const badge = item.querySelector('.unread-badge');
+            if (badge) badge.remove();
+          }
+        });
       }
-    });
-    
-    // Aggiorna lo stato sul server (opzionale)
-    markMessagesAsRead(patient.id);
-  }
-  
-  // Mostra i messaggi esistenti
-  renderMessages(conversations[patient.id]);
-  
-  // Update active state in patient list
-  document.querySelectorAll('.patient-item').forEach(item => {
-    item.classList.remove('active');
-    if (item.dataset.patientId === patient.id.toString()) {
-      item.classList.add('active');
-      // Remove unread badge when selecting patient
-      const badge = item.querySelector('.unread-badge');
-      if (badge) badge.remove();
-    }
-  });
-}
 
-// Aggiungi questa funzione per segnare i messaggi come letti sul server
-async function markMessagesAsRead(patientId) {
-  try {
-    const token = localStorage.getItem('token');
-    await fetch(`http://localhost:5501/messages/mark-as-read/${patientId}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
+      // Mark messages as read on server
+      async function markMessagesAsRead(patientId) {
+        try {
+          const token = localStorage.getItem('token');
+          await fetch(`http://localhost:5501/messages/mark-as-read/${patientId}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+        } catch (error) {
+          console.error('Error marking messages as read:', error);
+        }
       }
-    });
-  } catch (error) {
-    console.error('Error marking messages as read:', error);
-  }
-}
+
       // Render messages in chat
       function renderMessages(messages) {
         messagesContainer.innerHTML = '';
@@ -699,7 +858,14 @@ async function markMessagesAsRead(patientId) {
       async function initialize() {
         if (!checkAuth()) return;
         
-        await loadCurrentUser();
+        const userData = await loadCurrentUser();
+        
+        // Check if user is a doctor
+        if (userData.user_type !== 'doctor') {
+          showAccessDeniedPopup();
+          return;
+        }
+        
         const patients = await loadPatients();
         renderPatientsList(patients);
         

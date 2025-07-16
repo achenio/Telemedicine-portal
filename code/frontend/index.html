@@ -347,7 +347,6 @@
       <ul id="nav-list">
         <li id="nav-book-appointment"><a href="appointments.html">Book Appointment</a></li>
         <li><a href="chat.html" id="secure-chat-link">Secure Chat</a></li>
-        <li><a href="javascript:void(0)" id="feature-ai-chat">AI Chat</a></li>
         <li id="nav-login"><a href="login.html" id="login-link">Login</a></li>
         <li id="nav-register"><a href="register.html">Register</a></li>
         <li><a href="our-family.html">Our Family</a></li>
@@ -392,80 +391,7 @@
     <p>&copy; 2025 Telemedicine Portal</p>
   </footer>
 
-  <!-- AI Chat Popup -->
-  <div id="ai-chat-overlay" role="dialog" aria-modal="true" aria-labelledby="ai-chat-header">
-    <div id="ai-chat-popup">
-      <div id="ai-chat-header">
-        AI Chat
-        <button id="ai-chat-close" aria-label="Close AI chat popup">&times;</button>
-      </div>
-      <div id="ai-chat-messages" aria-live="polite" aria-atomic="false"></div>
-      <div id="ai-chat-input-container">
-        <input type="text" id="ai-chat-input" placeholder="Type your message..." aria-label="Type your message" />
-        <button id="ai-chat-send" aria-label="Send message">Send</button>
-      </div>
-    </div>
-  </div>
-
   <script>
-    // AI Chat Popup logic
-    const openBtns = [document.getElementById('feature-ai-chat'), document.getElementById('feature-ai-chat-2')];
-    const overlay = document.getElementById('ai-chat-overlay');
-    const closeBtn = document.getElementById('ai-chat-close');
-    const sendBtn = document.getElementById('ai-chat-send');
-    const input = document.getElementById('ai-chat-input');
-    const messages = document.getElementById('ai-chat-messages');
-
-    function openChat() {
-      overlay.style.display = 'flex';
-      input.focus();
-    }
-
-    function closeChat() {
-      overlay.style.display = 'none';
-      input.value = '';
-      messages.innerHTML = '';
-    }
-
-    function appendMessage(text, sender) {
-      const msg = document.createElement('div');
-      msg.classList.add('message', sender);
-      msg.textContent = text;
-      messages.appendChild(msg);
-      messages.scrollTop = messages.scrollHeight;
-    }
-
-    function getAIResponse(userText) {
-      // Placeholder AI response
-      return "You said: " + userText + ". (This is a dummy AI response.)";
-    }
-
-    function sendMessage() {
-      const text = input.value.trim();
-      if (!text) return;
-      appendMessage(text, 'user');
-      input.value = '';
-      setTimeout(() => {
-        const response = getAIResponse(text);
-        appendMessage(response, 'bot');
-      }, 800);
-    }
-
-    openBtns.forEach(btn => {
-      if(btn) btn.addEventListener('click', openChat);
-    });
-    closeBtn.addEventListener('click', closeChat);
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) closeChat();
-    });
-    sendBtn.addEventListener('click', sendMessage);
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        sendMessage();
-      }
-    });
-
     // USER PROFILE DISPLAY AND NAVIGATION LOGIC
     const profileArea = document.getElementById('profile-area');
     const navList = document.getElementById('nav-list');

@@ -241,64 +241,68 @@
   </footer>
 
   <script>
-    document.getElementById('user_type').addEventListener('change', function() {
-      const specField = document.getElementById('specialization-field');
-      const specInput = document.getElementById('specialization');
-      
-      if (this.value === 'doctor') {
-        specField.style.display = 'block';
-        specInput.required = true;
-      } else {
-        specField.style.display = 'none';
-        specInput.required = false;
-      }
+document.getElementById('user_type').addEventListener('change', function() {
+  const specField = document.getElementById('specialization-field');
+  const specInput = document.getElementById('specialization');
+  
+  if (this.value === 'doctor') {
+    specField.style.display = 'block';
+    specInput.required = true;
+  } else {
+    specField.style.display = 'none';
+    specInput.required = false;
+  }
+});
+
+document.getElementById('register-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const formData = {
+    user_type: document.getElementById('user_type').value,
+    nome: document.getElementById('nome').value.trim(),
+    cognome: document.getElementById('cognome').value.trim(),
+    codice_fiscale: document.getElementById('codice_fiscale').value.trim(),
+    data_nascita: document.getElementById('data_nascita').value,
+    email: document.getElementById('email').value.trim(),
+    telefono: document.getElementById('telefono').value.trim(),
+    username: document.getElementById('username').value.trim(),
+    password: document.getElementById('password').value,
+    specialization: document.getElementById('user_type').value === 'doctor' 
+      ? document.getElementById('specialization').value.trim()
+      : null
+  };
+
+  try {
+    const response = await fetch('http://localhost:5501/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
     });
 
-    document.getElementById('register-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
+    const data = await response.json();
+    
+    if (response.ok) {
+      localStorage.setItem('username', data.user.username);
+      localStorage.setItem('user_type', data.user.user_type);
+      localStorage.setItem('user_id', data.user.id);
       
-      const formData = {
-        user_type: document.getElementById('user_type').value,
-        nome: document.getElementById('nome').value.trim(),
-        cognome: document.getElementById('cognome').value.trim(),
-        codice_fiscale: document.getElementById('codice_fiscale').value.trim(),
-        data_nascita: document.getElementById('data_nascita').value,
-        email: document.getElementById('email').value.trim(),
-        telefono: document.getElementById('telefono').value.trim(),
-        username: document.getElementById('username').value.trim(),
-        password: document.getElementById('password').value,
-        specialization: document.getElementById('user_type').value === 'doctor' 
-          ? document.getElementById('specialization').value.trim()
-          : null
-      };
-
-      try {
-        const response = await fetch('http://localhost:5501/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
-        });
-
-        const data = await response.json();
-        
-        if (response.ok) {
-          localStorage.setItem('username', data.user.username);
-          localStorage.setItem('user_type', data.user.user_type);
-          localStorage.setItem('user_id', data.user.id);
-          
-          window.location.href = data.user.user_type === 'doctor' 
-            ? 'doctor-appointments.html' 
-            : 'index.html';
-        } else {
-          document.getElementById('register-message').style.color = 'var(--error)';
-          document.getElementById('register-message').textContent = data.error || 'Registration failed';
-        }
-      } catch (err) {
-        console.error('Registration error:', err);
-        document.getElementById('register-message').style.color = 'var(--error)';
-        document.getElementById('register-message').textContent = 'Server error, please try again';
+      if (data.user.user_type === 'doctor') {
+        localStorage.setItem('specialization', formData.specialization);
       }
-    });
+      
+      window.location.href = data.user.user_type === 'doctor' 
+        ? 'doctor-appointments.html' 
+        : 'index.html';
+    } else {
+      document.getElementById('register-message').style.color = 'var(--error)';
+      document.getElementById('register-message').textContent = data.error || 'Registration failed';
+    }
+  } catch (err) {
+    console.error('Registration error:', err);
+    document.getElementById('register-message').style.color = 'var(--error)';
+    document.getElementById('register-message').textContent = 'Server error, please try again';
+  }
+});
   </script>
 </body>
 </html>

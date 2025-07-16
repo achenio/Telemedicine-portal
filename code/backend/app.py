@@ -4,6 +4,7 @@ from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 import torch
 from flask_cors import CORS
+import sqlite3
 
 # Add these imports for transformers
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -125,6 +126,15 @@ def chat():
         return jsonify({'reply': 'No message received.'}), 400
     # Echo the message back for now
     return jsonify({'reply': f"You said: {message}"})
+
+@app.route('/api/doctors')
+def get_doctors():
+    conn = sqlite3.connect('utenti.db')
+    c = conn.cursor()
+    c.execute("SELECT nome, cognome, specialization FROM utenti WHERE user_type='doctor'")
+    doctors = [{"name": f"{row[0]} {row[1]}", "specialization": row[2]} for row in c.fetchall()]
+    conn.close()
+    return jsonify(doctors)
 
 if __name__ == "__main__":
     with app.app_context():

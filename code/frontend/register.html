@@ -183,6 +183,34 @@
         </select>
       </div>
 
+      <div id="specialization-field" style="display: none;">
+        <label for="specialization">Medical Specialization:</label>
+        <select id="specialization" name="specialization">
+          <option value="">Select specialization</option>
+          <option value="Cardiology">Cardiology</option>
+          <option value="Dermatology">Dermatology</option>
+          <option value="Endocrinology">Endocrinology</option>
+          <option value="Gastroenterology">Gastroenterology</option>
+          <option value="General Surgery">General Surgery</option>
+          <option value="Gynecology">Gynecology</option>
+          <option value="Neurology">Neurology</option>
+          <option value="Ophthalmology">Ophthalmology</option>
+          <option value="Orthopedics">Orthopedics</option>
+          <option value="Otolaryngology">Otolaryngology (ENT)</option>
+          <option value="Pediatrics">Pediatrics</option>
+          <option value="Psychiatry">Psychiatry</option>
+          <option value="Pulmonology">Pulmonology</option>
+          <option value="Radiology">Radiology</option>
+          <option value="Urology">Urology</option>
+          <option value="Oncology">Oncology</option>
+          <option value="Rheumatology">Rheumatology</option>
+          <option value="Nephrology">Nephrology</option>
+          <option value="Hematology">Hematology</option>
+          <option value="Infectious Diseases">Infectious Diseases</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
       <div>
         <label for="nome">First Name:</label>
         <input type="text" id="nome" name="nome" required>
@@ -215,11 +243,6 @@
         <input type="tel" id="telefono" name="telefono" required>
       </div>
 
-      <div id="specialization-field" style="display: none;">
-        <label for="specialization">Medical Specialization:</label>
-        <input type="text" id="specialization" name="specialization">
-      </div>
-
       <div>
         <label for="username">Username:</label>
         <input type="text" id="username" name="username" required minlength="4">
@@ -241,19 +264,19 @@
   </footer>
 
   <script>
-    document.getElementById('user_type').addEventListener('change', function() {
-      const specField = document.getElementById('specialization-field');
-      const specInput = document.getElementById('specialization');
-      
-      if (this.value === 'doctor') {
-        specField.style.display = 'block';
-        specInput.required = true;
-      } else {
-        specField.style.display = 'none';
-        specInput.required = false;
-      }
-    });
-
+  document.getElementById('user_type').addEventListener('change', function() {
+    const specField = document.getElementById('specialization-field');
+    const specInput = document.getElementById('specialization');
+    if (this.value === 'doctor') {
+      specField.style.display = 'block';
+      specInput.required = true;
+    } else {
+      specField.style.display = 'none';
+      specInput.required = false;
+    }
+  });
+  </script>
+  <script>
     document.getElementById('register-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       

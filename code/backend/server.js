@@ -218,10 +218,12 @@ app.put('/users/:id', authenticateToken, (req, res) => {
 
 // Endpoint per ottenere la lista dei dottori
 app.get('/doctors', (req, res) => {
-  db.all('SELECT id, nome, cognome, specialization FROM utenti WHERE user_type = "doctor"', (err, rows) => {
-    if (err) return res.status(500).json({ error: "Database error" });
+  const db = new sqlite3.Database('./utenti.db');
+  db.all("SELECT nome, cognome, specialization FROM utenti WHERE user_type='doctor'", (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
+  db.close();
 });
 
 // Endpoint per creare un appuntamento con upload file
@@ -568,3 +570,5 @@ app.use('/uploads', express.static(uploadsDir));
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
+
+

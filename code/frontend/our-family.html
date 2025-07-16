@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Our Family</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; background: #f7f7f7; }
+        h1 { color: #2c3e50; }
+        .filter { margin-bottom: 1em; }
+        .doctor-list { list-style: none; padding: 0; }
+        .doctor-card {
+            background: #fff;
+            margin-bottom: 1em;
+            padding: 1em;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .specialization { color: #2980b9; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Our Family</h1>
+    <div class="filter">
+        <label for="specialization">Filter by specialization:</label>
+        <select id="specialization">
+            <option value="all">All</option>
+            <option>Cardiology</option>
+            <option>Dermatology</option>
+            <option>Endocrinology</option>
+            <option>Gastroenterology</option>
+            <option>General Surgery</option>
+            <option>Gynecology</option>
+            <option>Neurology</option>
+            <option>Ophthalmology</option>
+            <option>Orthopedics</option>
+            <option>Otolaryngology (ENT)</option>
+            <option>Pediatrics</option>
+            <option>Psychiatry</option>
+            <option>Pulmonology</option>
+            <option>Radiology</option>
+            <option>Urology</option>
+            <option>Oncology</option>
+            <option>Rheumatology</option>
+            <option>Nephrology</option>
+            <option>Hematology</option>
+            <option>Infectious Diseases</option>
+            <option>Other</option>
+        </select>
+    </div>
+    <ul class="doctor-list" id="doctorList"></ul>
+    <script>
+        // Cambia la porta se necessario
+        const API_URL = "http://localhost:5501/doctors";
+
+        async function loadDoctors() {
+            const res = await fetch(API_URL);
+            const doctors = await res.json();
+            const list = document.getElementById('doctorList');
+            list.innerHTML = '';
+            doctors.forEach(doc => {
+                const li = document.createElement('li');
+                li.className = 'doctor-card';
+                li.dataset.specialization = doc.specialization;
+                li.innerHTML = `<div><strong>${doc.nome} ${doc.cognome}</strong></div>
+                                <div class="specialization">${doc.specialization || ''}</div>`;
+                list.appendChild(li);
+            });
+            applyFilter();
+        }
+
+        function applyFilter() {
+            const value = document.getElementById('specialization').value;
+            document.querySelectorAll('.doctor-card').forEach(card => {
+                if (value === 'all' || card.dataset.specialization === value) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        document.getElementById('specialization').addEventListener('change', applyFilter);
+
+        window.onload = loadDoctors;
+    </script>
+</body>
+</html>

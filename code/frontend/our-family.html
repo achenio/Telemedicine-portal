@@ -101,6 +101,33 @@
       background-color: var(--bg);
     }
 
+    /* Nuovo stile per la barra di ricerca */
+    .search-container {
+      display: flex;
+      justify-content: center;
+      margin: 2rem 0;
+    }
+
+    .search-box {
+      background-color: var(--card);
+      padding: 1rem;
+      border-radius: 16px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+      width: 100%;
+      max-width: 500px;
+      margin-top: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      font-size: 1rem;
+      background-color: var(--bg);
+    }
+
     .doctor-list {
       list-style: none;
       padding: 0;
@@ -218,10 +245,11 @@
       </div>
     </div>
 
-
-    <div class="filter" style="margin-top:1rem;">
-      <label for="searchName">Search by name:</label>
-      <input type="text" id="searchName" placeholder="Type a name or surname..." style="width:100%;padding:0.75rem;border:1px solid #ddd;border-radius:12px;font-size:1rem;">
+    <div class="search-container">
+      <div class="search-box">
+        <label for="searchName">Search by name:</label>
+        <input type="text" id="searchName" placeholder="Type a doctor's name or surname...">
+      </div>
     </div>
 
     <ul class="doctor-list" id="doctorList">
@@ -273,7 +301,7 @@
     if (filtered.length === 0) {
       list.innerHTML = `
         <li class="doctor-card" style="text-align: center;">
-          No doctors found. Please check back later.
+          No doctors found matching your criteria.
         </li>
       `;
       return;

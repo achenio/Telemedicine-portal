@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doctor Dashboard</title>
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --text: #212529;
+      --subtext: #6c757d;
+      --primary: #0d6efd;
+      --card: #ffffff;
+      --input-bg: #f1f3f5;
+      --input-border: #ced4da;
+      --error: #dc3545;
+      --success: #28a745;
+      --warning: #ffc107;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background-color: var(--card);
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid #dee2e6;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header-title {
+      font-size: 1.5rem;
+      color: var(--primary);
+      margin: 0;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      margin-left: auto;
+    }
+
+    .nav-link {
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 500;
+      padding: 0.5rem 0;
+      position: relative;
+      transition: color 0.3s ease;
+    }
+
+    .nav-link:hover {
+      color: var(--primary);
+    }
+
+    .nav-link.active {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .nav-link.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: var(--primary);
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 1rem;
+      flex-grow: 1;
+    }
+
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .welcome-message h2 {
+      font-size: 1.8rem;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .welcome-message p {
+      color: var(--subtext);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background-color: var(--card);
+      padding: 1.5rem;
+      border-radius: 16px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .stat-card h3 {
+      font-size: 1rem;
+      color: var(--subtext);
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-card .value {
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      margin: 2rem 0 1rem;
+      color: var(--text);
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--input-border);
+      margin-bottom: 1.5rem;
+    }
+
+    .tab {
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      font-weight: 500;
+      color: var(--subtext);
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .tab:hover {
+      color: var(--primary);
+    }
+
+    .tab.active {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: var(--primary);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background-color: var(--card);
+      border-radius: 16px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .card-header {
+      padding: 1.25rem 1.5rem;
+      background-color: var(--primary);
+      color: white;
+      font-weight: 600;
+    }
+
+    .card-body {
+      padding: 1.5rem;
+    }
+
+    .patient-info {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .patient-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background-color: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 1rem;
+      flex-shrink: 0;
+    }
+
+    .patient-details h4 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .patient-details p {
+      margin: 0.25rem 0 0;
+      font-size: 0.9rem;
+      color: var(--subtext);
+    }
+
+    .appointment-details {
+      margin-top: 1rem;
+    }
+
+    .appointment-details p {
+      margin: 0.5rem 0;
+      font-size: 0.9rem;
+    }
+
+    .appointment-details .status {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .status.upcoming {
+      background-color: rgba(13, 110, 253, 0.1);
+      color: var(--primary);
+    }
+
+    .status.completed {
+      background-color: rgba(40, 167, 69, 0.1);
+      color: var(--success);
+    }
+
+    .status.cancelled {
+      background-color: rgba(220, 53, 69, 0.1);
+      color: var(--error);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+    }
+
+    .btn {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: none;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #0b5ed7;
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid var(--input-border);
+      color: var(--text);
+    }
+
+    .btn-outline:hover {
+      background-color: var(--input-bg);
+    }
+
+    .btn-danger {
+      background-color: var(--error);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background-color: #c82333;
+    }
+
+    .prescription-form {
+      background-color: var(--card);
+      padding: 1.5rem;
+      border-radius: 16px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+      margin-top: 1.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.3s ease;
+      background-color: var(--input-bg);
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+    }
+
+    .form-group textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .medication-item {
+      background-color: var(--input-bg);
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      position: relative;
+    }
+
+    .remove-medication {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background-color: var(--error);
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      cursor: pointer;
+      border: none;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      font-size: 0.9rem;
+      color: var(--subtext);
+      border-top: 1px solid var(--input-border);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @media (max-width: 768px) {
+      .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+
+      .nav-links {
+        margin-left: 0;
+        width: 100%;
+        justify-content: flex-end;
+      }
+
+      .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .card-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-links {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-end;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <h1 class="header-title">Doctor Dashboard</h1>
+      <div class="nav-links">
+        <a href="#" class="nav-link active">Dashboard</a>
+        <a href="appointments.html" class="nav-link">Appointments</a>
+        <a href="doctor-chat.html" class="nav-link">Secure Chat</a>
+        <a href="index.html" class="nav-link">Logout</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="dashboard-header">
+      <div class="welcome-message">
+        <h2>Welcome back, Dr. Smith</h2>
+        <p>Here's what's happening with your practice today</p>
+      </div>
+      <div class="current-date">
+        <p>Today is <strong>Monday, June 10, 2024</strong></p>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3>Today's Appointments</h3>
+        <div class="value">8</div>
+      </div>
+      <div class="stat-card">
+        <h3>Active Patients</h3>
+        <div class="value">42</div>
+      </div>
+      <div class="stat-card">
+        <h3>Pending Prescriptions</h3>
+        <div class="value">3</div>
+      </div>
+      <div class="stat-card">
+        <h3>Messages</h3>
+        <div class="value">5</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="patients">My Patients</div>
+      <div class="tab" data-tab="appointments">Upcoming Appointments</div>
+      <div class="tab" data-tab="prescriptions">Write Prescription</div>
+    </div>
+
+    <div class="tab-content active" id="patients-tab">
+      <div class="card-grid">
+        <!-- Patient Card 1 -->
+        <div class="card">
+          <div class="card-header">
+            Patient Overview
+          </div>
+          <div class="card-body">
+            <div class="patient-info">
+              <div class="patient-avatar">JD</div>
+              <div class="patient-details">
+                <h4>John Doe</h4>
+                <p>ID: PT-1001 | Age: 45</p>
+                <p>Last visit: May 15, 2024</p>
+              </div>
+            </div>
+            <div class="action-buttons">
+              <button class="btn btn-primary">View Profile</button>
+              <button class="btn btn-outline">Message</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Patient Card 2 -->
+        <div class="card">
+          <div class="card-header">
+            Patient Overview
+          </div>
+          <div class="card-body">
+            <div class="patient-info">
+              <div class="patient-avatar">MS</div>
+              <div class="patient-details">
+                <h4>Maria Smith</h4>
+                <p>ID: PT-1002 | Age: 32</p>
+                <p>Last visit: June 5, 2024</p>
+              </div>
+            </div>
+            <div class="action-buttons">
+              <button class="btn btn-primary">View Profile</button>
+              <button class="btn btn-outline">Message</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Patient Card 3 -->
+        <div class="card">
+          <div class="card-header">
+            Patient Overview
+          </div>
+          <div class="card-body">
+            <div class="patient-info">
+              <div class="patient-avatar">RJ</div>
+              <div class="patient-details">
+                <h4>Robert Johnson</h4>
+                <p>ID: PT-1003 | Age: 58</p>
+                <p>Last visit: June 8, 2024</p>
+              </div>
+            </div>
+            <div class="action-buttons">
+              <button class="btn btn-primary">View Profile</button>
+              <button class="btn btn-outline">Message</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="appointments-tab">
+      <div class="card-grid">
+        <!-- Appointment Card 1 -->
+        <div class="card">
+          <div class="card-header">
+            Appointment Details
+          </div>
+          <div class="card-body">
+            <div class="patient-info">
+              <div class="patient-avatar">JD</div>
+              <div class="patient-details">
+                <h4>John Doe</h4>
+                <p>ID: PT-1001 | Follow-up</p>
+              </div>
+            </div>
+            <div class="appointment-details">
+              <p><strong>Date:</strong> Today, June 10, 2024</p>
+              <p><strong>Time:</strong> 10:30 AM</p>
+              <p><strong>Reason:</strong> Blood test results review</p>
+              <p><span class="status upcoming">Upcoming</span></p>
+            </div>
+            <div class="action-buttons">
+              <button class="btn btn-primary">Start Consultation</button>
+              <button class="btn btn-outline">Reschedule</button>
+              <button class="btn btn-danger">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Appointment Card 2 -->
+        <div class="card">
+          <div class="card-header">
+            Appointment Details
+          </div>
+          <div class="card-body">
+            <div class="patient-info">
+              <div class="patient-avatar">AS</div>
+              <div class="patient-details">
+                <h4>Anna Smith</h4>
+                <p>ID: PT-1004 | New patient</p>
+              </div>
+            </div>
+            <div class="appointment-details">
+              <p><strong>Date:</strong> Tomorrow, June 11, 2024</p>
+              <p><strong>Time:</strong> 2:15 PM</p>
+              <p><strong>Reason:</strong> Initial consultation</p>
+              <p><span class="status upcoming">Upcoming</span></p>
+            </div>
+            <div class="action-buttons">
+              <button class="btn btn-outline">View Details</button>
+              <button class="btn btn-outline">Reschedule</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="prescriptions-tab">
+      <div class="card">
+        <div class="card-header">
+          New Prescription
+        </div>
+        <div class="card-body">
+          <form id="prescriptionForm">
+            <div class="form-group">
+              <label for="patientSelect">Select Patient</label>
+              <select id="patientSelect" required>
+                <option value="">Choose a patient</option>
+                <option value="PT-1001">John Doe (PT-1001)</option>
+                <option value="PT-1002">Maria Smith (PT-1002)</option>
+                <option value="PT-1003">Robert Johnson (PT-1003)</option>
+                <option value="PT-1004">Anna Smith (PT-1004)</option>
+              </select>
+            </div>
+
+            <div id="medications-container">
+              <div class="medication-item">
+                <div class="form-group">
+                  <label>Medication 1</label>
+                  <input type="text" placeholder="Medication name" required>
+                </div>
+                <div class="form-group">
+                  <label>Dosage</label>
+                  <input type="text" placeholder="e.g. 500mg" required>
+                </div>
+                <div class="form-group">
+                  <label>Instructions</label>
+                  <input type="text" placeholder="e.g. Take once daily with food" required>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" class="btn btn-outline" id="addMedication">+ Add Another Medication</button>
+
+            <div class="form-group">
+              <label for="prescriptionNotes">Additional Notes</label>
+              <textarea id="prescriptionNotes" placeholder="Any additional instructions..."></textarea>
+            </div>
+
+            <div class="action-buttons">
+              <button type="submit" class="btn btn-primary">Save Prescription</button>
+              <button type="button" class="btn btn-outline">Preview</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Telemedicine Portal. All rights reserved.</p>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Tab switching functionality
+      const tabs = document.querySelectorAll('.tab');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+          // Remove active class from all tabs and content
+          document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+          
+          // Add active class to clicked tab
+          this.classList.add('active');
+          
+          // Show corresponding content
+          const tabId = this.getAttribute('data-tab');
+          document.getElementById(`${tabId}-tab`).classList.add('active');
+        });
+      });
+
+      // Add medication functionality
+      const addMedicationBtn = document.getElementById('addMedication');
+      const medicationsContainer = document.getElementById('medications-container');
+      let medicationCount = 1;
+
+      addMedicationBtn.addEventListener('click', function() {
+        medicationCount++;
+        const newMedication = document.createElement('div');
+        newMedication.className = 'medication-item';
+        newMedication.innerHTML = `
+          <button class="remove-medication" type="button">×</button>
+          <div class="form-group">
+            <label>Medication ${medicationCount}</label>
+            <input type="text" placeholder="Medication name" required>
+          </div>
+          <div class="form-group">
+            <label>Dosage</label>
+            <input type="text" placeholder="e.g. 500mg" required>
+          </div>
+          <div class="form-group">
+            <label>Instructions</label>
+            <input type="text" placeholder="e.g. Take once daily with food" required>
+          </div>
+        `;
+        medicationsContainer.appendChild(newMedication);
+
+        // Add event listener to remove button
+        newMedication.querySelector('.remove-medication').addEventListener('click', function() {
+          if (medicationCount > 1) {
+            medicationsContainer.removeChild(newMedication);
+            medicationCount--;
+          } else {
+            alert('At least one medication is required');
+          }
+        });
+      });
+
+      // Form submission
+      const prescriptionForm = document.getElementById('prescriptionForm');
+      prescriptionForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        alert('Prescription saved successfully!');
+        this.reset();
+        medicationCount = 1;
+      });
+    });
+  </script>
+</body>
+</html>

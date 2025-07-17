@@ -218,6 +218,12 @@
       </div>
     </div>
 
+
+    <div class="filter" style="margin-top:1rem;">
+      <label for="searchName">Search by name:</label>
+      <input type="text" id="searchName" placeholder="Type a name or surname..." style="width:100%;padding:0.75rem;border:1px solid #ddd;border-radius:12px;font-size:1rem;">
+    </div>
+
     <ul class="doctor-list" id="doctorList">
       <!-- Doctors will be loaded here -->
     </ul>
@@ -228,67 +234,65 @@
   </footer>
 
   <script>
-    // Cambia la porta se necessario
-    const API_URL = "http://localhost:5501/doctors";
+  const API_URL = "http://localhost:5501/doctors";
 
-    async function loadDoctors() {
-      try {
-        const res = await fetch(API_URL);
-        if (!res.ok) {
-          throw new Error('Failed to load doctors');
-        }
-        
-        const doctors = await res.json();
-        const list = document.getElementById('doctorList');
-        list.innerHTML = '';
-        
-        if (doctors.length === 0) {
-          list.innerHTML = `
-            <li class="doctor-card" style="text-align: center;">
-              No doctors found. Please check back later.
-            </li>
-          `;
-          return;
-        }
-        
-        doctors.forEach(doc => {
-          const li = document.createElement('li');
-          li.className = 'doctor-card';
-          li.dataset.specialization = doc.specialization;
-          li.innerHTML = `
-            <strong>Dr. ${doc.nome} ${doc.cognome}</strong>
-            ${doc.specialization ? `<div class="specialization">${doc.specialization}</div>` : ''}
-          `;
-          list.appendChild(li);
-        });
-        
-        applyFilter();
-      } catch (error) {
-        console.error('Error:', error);
-        const list = document.getElementById('doctorList');
-        list.innerHTML = `
-          <li class="doctor-card" style="color: var(--error); text-align: center;">
-            ${error.message}<br>
-            <button onclick="location.reload()">Retry</button>
-          </li>
-        `;
-      }
+  async function loadDoctors() {
+    try {
+      const res = await fetch(API_URL);
+      if (!res.ok) throw new Error('Failed to load doctors');
+      window.allDoctors = await res.json(); // Salva tutti i medici globalmente
+      renderDoctors();
+    } catch (error) {
+      const list = document.getElementById('doctorList');
+      list.innerHTML = `
+        <li class="doctor-card" style="color: var(--error); text-align: center;">
+          ${error.message}<br>
+          <button onclick="location.reload()">Retry</button>
+        </li>
+      `;
+    }
+  }
+
+  function renderDoctors() {
+    const list = document.getElementById('doctorList');
+    const specialization = document.getElementById('specialization').value;
+    const search = document.getElementById('searchName').value.trim().toLowerCase();
+
+    let filtered = window.allDoctors || [];
+    if (specialization !== 'all') {
+      filtered = filtered.filter(doc => doc.specialization === specialization);
+    }
+    if (search) {
+      filtered = filtered.filter(doc =>
+        (`${doc.nome} ${doc.cognome}`.toLowerCase().includes(search) ||
+         `${doc.cognome} ${doc.nome}`.toLowerCase().includes(search))
+      );
     }
 
-    function applyFilter() {
-      const value = document.getElementById('specialization').value;
-      document.querySelectorAll('.doctor-card').forEach(card => {
-        if (value === 'all' || card.dataset.specialization === value) {
-          card.style.display = '';
-        } else {
-          card.style.display = 'none';
-        }
-      });
+    list.innerHTML = '';
+    if (filtered.length === 0) {
+      list.innerHTML = `
+        <li class="doctor-card" style="text-align: center;">
+          No doctors found. Please check back later.
+        </li>
+      `;
+      return;
     }
+    filtered.forEach(doc => {
+      const li = document.createElement('li');
+      li.className = 'doctor-card';
+      li.dataset.specialization = doc.specialization;
+      li.innerHTML = `
+        <strong>Dr. ${doc.nome} ${doc.cognome}</strong>
+        ${doc.specialization ? `<div class="specialization">${doc.specialization}</div>` : ''}
+      `;
+      list.appendChild(li);
+    });
+  }
 
-    document.getElementById('specialization').addEventListener('change', applyFilter);
-
-    document.addEventListener('DOMContentLoaded', loadDoctors);
+  document.getElementById('specialization').addEventListener('change', renderDoctors);
+  document.addEventListener('DOMContentLoaded', loadDoctors);
+  document.getElementById('searchName').addEventListener('input', renderDoctors);
   </script>
 </body>
 </html>

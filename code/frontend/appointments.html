@@ -277,6 +277,25 @@
         <div style="margin: 0.5rem 0; text-align: center;">or</div>
         <input type="file" id="medical-report" name="medical-report" accept="application/pdf" />
       </div>
+      <div>
+        <label for="payment-method">Payment Method <span style="color:var(--error);">*</span>:</label><br />
+        <select id="payment-method" name="payment-method" required>
+          <option value="">Select payment method</option>
+          <option value="credit_card">Credit Card</option>
+          <option value="paypal">PayPal</option>
+          <option value="bank_transfer">Bank Transfer</option>
+          <option value="insurance">Insurance Package</option>
+        </select>
+      </div>
+      <div id="insurance-options" style="display:none; margin-top:0.5rem;">
+        <label for="insurance-package">Choose Insurance Package:</label>
+        <select id="insurance-package" name="insurance-package">
+          <option value="">Select package</option>
+          <option value="basic">Basic</option>
+          <option value="premium">Premium</option>
+          <option value="family">Family</option>
+        </select>
+      </div>
       <button type="submit" id="submit-btn">
         <span id="submit-btn-text">Book Appointment</span>
         <div class="loading-spinner" id="submit-spinner"></div>
@@ -518,6 +537,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     formData.append('time', form.time.value);
     formData.append('doctor_id', form.doctor.value);
 
+    if (!form['payment-method'].value) {
+      alert('Please select a payment method.');
+      submitBtnText.style.display = 'block';
+      submitSpinner.style.display = 'none';
+      submitBtn.disabled = false;
+      return;
+    }
+    if (form['payment-method'].value === 'insurance' && !form['insurance-package'].value) {
+      alert('Please select an insurance package.');
+      submitBtnText.style.display = 'block';
+      submitSpinner.style.display = 'none';
+      submitBtn.disabled = false;
+      return;
+    }
+
+    formData.append('payment_method', form['payment-method'].value);
+    if (form['payment-method'].value === 'insurance') {
+      formData.append('insurance_package', form['insurance-package'].value);
+    }
+
     if (selectedFile) {
       formData.append('medical_report', selectedFile);
     }
@@ -548,6 +587,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       submitBtnText.style.display = 'block';
       submitSpinner.style.display = 'none';
       submitBtn.disabled = false;
+    }
+  });
+
+  // Show/hide insurance options based on payment method
+  document.getElementById('payment-method').addEventListener('change', function() {
+    const insuranceDiv = document.getElementById('insurance-options');
+    if (this.value === 'insurance') {
+      insuranceDiv.style.display = '';
+      document.getElementById('insurance-package').setAttribute('required', 'required');
+    } else {
+      insuranceDiv.style.display = 'none';
+      document.getElementById('insurance-package').removeAttribute('required');
     }
   });
 });

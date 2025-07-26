@@ -422,7 +422,7 @@
       li.className = 'doctor-card';
       li.dataset.specialization = doc.specialization;
       li.innerHTML = `
-        <span class="doctor-name"><strong>${doc.nome} ${doc.cognome}</strong></span>
+        <span class="doctor-name"><strong>Dr. ${doc.nome} ${doc.cognome}</strong></span>
         ${doc.specialization ? `<div class="specialization">${doc.specialization}</div>` : ''}
         ${doc.specialties ? `<div class="specialties-list">${doc.specialties.split(',').map(s => `<span class="specialty-pill">${s.trim()}</span>`).join('')}</div>` : ''}
         ${doc.bio ? `<div style="margin: 0.5rem 0; color: var(--subtext);">${doc.bio}</div>` : ''}

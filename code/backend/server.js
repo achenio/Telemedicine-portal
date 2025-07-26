@@ -8,6 +8,7 @@ import path from 'path';
 import fs from 'fs';
 import fetch from 'node-fetch';
 import url from 'url';
+import crypto from 'crypto';
 
 // ==================== Configuration ====================
 const app = express();
@@ -18,7 +19,9 @@ const JWT_SECRET = 'your-secret-key-here';
 const CLIENT_ID = 'b4ebe754-d2ce-412a-bee5-c06f87a50cd2';
 const CLIENT_SECRET = 'dVh8Q~hTU07Kf4otVIy-zfOl~37PlyxHJdNJNawp';
 const TENANT_ID = '97a29f68-d5d4-46b2-b6b3-c1436a513f32';
-const REDIRECT_URI = 'http://localhost:5501/auth/email/callback'; // Modificato per puntare al nostro server
+const REDIRECT_URI = 'http://localhost:5501/auth/email/callback';
+const FROM_EMAIL = 'noreply@telemedicineportal.run.place';
+const RESET_PASSWORD_SUBJECT = 'Reset Your Password - Telemedicine Portal';
 
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -115,6 +118,16 @@ db.serialize(() => {
       FOREIGN KEY(receiver_id) REFERENCES utenti(id)
     )
   `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS reset_tokens (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      token TEXT NOT NULL,
+      expires_at DATETIME NOT NULL,
+      FOREIGN KEY(user_id) REFERENCES utenti(id)
+    )
+  `);
 });
 
 // ==================== Email Token Management ====================
@@ -193,6 +206,96 @@ async function getAccessToken() {
   }
 }
 
+// ==================== Password Reset Functions ====================
+async function generateResetToken(userId) {
+  // Delete any existing tokens for this user
+  await new Promise((resolve, reject) => {
+    db.run('DELETE FROM reset_tokens WHERE user_id = ?', [userId], (err) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
+  
+  // Generate new token
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 3600000); // 1 hour
+  
+  await new Promise((resolve, reject) => {
+    db.run(
+      'INSERT INTO reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)',
+      [userId, resetToken, expiresAt.toISOString()],
+      (err) => {
+        if (err) reject(err);
+        else resolve();
+      }
+    );
+  });
+
+  return resetToken;
+}
+
+async function verifyResetToken(userId, token) {
+  const tokenRecord = await new Promise((resolve, reject) => {
+    db.get(
+      'SELECT * FROM reset_tokens WHERE user_id = ? AND token = ? AND expires_at > ?',
+      [userId, token, new Date().toISOString()],
+      (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      }
+    );
+  });
+  
+  return !!tokenRecord;
+}
+
+async function sendResetPasswordEmail(email, resetLink) {
+  try {
+    const accessToken = await getAccessToken();
+
+    const emailContent = {
+      message: {
+        subject: RESET_PASSWORD_SUBJECT,
+        body: {
+          contentType: "HTML",
+          content: `
+            <h2>Password Reset Request</h2>
+            <p>You requested to reset your password. Click the link below to set a new password:</p>
+            <p><a href="${resetLink}" style="background-color: #007aff; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">Reset Password</a></p>
+            <p>This link will expire in 1 hour. If you didn't request this, please ignore this email.</p>
+          `
+        },
+        toRecipients: [{
+          emailAddress: { address: email }
+        }],
+        from: {
+          emailAddress: { address: FROM_EMAIL }
+        }
+      },
+      saveToSentItems: "true"
+    };
+
+    const response = await fetch('https://graph.microsoft.com/v1.0/me/sendMail', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(emailContent)
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Email sending failed: ${JSON.stringify(error)}`);
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error sending reset password email:', error);
+    throw error;
+  }
+}
+
 // ==================== Email Authentication Routes ====================
 app.get('/auth/email', (req, res) => {
   const authUrl = `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/authorize?` +
@@ -247,7 +350,6 @@ app.get('/auth/email/callback', async (req, res) => {
 
     saveToken(tokenData);
     
-    // Invia una pagina HTML di successo con un pulsante per tornare all'app
     res.send(`
       <html>
         <head>
@@ -346,22 +448,107 @@ async function sendEmail(to, subject, htmlContent) {
   }
 }
 
-// Test endpoint for email functionality
-app.get('/test-email', async (req, res) => {
+// ==================== Password Reset Routes ====================
+app.post('/auth/request-password-reset', async (req, res) => {
   try {
-    const success = await sendEmail(
-      'recipient@example.com', // Sostituisci con un indirizzo email reale
-      'Test Email from MediConnect',
-      '<h1>Test Email</h1><p>This is a test email sent from the MediConnect server.</p>'
-    );
-    res.json({ success });
-  } catch (err) {
-    console.error('Test email error:', err);
-    res.status(500).json({ 
-      error: err.message,
-      authUrl: `http://localhost:${PORT}/auth/email` 
+    const { email } = req.body;
+    
+    const user = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM utenti WHERE email = ?', [email], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
     });
+    
+    if (!user) {
+      return res.status(200).json({
+        message: 'If an account with that email exists, a password reset link has been sent'
+      });
+    }
+
+    const resetToken = await generateResetToken(user.id);
+    const resetLink = `http://localhost:5500/frontend/reset_password.html?token=${resetToken}&id=${user.id}`;
+
+    await sendResetPasswordEmail(user.email, resetLink);
+
+    res.status(200).json({
+      message: 'If an account with that email exists, a password reset link has been sent'
+    });
+  } catch (error) {
+    console.error('Password reset request error:', error);
+    res.status(500).json({ message: 'Error processing password reset request' });
   }
+});
+
+app.post('/auth/reset-password', async (req, res) => {
+  try {
+    const { userId, token, newPassword } = req.body;
+    const isValidToken = await verifyResetToken(userId, token);
+    
+    if (!isValidToken) {
+      return res.status(400).json({ message: 'Invalid or expired token' });
+    }
+
+    const user = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM utenti WHERE id = ?', [userId], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'User not found' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    
+    await new Promise((resolve, reject) => {
+      db.run(
+        'UPDATE utenti SET password_hash = ? WHERE id = ?',
+        [hashedPassword, userId],
+        (err) => {
+          if (err) reject(err);
+          else resolve();
+        }
+      );
+    });
+
+    await new Promise((resolve, reject) => {
+      db.run(
+        'DELETE FROM reset_tokens WHERE user_id = ? AND token = ?',
+        [userId, token],
+        (err) => {
+          if (err) reject(err);
+          else resolve();
+        }
+      );
+    });
+
+    res.status(200).json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Password reset error:', error);
+    res.status(500).json({ message: 'Error resetting password' });
+  }
+});
+
+// Aggiungi questa rotta nel tuo server.js
+app.get('/reset-password', (req, res) => {
+    const { token, id } = req.query;
+    if (!token || !id) {
+        return res.status(400).json({ error: 'Invalid reset link' });
+    }
+    
+    verifyResetToken(id, token).then(isValid => {
+        if (!isValid) {
+            return res.status(400).json({ error: 'Invalid or expired token' });
+        }
+        
+        // Restituisci solo un JSON confermando che il token è valido
+        res.json({ valid: true });
+    }).catch(err => {
+        res.status(500).json({ error: 'Server error' });
+    });
 });
 
 // ==================== Authentication Middleware ====================
@@ -495,7 +682,7 @@ app.post('/register', async (req, res) => {
 
         if (email) {
           const welcomeEmail = `
-            <h1>Welcome to MediConnect!</h1>
+            <h1>Welcome to Telemedicine Portal!</h1>
             <p>Dear ${nome} ${cognome},</p>
             <p>Your registration has been completed successfully.</p>
             <p>Your login details:</p>
@@ -507,7 +694,7 @@ app.post('/register', async (req, res) => {
             <p>Thank you for choosing our service!</p>
           `;
           
-          sendEmail(email, 'Welcome to MediConnect', welcomeEmail)
+          sendEmail(email, 'Welcome to Telemedicine Portal', welcomeEmail)
             .catch(err => console.error('Error sending welcome email:', err));
         }
 

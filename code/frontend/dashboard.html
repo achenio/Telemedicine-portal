@@ -3,14 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>User Dashboard | Telemedicine Portal</title>
+  <title>My Telemedicine Dashboard</title>
   <style>
     :root {
-      --bg: #fefefe;
-      --text: #1c1c1e;
-      --subtext: #555;
-      --primary: #007aff;
+      --bg: #f8f9fa;
+      --text: #202124;
+      --subtext: #5f6368;
+      --primary: #1a73e8;
+      --primary-hover: #1765cc;
       --card: #ffffff;
+      --border: #dadce0;
+      --success: #34a853;
+      --warning: #f9ab00;
+      --danger: #d93025;
     }
 
     * {
@@ -20,205 +25,145 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       background-color: var(--bg);
       color: var(--text);
       line-height: 1.6;
       overflow-x: hidden;
     }
 
-    /* Header styles */
-    header {
-      position: relative;
+    .dashboard-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar Navigation */
+    .sidebar {
+      width: 280px;
       background-color: var(--card);
-      padding: 1.5rem;
-      text-align: center;
-      animation: fadeIn 1s ease-out;
-      z-index: 1;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      border-right: 1px solid var(--border);
+      padding: 24px 0;
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
     }
 
-    .header-left {
-      display: flex;
-      align-items: center;
+    .sidebar-header {
+      padding: 0 24px 16px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
     }
 
-    .header-left h1 {
-      font-size: 1.5rem;
-      color: var(--primary);
-      margin: 0;
+    .sidebar-header h2 {
+      font-size: 1.25rem;
+      font-weight: 500;
+      color: var(--text);
     }
 
-    nav ul {
-      list-style: none;
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 1rem;
-      padding: 0;
-      margin: 0;
-    }
-
-    nav ul li a {
-      text-decoration: none;
-      color: var(--primary);
-      font-weight: 600;
-      padding: 0.5rem 1rem;
-      border-radius: 20px;
-      transition: background-color 0.3s ease;
-      cursor: pointer;
-    }
-
-    nav ul li a:hover {
-      background-color: rgba(0, 122, 255, 0.1);
-    }
-
-    nav ul li a.active {
-      background-color: rgba(0, 122, 255, 0.1);
-    }
-
-    #profile-area {
+    .sidebar-header .user-info {
       display: flex;
       align-items: center;
-      gap: 1rem;
+      margin-top: 12px;
     }
 
-    #profile-area img {
+    .sidebar-header .user-avatar {
       width: 40px;
       height: 40px;
       border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid var(--primary);
-    }
-
-    /* Dashboard content */
-    .dashboard-main {
-      padding: 3rem 1rem;
-      max-width: 1000px;
-      margin: auto;
-      animation: fadeInUp 1s ease-out;
-    }
-
-    .section {
-      margin-bottom: 4rem;
-    }
-
-    .section h2 {
-      font-size: 2rem;
-      margin-bottom: 1rem;
-      color: var(--primary);
-    }
-
-    /* Profile card */
-    .profile-card {
-      background-color: var(--card);
-      border-radius: 16px;
-      padding: 2rem;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-      margin-bottom: 2rem;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .profile-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
-    }
-
-    .profile-info {
-      display: flex;
-      align-items: center;
-      gap: 2rem;
-      margin-bottom: 2rem;
-    }
-
-    .profile-avatar {
-      position: relative;
-    }
-
-    .profile-avatar img {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 3px solid var(--primary);
-    }
-
-    .avatar-upload {
-      position: absolute;
-      bottom: 10px;
-      right: 10px;
       background-color: var(--primary);
       color: white;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
+      font-weight: 500;
+      margin-right: 12px;
     }
 
-    .avatar-upload input {
-      display: none;
-    }
-
-    .profile-details {
+    .sidebar-header .user-details {
       flex: 1;
     }
 
-    .profile-name {
-      font-size: 1.5rem;
-      margin-bottom: 0.5rem;
+    .sidebar-header .user-name {
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+
+    .sidebar-header .user-type {
+      font-size: 0.8rem;
+      color: var(--subtext);
+      margin-top: 2px;
+    }
+
+    .nav-menu {
+      list-style: none;
+    }
+
+    .nav-item {
+      margin-bottom: 4px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      padding: 12px 24px;
+      text-decoration: none;
+      color: var(--subtext);
+      font-size: 0.95rem;
+      transition: background-color 0.2s;
+      border-radius: 0 25px 25px 0;
+    }
+
+    .nav-link:hover {
+      background-color: rgba(26, 115, 232, 0.08);
       color: var(--primary);
     }
 
-    .profile-email {
-      color: var(--subtext);
-      margin-bottom: 1rem;
-    }
-
-    /* Form styles */
-    .form-group {
-      margin-bottom: 1.5rem;
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 0.5rem;
+    .nav-link.active {
+      background-color: rgba(26, 115, 232, 0.12);
+      color: var(--primary);
       font-weight: 500;
     }
 
-    .form-control {
-      width: 100%;
-      padding: 0.75rem 1rem;
-      font-size: 1rem;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      transition: border-color 0.3s ease;
+    .nav-link i {
+      margin-right: 16px;
+      font-size: 1.1rem;
+      width: 24px;
+      text-align: center;
     }
 
-    .form-control:focus {
-      border-color: var(--primary);
-      outline: none;
+    /* Main Content Area */
+    .main-content {
+      flex: 1;
+      margin-left: 280px;
+      padding: 32px 40px;
     }
 
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .header h1 {
+      font-size: 1.75rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
     }
 
     .btn {
-      padding: 0.75rem 1.5rem;
-      font-size: 1rem;
-      border-radius: 8px;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      font-weight: 500;
       cursor: pointer;
-      transition: all 0.3s ease;
       border: none;
-      font-weight: 600;
+      transition: background-color 0.2s, box-shadow 0.2s;
     }
 
     .btn-primary {
@@ -227,413 +172,512 @@
     }
 
     .btn-primary:hover {
-      background-color: #005fcc;
+      background-color: var(--primary-hover);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     }
 
     .btn-outline {
       background-color: transparent;
-      border: 1px solid var(--primary);
+      border: 1px solid var(--border);
       color: var(--primary);
     }
 
     .btn-outline:hover {
-      background-color: rgba(0, 122, 255, 0.1);
+      background-color: rgba(26, 115, 232, 0.04);
     }
 
-    /* Stats cards */
-    .stats-grid {
+    /* Dashboard Cards */
+    .dashboard-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1.5rem;
-      margin-top: 2rem;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 24px;
+      margin-bottom: 32px;
     }
 
-    .stat-card {
+    .card {
       background-color: var(--card);
-      border-radius: 12px;
-      padding: 1.5rem;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      padding: 24px;
+      transition: box-shadow 0.2s;
     }
 
-    .stat-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    .card:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
-    .stat-card h3 {
-      font-size: 0.9rem;
-      color: var(--subtext);
-      margin-bottom: 0.5rem;
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
     }
 
-    .stat-card p {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--primary);
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 500;
     }
 
-    /* Appointments table */
-    .appointments-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 2rem;
-    }
-
-    .appointments-table th, 
-    .appointments-table td {
-      padding: 1rem;
-      text-align: left;
-      border-bottom: 1px solid #eee;
-    }
-
-    .appointments-table th {
-      background-color: var(--primary);
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       color: white;
     }
 
-    .appointments-table tr:hover {
-      background-color: rgba(0, 122, 255, 0.05);
+    .card-icon.blue {
+      background-color: var(--primary);
     }
 
-    .status-badge {
-      padding: 0.25rem 0.5rem;
-      border-radius: 12px;
+    .card-icon.green {
+      background-color: var(--success);
+    }
+
+    .card-icon.orange {
+      background-color: var(--warning);
+    }
+
+    .card-icon.red {
+      background-color: var(--danger);
+    }
+
+    .card-value {
+      font-size: 2rem;
+      font-weight: 400;
+      margin-bottom: 8px;
+    }
+
+    .card-description {
+      font-size: 0.9rem;
+      color: var(--subtext);
+    }
+
+    /* Upcoming Appointments */
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 500;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+
+    .appointments-list {
+      background-color: var(--card);
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .appointment-item {
+      display: flex;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+    }
+
+    .appointment-item:last-child {
+      border-bottom: none;
+    }
+
+    .appointment-time {
+      min-width: 120px;
+      margin-right: 24px;
+    }
+
+    .appointment-date {
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .appointment-hour {
+      font-size: 0.9rem;
+      color: var(--subtext);
+    }
+
+    .appointment-details {
+      flex: 1;
+    }
+
+    .appointment-title {
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .appointment-doctor {
+      font-size: 0.9rem;
+      color: var(--subtext);
+    }
+
+    .appointment-status {
+      padding: 4px 12px;
+      border-radius: 16px;
       font-size: 0.8rem;
-      font-weight: 600;
-    }
-
-    .status-booked {
-      background-color: #ffcc00;
-      color: #1c1c1e;
+      font-weight: 500;
     }
 
     .status-confirmed {
-      background-color: #34c759;
-      color: white;
+      background-color: rgba(52, 168, 83, 0.1);
+      color: var(--success);
     }
 
-    .status-cancelled {
-      background-color: #ff3b30;
-      color: white;
+    .status-pending {
+      background-color: rgba(249, 171, 0, 0.1);
+      color: var(--warning);
     }
 
-    .status-completed {
-      background-color: #007aff;
-      color: white;
+    .appointment-actions {
+      margin-left: 24px;
     }
 
-    /* Book appointment form */
-    .book-appointment-form {
+    /* Health Summary */
+    .health-summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 32px;
+    }
+
+    .health-card {
       background-color: var(--card);
-      border-radius: 16px;
-      padding: 2rem;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-      margin-bottom: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      padding: 24px;
     }
 
-    /* Responsive */
-    @media (max-width: 768px) {
-      header {
-        flex-direction: column;
-        gap: 1rem;
-        padding: 1rem;
-      }
-      
-      nav ul {
-        flex-direction: column;
-        align-items: center;
-      }
-      
-      .profile-info {
-        flex-direction: column;
-        text-align: center;
-      }
+    .health-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
 
-      .form-row {
+    .metric-item {
+      text-align: center;
+    }
+
+    .metric-value {
+      font-size: 1.5rem;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .metric-label {
+      font-size: 0.9rem;
+      color: var(--subtext);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+      .sidebar {
+        width: 240px;
+      }
+      .main-content {
+        margin-left: 240px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-container {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        position: static;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+      .main-content {
+        margin-left: 0;
+        padding: 24px;
+      }
+      .health-summary {
         grid-template-columns: 1fr;
       }
+    }
 
-      .appointments-table {
-        display: block;
-        overflow-x: auto;
+    @media (max-width: 480px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .header-actions {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .appointment-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .appointment-time {
+        margin-bottom: 12px;
+      }
+      .appointment-actions {
+        margin-left: 0;
+        margin-top: 12px;
+        align-self: flex-end;
       }
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    /* Icons (using Unicode as placeholder - replace with actual icon font) */
+    .icon {
+      font-style: normal;
+      font-family: Arial, sans-serif;
     }
   </style>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-  <header>
-    <div class="header-left">
-      <h1><a href="index.html">Telemedicine Portal</a></h1>
-      
-    </div>
-    
-    <nav>
-      <ul>
-        <li><a href="#" class="active" id="nav-profile"><i class="fas fa-user"></i> Profile</a></li>
-        <li><a href="#" id="nav-appointments"><i class="fas fa-calendar-check"></i> Appointments</a></li>
-        <li><a href="#" id="nav-patients" style="display:none;"><i class="fas fa-user-friends"></i> Patients</a></li>
-        <li><a href="chat.html" id="nav-messages"><i class="fas fa-comments"></i> Messages</a></li>
-      </ul>
-    </nav>
-    
-    <div id="profile-area">
-      <span id="username-display">Loading...</span>
-      <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Profile" id="header-avatar">
-      <button id="logout-btn" class="btn-outline" style="padding: 0.5rem 1rem; font-size: 0.9rem;">Logout</button>
-    </div>
-  </header>
-
-  <main class="dashboard-main">
-    <!-- Profile Section -->
-    <section class="section" id="profile-section">
-      <h2>My Profile</h2>
-      
-      <div class="profile-card">
-        <div class="profile-info">
-          <div class="profile-avatar">
-            <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Profile Photo" id="profile-avatar">
-            <label class="avatar-upload" for="avatar-input">
-              <i class="fas fa-camera"></i>
-              <input type="file" id="avatar-input" accept="image/*">
-            </label>
-          </div>
-          <div class="profile-details">
-            <h3 class="profile-name" id="profile-name-display">Loading...</h3>
-            <p class="profile-email" id="profile-email">Loading...</p>
-            <p id="profile-since">Member since: Loading...</p>
+  <div class="dashboard-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>Telemedicine Portal</h2>
+        <div class="user-info">
+          <div class="user-avatar" id="user-avatar">JD</div>
+          <div class="user-details">
+            <div class="user-name" id="user-name">John Doe</div>
+            <div class="user-type" id="user-type">Patient</div>
           </div>
         </div>
-
-        <form id="profile-form">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="first-name">First Name</label>
-              <input type="text" id="first-name" class="form-control">
-            </div>
-            <div class="form-group">
-              <label for="last-name">Last Name</label>
-              <input type="text" id="last-name" class="form-control">
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" id="email" class="form-control">
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="codice-fiscale">Codice Fiscale</label>
-              <input type="text" id="codice-fiscale" class="form-control" readonly>
-            </div>
-            <div class="form-group">
-              <label for="phone">Phone</label>
-              <input type="tel" id="phone" class="form-control">
-            </div>
-          </div>
-
-          <div class="form-group" id="specialization-group" style="display:none;">
-            <label for="specialization">Specialization</label>
-            <input type="text" id="specialization" class="form-control">
-          </div>
-
-          <div class="form-group">
-            <label for="address">Address</label>
-            <input type="text" id="address" class="form-control">
-          </div>
-
-          <div class="btn-group" style="display: flex; gap: 1rem; justify-content: flex-end;">
-            <button type="button" class="btn btn-outline" id="cancel-changes">Cancel</button>
-            <button type="button" class="btn btn-primary" id="save-profile">Save Changes</button>
-          </div>
-        </form>
       </div>
+      <ul class="nav-menu">
+        <li class="nav-item"><a href="#" class="nav-link active"><i class="icon">🏠</i> Dashboard</a></li>
+        <li class="nav-item"><a href="bookings.html" class="nav-link"><i class="icon">📅</i> Appointments</a></li>
+        <li class="nav-item"><a href="doctor-chat.html" class="nav-link"><i class="icon">💬</i> Secure Chat</a></li>
+        <li class="nav-item"><a href="medical-records.html" class="nav-link"><i class="icon">📋</i> Medical Records</a></li>
+        <li class="nav-item"><a href="prescriptions.html" class="nav-link"><i class="icon">💊</i> Prescriptions</a></li>
+        <li class="nav-item"><a href="payments.html" class="nav-link"><i class="icon">💰</i> Billing & Payments</a></li>
+        <li class="nav-item"><a href="#" class="nav-link"><i class="icon">⚙️</i> Settings</a></li>
+        </ul>
+    </aside>
 
-      <div class="stats-grid" id="stats-grid">
-        <!-- Stats will be populated by JavaScript -->
-      </div>
-    </section>
-
-    <!-- Appointments Section -->
-    <section class="section" id="appointments-section" style="display:none;">
-      <h2>My Appointments</h2>
-      
-      <div class="profile-card">
-        <div id="appointments-container">
-          <table class="appointments-table" id="appointments-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Doctor</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="appointments-body">
-              <!-- Appointments will be populated by JavaScript -->
-            </tbody>
-          </table>
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <div class="header">
+        <h1>Dashboard</h1>
+        <div class="header-actions">
+          <button class="btn btn-outline"><i class="icon">🔔</i> Notifications</button>
+          <button class="btn btn-primary"><i class="icon">+</i> New Appointment</button>
         </div>
       </div>
-    </section>
 
-    <!-- Doctor Appointments Section -->
-    <section class="section" id="doctor-appointments-section" style="display:none;">
-      <h2>Patient Appointments</h2>
-      
-      <div class="profile-card">
-        <div id="doctor-appointments-container">
-          <table class="appointments-table" id="doctor-appointments-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Patient</th>
-                <th>Codice Fiscale</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="doctor-appointments-body">
-              <!-- Appointments will be populated by JavaScript -->
-            </tbody>
-          </table>
+      <!-- Stats Cards -->
+      <div class="dashboard-grid">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Upcoming Appointments</div>
+            <div class="card-icon blue"><i class="icon">📅</i></div>
+          </div>
+          <div class="card-value" id="upcoming-count">2</div>
+          <div class="card-description">Next appointment in 3 days</div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Unread Messages</div>
+            <div class="card-icon green"><i class="icon">💬</i></div>
+          </div>
+          <div class="card-value" id="unread-messages">3</div>
+          <div class="card-description">From your care team</div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Pending Prescriptions</div>
+            <div class="card-icon orange"><i class="icon">💊</i></div>
+          </div>
+          <div class="card-value" id="pending-rx">1</div>
+          <div class="card-description">Ready for review</div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Outstanding Balance</div>
+            <div class="card-icon red"><i class="icon">💰</i></div>
+          </div>
+          <div class="card-value" id="balance">$45.00</div>
+          <div class="card-description">Due in 15 days</div>
         </div>
       </div>
-    </section>
 
-    <!-- Book Appointment Section -->
-    <section class="section" id="book-appointment-section" style="display:none;">
-      <h2>Book New Appointment</h2>
-      
-      <div class="book-appointment-form">
-        <form id="book-appointment-form">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="appointment-doctor">Doctor</label>
-              <select id="appointment-doctor" class="form-control" required>
-                <option value="">Select a doctor</option>
-                <!-- Doctors will be populated by JavaScript -->
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="appointment-date">Date</label>
-              <input type="date" id="appointment-date" class="form-control" required>
-            </div>
+      <!-- Upcoming Appointments -->
+      <h2 class="section-title">Upcoming Appointments</h2>
+      <div class="appointments-list">
+        <div class="appointment-item">
+          <div class="appointment-time">
+            <div class="appointment-date">Tomorrow</div>
+            <div class="appointment-hour">10:30 AM</div>
           </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label for="appointment-time">Time</label>
-              <input type="time" id="appointment-time" class="form-control" required>
-            </div>
+          <div class="appointment-details">
+            <div class="appointment-title">Annual Physical Checkup</div>
+            <div class="appointment-doctor">Dr. Sarah Johnson, Family Medicine</div>
           </div>
-          
-          <div class="btn-group" style="display: flex; gap: 1rem; justify-content: flex-end;">
-            <button type="button" class="btn btn-outline" id="cancel-booking">Cancel</button>
-            <button type="submit" class="btn btn-primary">Book Appointment</button>
+          <div class="appointment-status status-confirmed">Confirmed</div>
+          <div class="appointment-actions">
+            <button class="btn btn-outline" style="padding: 4px 8px; font-size: 0.8rem;">Details</button>
           </div>
-        </form>
+        </div>
+        <div class="appointment-item">
+          <div class="appointment-time">
+            <div class="appointment-date">June 15</div>
+            <div class="appointment-hour">2:00 PM</div>
+          </div>
+          <div class="appointment-details">
+            <div class="appointment-title">Follow-up Consultation</div>
+            <div class="appointment-doctor">Dr. Michael Chen, Cardiology</div>
+          </div>
+          <div class="appointment-status status-confirmed">Confirmed</div>
+          <div class="appointment-actions">
+            <button class="btn btn-outline" style="padding: 4px 8px; font-size: 0.8rem;">Details</button>
+          </div>
+        </div>
+        <div class="appointment-item">
+          <div class="appointment-time">
+            <div class="appointment-date">June 22</div>
+            <div class="appointment-hour">9:15 AM</div>
+          </div>
+          <div class="appointment-details">
+            <div class="appointment-title">Lab Results Review</div>
+            <div class="appointment-doctor">Dr. Emily Wong, Internal Medicine</div>
+          </div>
+          <div class="appointment-status status-pending">Pending</div>
+          <div class="appointment-actions">
+            <button class="btn btn-outline" style="padding: 4px 8px; font-size: 0.8rem;">Details</button>
+          </div>
+        </div>
       </div>
-    </section>
-  </main>
-<script>
-document.addEventListener('DOMContentLoaded', async function() {
-    // Check if user is logged in
-    const token = localStorage.getItem('token');
-    const userData = JSON.parse(localStorage.getItem('userData'));
+
+      <!-- Health Summary -->
+      <div class="health-summary">
+        <div class="health-card">
+          <h2 class="section-title">Health Summary</h2>
+          <div class="health-metrics">
+            <div class="metric-item">
+              <div class="metric-value">120/80</div>
+              <div class="metric-label">Blood Pressure</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-value">72</div>
+              <div class="metric-label">Heart Rate (bpm)</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-value">98.6°F</div>
+              <div class="metric-label">Temperature</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-value">22.5</div>
+              <div class="metric-label">BMI</div>
+            </div>
+          </div>
+        </div>
+        <div class="health-card">
+          <h2 class="section-title">Recent Activity</h2>
+          <div style="margin-top: 16px;">
+            <div style="display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border);">
+              <div style="width: 32px; height: 32px; background-color: rgba(26, 115, 232, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                <i class="icon" style="color: var(--primary);">💊</i>
+              </div>
+              <div>
+                <div style="font-size: 0.9rem;">New prescription added</div>
+                <div style="font-size: 0.8rem; color: var(--subtext);">2 days ago</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border);">
+              <div style="width: 32px; height: 32px; background-color: rgba(52, 168, 83, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                <i class="icon" style="color: var(--success);">📋</i>
+              </div>
+              <div>
+                <div style="font-size: 0.9rem;">Lab results received</div>
+                <div style="font-size: 0.8rem; color: var(--subtext);">1 week ago</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; padding: 8px 0;">
+              <div style="width: 32px; height: 32px; background-color: rgba(249, 171, 0, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                <i class="icon" style="color: var(--warning);">💬</i>
+              </div>
+              <div>
+                <div style="font-size: 0.9rem;">Message from Dr. Johnson</div>
+                <div style="font-size: 0.8rem; color: var(--subtext);">2 weeks ago</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Load user data from localStorage
+    const username = localStorage.getItem('username') || 'John Doe';
+    const userType = localStorage.getItem('user_type') || 'patient';
+    const userId = localStorage.getItem('user_id') || 'user123';
+
+    // Set user info in the sidebar
+    document.getElementById('user-name').textContent = username;
+    document.getElementById('user-type').textContent = userType === 'doctor' ? 'Doctor' : 'Patient';
     
-    // Redirect immediately if no token
-    if (!token) {
-        window.location.href = 'login.html';
-        return;
+    // Generate avatar initials
+    const nameParts = username.split(' ');
+    const initials = nameParts.length >= 2 
+      ? nameParts[0].charAt(0) + nameParts[nameParts.length - 1].charAt(0)
+      : username.substring(0, 2);
+    document.getElementById('user-avatar').textContent = initials.toUpperCase();
+
+    // Adjust dashboard for doctors
+    if (userType === 'doctor') {
+      // Update card titles and values
+      document.querySelector('.card:nth-child(1) .card-title').textContent = 'Today\'s Appointments';
+      document.getElementById('upcoming-count').textContent = '5';
+      document.querySelector('.card:nth-child(1) .card-description').textContent = 'Next appointment in 1 hour';
+      
+      document.querySelector('.card:nth-child(2) .card-title').textContent = 'Patient Messages';
+      document.getElementById('unread-messages').textContent = '7';
+      document.querySelector('.card:nth-child(2) .card-description').textContent = 'Requiring your response';
+      
+      document.querySelector('.card:nth-child(3) .card-title').textContent = 'Prescriptions to Approve';
+      document.getElementById('pending-rx').textContent = '3';
+      
+      // Update section titles
+      document.querySelector('.section-title').textContent = 'Today\'s Appointments';
+      
+      // Update appointment items
+      const appointmentItems = document.querySelectorAll('.appointment-item');
+      appointmentItems[0].querySelector('.appointment-title').textContent = 'Follow-up - Hypertension';
+      appointmentItems[1].querySelector('.appointment-title').textContent = 'New Patient Consultation';
+      appointmentItems[2].querySelector('.appointment-title').textContent = 'Annual Physical';
+      
+      // Add doctor-specific menu items
+      const navMenu = document.querySelector('.nav-menu');
+      const existingItems = navMenu.querySelectorAll('.nav-item');
+      
+      // Insert after the 3rd item (Medical Records)
+      const doctorItem = document.createElement('li');
+      doctorItem.className = 'nav-item';
+      doctorItem.innerHTML = '<a href="doctor-schedule.html" class="nav-link"><i class="icon">⏰</i> My Schedule</a>';
+      navMenu.insertBefore(doctorItem, existingItems[3]);
+      
+      const patientsItem = document.createElement('li');
+      patientsItem.className = 'nav-item';
+      patientsItem.innerHTML = '<a href="my-patients.html" class="nav-link"><i class="icon">👥</i> My Patients</a>';
+      navMenu.insertBefore(patientsItem, existingItems[4]);
     }
 
-    try {
-        // Verify token with backend
-        const verifyResponse = await fetch('http://localhost:5501/user-data', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (!verifyResponse.ok) {
-            throw new Error('Token verification failed');
-        }
-        
-        const currentUser = await verifyResponse.json();
-        
-        // Store user data in localStorage for consistency
-        localStorage.setItem('userData', JSON.stringify(currentUser));
-        
-        // Update UI with user data
-        updateUserInterface(currentUser);
-        
-        // Load appropriate data based on user type
-        if (currentUser.user_type === 'doctor') {
-            document.getElementById('specialization-group').style.display = 'block';
-            document.getElementById('specialization').value = currentUser.specialization || '';
-            document.getElementById('nav-patients').style.display = '';
-            loadDoctorAppointments();
-        } else {
-            loadPatientAppointments();
-        }
-        
-        // Setup navigation
-        setupNavigation();
-        
-    } catch (error) {
-        console.error('Authentication error:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('userData');
-        window.location.href = 'login.html';
-    }
-
-    // Logout button
+    // Logout functionality
     document.getElementById('logout-btn').addEventListener('click', () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('userData');
-        window.location.href = 'login.html';
+      localStorage.removeItem('username');
+      localStorage.removeItem('user_type');
+      localStorage.removeItem('user_id');
+      window.location.href = 'login.html';
     });
-});
 
-function updateUserInterface(user) {
-    document.getElementById('username-display').textContent = `${user.nome} ${user.cognome}`;
-    document.getElementById('profile-name-display').textContent = `${user.nome} ${user.cognome}`;
-    document.getElementById('profile-email').textContent = user.email || 'No email provided';
-    
-    // Populate form fields
-    document.getElementById('first-name').value = user.nome || '';
-    document.getElementById('last-name').value = user.cognome || '';
-    document.getElementById('email').value = user.email || '';
-    document.getElementById('codice-fiscale').value = user.codice_fiscale || '';
-    document.getElementById('phone').value = user.telefono || '';
-    document.getElementById('address').value = user.luogo_nascita || '';
-    
-    // Set member since date if available
-    if (user.created_at) {
-        document.getElementById('profile-since').textContent = `Member since: ${new Date(user.created_at).toLocaleDateString()}`;
-    }
-}
-</script>
-  </body>
+    // Simulate loading data
+    setTimeout(() => {
+      // This would be replaced with actual API calls in production
+      console.log('Loading user data...');
+    }, 500);
+  </script>
+</body>
 </html>

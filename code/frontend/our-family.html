@@ -122,6 +122,22 @@
       outline: none;
     }
 
+    .filter-item input[type="text"] {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      font-size: 1rem;
+      background-color: var(--bg);
+      transition: border-color 0.2s;
+      color: var(--text);
+    }
+
+    .filter-item input[type="text"]:focus {
+      border-color: var(--primary);
+      outline: none;
+    }
+
     .search-container {
       display: flex;
       justify-content: center;
@@ -129,23 +145,38 @@
     }
 
     .search-box {
-      background-color: var(--card);
-      padding: 1rem;
+      background-color: #e3f2fd;
       border-radius: 16px;
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 6px 16px rgba(0, 122, 255, 0.07);
+      padding: 1rem;
       width: 100%;
       max-width: 500px;
       margin-top: 1rem;
       margin-bottom: 1rem;
+      border: 1px solid #b3d4fc;
+    }
+
+    .search-box label {
+      color: #1976d2;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      display: block;
     }
 
     .search-box input {
       width: 100%;
       padding: 0.75rem;
-      border: 1px solid #ddd;
+      border: 1px solid #90caf9;
       border-radius: 12px;
       font-size: 1rem;
-      background-color: var(--bg);
+      background-color: #f5fbff;
+      color: #1976d2;
+      transition: border-color 0.2s;
+    }
+
+    .search-box input:focus {
+      border-color: #1976d2;
+      outline: none;
     }
 
     .doctor-list {
@@ -315,10 +346,14 @@
       </div>
     </div>
 
-    <div class="search-container">
-      <div class="search-box">
-        <label for="searchName">Search by name:</label>
-        <input type="text" id="searchName" placeholder="Type a doctor's name or surname...">
+    <div class="filter-container">
+      <div class="filter-card">
+        <div class="filter-row">
+          <div class="filter-item" style="flex: 1;">
+            <label for="searchName">Search by name:</label>
+            <input type="text" id="searchName" placeholder="Type a doctor's name or surname...">
+          </div>
+        </div>
       </div>
     </div>
 
@@ -387,7 +422,7 @@
       li.className = 'doctor-card';
       li.dataset.specialization = doc.specialization;
       li.innerHTML = `
-        <strong>Dr. ${doc.nome} ${doc.cognome}</strong>
+        <span class="doctor-name"><strong>${doc.nome} ${doc.cognome}</strong></span>
         ${doc.specialization ? `<div class="specialization">${doc.specialization}</div>` : ''}
         ${doc.specialties ? `<div class="specialties-list">${doc.specialties.split(',').map(s => `<span class="specialty-pill">${s.trim()}</span>`).join('')}</div>` : ''}
         ${doc.bio ? `<div style="margin: 0.5rem 0; color: var(--subtext);">${doc.bio}</div>` : ''}

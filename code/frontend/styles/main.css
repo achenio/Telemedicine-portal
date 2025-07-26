@@ -1,122 +1,335 @@
-body {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f5f5f7;
+/* Stile Apple Moderno - Bianco e Azzurro */
+:root {
+  --apple-primary: #0071e3;
+  --apple-primary-hover: #0062c4;
+  --apple-light: #f5f5f7;
+  --apple-lighter: #fbfbfd;
+  --apple-dark: #1d1d1f;
+  --apple-gray: #86868b;
+  --apple-gray-light: #e5e5e7;
+  --apple-blue-light: #e8f2fc;
+  --apple-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  --apple-border-radius: 18px;
+  --apple-border-radius-small: 12px;
+  --apple-transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
+/* Reset e Base */
+body {
+  font-family: 'SF Pro Display', 'SF Pro Text', -apple-system, BlinkMacSystemFont, 
+               'Helvetica Neue', Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: var(--apple-light);
+  color: var(--apple-dark);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Header Moderno */
 header {
-    background: #ffffff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    padding: 20px 0;
-    text-align: center;
+  background: #ffffff;
+  padding: 24px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 h1 {
-    margin: 0;
-    font-size: 24px;
-    color: #333333;
-}
-
-nav ul {
-    list-style: none;
-    padding: 0;
-}
-
-nav ul li {
-    display: inline;
-    margin: 0 15px;
-}
-
-nav ul li a {
-    text-decoration: none;
-    color: #007aff;
-    font-weight: bold;
-}
-
-nav ul li a:hover {
-    text-decoration: underline;
-}
-
-.container {
-    width: 90%;
-    max-width: 1200px;
-    margin: auto;
-}
-
-section {
-    margin: 20px 0;
-    padding: 20px;
-    background: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--apple-dark);
+  letter-spacing: -0.5px;
 }
 
 h2 {
-    font-size: 20px;
-    color: #333333;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--apple-dark);
+  margin-bottom: 16px;
 }
 
-button {
-    background-color: #007aff;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
+/* Navigazione Moderna */
+nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+  display: flex;
+  justify-content: center;
+  gap: 24px;
 }
 
-button:hover {
-    background-color: #005bb5;
+nav ul li {
+  margin: 0;
 }
 
+nav ul li a {
+  text-decoration: none;
+  color: var(--apple-primary);
+  font-weight: 500;
+  font-size: 17px;
+  padding: 8px 12px;
+  border-radius: var(--apple-border-radius-small);
+  transition: var(--apple-transition);
+}
+
+nav ul li a:hover {
+  background-color: var(--apple-blue-light);
+  text-decoration: none;
+}
+
+/* Layout Moderno */
+.container {
+  width: 94%;
+  max-width: 1200px;
+  margin: 32px auto;
+  padding: 0 20px;
+}
+
+/* Sezioni Modern Apple */
+section {
+  margin: 24px 0;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: var(--apple-border-radius);
+  box-shadow: var(--apple-shadow);
+  transition: var(--apple-transition);
+}
+
+section:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* Bottoni Moderni */
+button, .apple-btn {
+  background-color: var(--apple-primary);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 980px;
+  cursor: pointer;
+  font-size: 17px;
+  font-weight: 500;
+  transition: var(--apple-transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+button:hover, .apple-btn:hover {
+  background-color: var(--apple-primary-hover);
+  transform: translateY(-1px);
+}
+
+button.secondary, .apple-btn.secondary {
+  background-color: transparent;
+  color: var(--apple-primary);
+  border: 1px solid var(--apple-primary);
+}
+
+button.secondary:hover, .apple-btn.secondary:hover {
+  background-color: var(--apple-blue-light);
+}
+
+/* Form Moderno */
 .appointment-form input[type="date"],
 .appointment-form input[type="time"],
-.chat-container input[type="text"] {
-    width: calc(100% - 20px);
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #cccccc;
-    border-radius: 5px;
+.appointment-form input[type="text"],
+.chat-container input[type="text"],
+.apple-input {
+  width: 100%;
+  padding: 12px 20px;
+  margin: 8px 0 16px;
+  border: 1px solid var(--apple-gray-light);
+  border-radius: var(--apple-border-radius-small);
+  font-size: 17px;
+  transition: var(--apple-transition);
 }
 
+.appointment-form input[type="date"]:focus,
+.appointment-form input[type="time"]:focus,
+.appointment-form input[type="text"]:focus,
+.chat-container input[type="text"]:focus,
+.apple-input:focus {
+  outline: none;
+  border-color: var(--apple-primary);
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+}
+
+/* Chat Moderna */
 .chat-container {
-    background: #ffffff;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    max-height: 400px;
-    overflow-y: auto;
+  background: #ffffff;
+  padding: 20px;
+  border-radius: var(--apple-border-radius);
+  box-shadow: var(--apple-shadow);
+  max-height: 500px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .chat-message {
-    margin: 10px 0;
+  margin: 0;
+  max-width: 80%;
+  padding: 12px 18px;
+  border-radius: 18px;
+  position: relative;
+  animation: fadeIn 0.25s ease-out;
 }
 
 .chat-message.user {
-    text-align: right;
+  align-self: flex-end;
+  background-color: var(--apple-primary);
+  color: white;
+  border-bottom-right-radius: 4px;
 }
 
+.chat-message.bot {
+  align-self: flex-start;
+  background-color: var(--apple-lighter);
+  border-bottom-left-radius: 4px;
+}
+
+.chat-message-time {
+  font-size: 13px;
+  opacity: 0.7;
+  margin-top: 4px;
+  text-align: right;
+}
+
+/* Video Call Moderna */
 .video-call-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 400px;
-    background: #eaeaea;
-    border-radius: 10px;
-    margin: 20px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 500px;
+  background: var(--apple-lighter);
+  border-radius: var(--apple-border-radius);
+  margin: 24px 0;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--apple-shadow);
 }
 
 .video-call-container video {
-    width: 100%;
-    height: 100%;
-    border-radius: 10px;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--apple-border-radius);
 }
 
+.video-call-overlay {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+/* Footer Moderno */
 footer {
-    text-align: center;
-    padding: 20px 0;
-    background: #ffffff;
-    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  padding: 24px 0;
+  background: #ffffff;
+  box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.05);
+  margin-top: 60px;
+  font-size: 14px;
+  color: var(--apple-gray);
+}
+
+/* Animazioni */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    width: 100%;
+    padding: 0 16px;
+  margin: 20px auto;
+  }
+  
+  h1 {
+    font-size: 24px;
+  }
+  
+  h2 {
+    font-size: 20px;
+  }
+  
+  nav ul {
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  nav ul li a {
+    font-size: 15px;
+    padding: 6px 10px;
+  }
+  
+  section {
+    padding: 20px;
+    margin: 16px 0;
+  }
+  
+  .video-call-container {
+    height: 300px;
+  }
+  
+  .chat-message {
+    max-width: 90%;
+  }
+}
+
+/* Effetti di hover e interazione */
+button:active, .apple-btn:active {
+  transform: scale(0.98);
+}
+
+input:disabled, button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Utility Classes */
+.text-center {
+  text-align: center;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gap-16 {
+  gap: 16px;
+}
+
+.mt-24 {
+  margin-top: 24px;
+}
+
+.mb-24 {
+  margin-bottom: 24px;
 }

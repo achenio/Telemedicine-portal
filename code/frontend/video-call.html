@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Call | Telemedicine Portal</title>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --text: #212529;
+      --subtext: #6c757d;
+      --primary: #0d6efd;
+      --card: #ffffff;
+      --input-bg: #f1f3f5;
+      --input-border: #ced4da;
+      --error: #dc3545;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background-color: var(--card);
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid #dee2e6;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header-title {
+      font-size: 1.5rem;
+      color: var(--primary);
+      margin: 0;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      margin-left: auto;
+    }
+
+    .nav-link {
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 500;
+      padding: 0.5rem 0;
+      position: relative;
+      transition: color 0.3s ease;
+    }
+
+    .nav-link:hover {
+      color: var(--primary);
+    }
+
+    .nav-link.home-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .home-icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    .container {
+      display: flex;
+      flex-grow: 1;
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      gap: 2rem;
+    }
+
+    .doctors-sidebar {
+      width: 300px;
+      background-color: var(--card);
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      height: fit-content;
+    }
+
+    .doctors-sidebar h2 {
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+      font-size: 1.25rem;
+      text-align: center;
+    }
+
+    .search-container {
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+
+    #search-doctors {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      border: 1px solid var(--input-border);
+      border-radius: 2rem;
+      outline: none;
+      transition: border-color 0.3s ease;
+      padding-right: 2.5rem;
+    }
+
+    #search-doctors:focus {
+      border-color: var(--primary);
+    }
+
+    .search-icon {
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--subtext);
+    }
+
+    .doctors-list {
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .doctor-item {
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .doctor-item:hover {
+      background-color: var(--input-bg);
+    }
+
+    .doctor-item.active {
+      background-color: rgba(13, 110, 253, 0.1);
+      border-left: 3px solid var(--primary);
+    }
+
+    .doctor-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 1rem;
+      flex-shrink: 0;
+    }
+
+    .doctor-info {
+      flex-grow: 1;
+    }
+
+    .doctor-info h3 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .doctor-info p {
+      margin: 0.2rem 0 0;
+      font-size: 0.8rem;
+      color: var(--subtext);
+    }
+
+    .chat-container {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--card);
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      overflow: hidden;
+    }
+
+    .chat-header {
+      padding: 1.5rem;
+      background-color: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+    }
+
+    .chat-header .doctor-avatar {
+      margin-right: 1rem;
+      background-color: white;
+      color: var(--primary);
+    }
+
+    .chat-header-info h2 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+
+    .chat-header-info p {
+      margin: 0.2rem 0 0;
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+
+    .no-doctor-selected {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      padding: 2rem;
+      text-align: center;
+      color: var(--subtext);
+    }
+
+    .no-doctor-selected svg {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    #chat-window {
+      display: flex;
+      flex-direction: column;
+      height: 500px;
+      padding: 1rem;
+      background-color: var(--input-bg);
+    }
+
+    #messages {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      background-color: var(--card);
+      border-radius: 0.5rem;
+      box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+    }
+
+    .message {
+      max-width: 70%;
+      padding: 0.8rem 1rem;
+      margin-bottom: 0.8rem;
+      border-radius: 1rem;
+      word-wrap: break-word;
+    }
+
+    .message.patient {
+      background-color: var(--primary);
+      color: white;
+      margin-left: auto;
+      border-bottom-right-radius: 0.25rem;
+    }
+
+    .message.doctor {
+      background-color: var(--card);
+      color: var(--text);
+      margin-right: auto;
+      border-bottom-left-radius: 0.25rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .message-time {
+      font-size: 0.7rem;
+      opacity: 0.7;
+      margin-top: 0.3rem;
+      text-align: right;
+    }
+
+    .chat-input-container {
+      display: flex;
+      padding: 0.75rem;
+      background-color: var(--card);
+      border-top: 1px solid var(--input-border);
+    }
+
+    #chat-input {
+      flex-grow: 1;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      border: 1px solid var(--input-border);
+      border-radius: 2rem;
+      outline: none;
+      margin-right: 0.75rem;
+    }
+
+    #chat-input:focus {
+      border-color: var(--primary);
+    }
+
+    #send-message {
+      padding: 0 1.5rem;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 2rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #send-message:hover {
+      background-color: #0b5ed7;
+    }
+
+    .unread-badge {
+      background-color: #dc3545;
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      margin-left: 0.5rem;
+    }
+
+    /* Popup styles */
+    .popup-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      backdrop-filter: blur(5px);
+    }
+    
+    .popup-content {
+      background-color: var(--card);
+      padding: 2rem;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      animation: popIn 0.3s ease-out;
+    }
+    
+    .popup-content h3 {
+      color: var(--error);
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+    }
+    
+    .popup-content p {
+      margin-bottom: 2rem;
+      color: var(--text);
+    }
+    
+    .popup-btn {
+      padding: 0.75rem 1.5rem;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 20px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    
+    .popup-btn:hover {
+      background-color: #0062cc;
+    }
+    
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    
+    body.popup-active main,
+    body.popup-active header,
+    body.popup-active footer {
+      filter: blur(5px);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+
+      .doctors-sidebar {
+        width: 100%;
+      }
+
+      .chat-container {
+        height: 500px;
+      }
+
+      .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+
+      .nav-links {
+        margin-left: 0;
+        width: 100%;
+        justify-content: flex-end;
+      }
+    }
+  </style>
+<body>
+  <header>
+    <div class="header-content">
+      <h1 class="header-title">Patient Portal - Doctor Communications</h1>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link home-link">
+          <svg class="home-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+          </svg>
+          Home
+        </a>
+        <a href="doctor-chat.html" class="nav-link">Secure Chat-doctor</a>
+        <a href="chat.html" class="nav-link">Secure Chat-patient</a>
+        <a href="bot-chat.html" class="nav-link">AI Chatbot</a>
+      </div>
+    </div>
+  </header>
+  <main class="container">
+    <section>
+      <h2 class="text-center">Video Call</h2>
+      <div class="video-call-container">
+        <video id="localVideo" autoplay muted playsinline></video>
+        <video id="remoteVideo" autoplay playsinline></video>
+        <div class="video-call-overlay">
+          <button id="startCall" class="apple-btn primary">Start Call</button>
+          <button id="endCall" class="apple-btn secondary" disabled>End</button>
+          <button id="toggleMic" class="apple-btn">Mic</button>
+          <button id="toggleCam" class="apple-btn">Camera</button>
+        </div>
+      </div>
+      <div class="flex-center gap-16 mt-24">
+        <input type="text" id="roomId" placeholder="Enter Room ID" class="apple-input" />
+        <button id="joinRoom" class="apple-btn">Join Room</button>
+      </div>
+      <div id="notification" class="text-center mt-24"></div>
+    </section>
+  </main>
+  <footer>
+    <p>&copy; 2025 Telemedicine Portal</p>
+  </footer>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="scripts/video-call.js"></script>
+</body>
+</html>

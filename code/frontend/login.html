@@ -4,156 +4,133 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Telemedicine Portal</title>
-    <style>
-        :root {
-            --primary: #007aff;
-            --bg: #fefefe;
-            --card: #ffffff;
-            --text: #1c1c1e;
-            --border: #e5e5ea;
-            --error: #ff3b30;
-            --success: #34c759;
-        }
+<style>
+    :root {
+        --primary: #007aff;
+        --bg: #fefefe;
+        --card: #ffffff;
+        --text: #1c1c1e;
+        --border: #e5e5ea;
+    }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background-color: var(--bg);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
 
-        .login-container {
-            background-color: var(--card);
-            padding: 2.2rem 2rem;
-            border-radius: 20px;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
-            width: 100%;
-            max-width: 340px;
-            transition: all 0.3s ease;
-        }
+    .login-container {
+        background-color: var(--card);
+        padding: 2.2rem 2rem;
+        border-radius: 20px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+        width: 100%;
+        max-width: 340px;
+        transition: all 0.3s ease;
+    }
 
-        h1 {
-            color: var(--primary);
-            text-align: center;
-            margin-bottom: 2rem;
-            font-size: 1.8rem;
-        }
+    h1 {
+        color: var(--primary);
+        text-align: center;
+        margin-bottom: 2rem;
+        font-size: 1.8rem;
+    }
 
-        .form-group {
-            margin-bottom: 1.4rem;
-        }
+    .form-group {
+        margin-bottom: 1.4rem;
+    }
 
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: var(--text);
-        }
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: var(--text);
+    }
 
-        input {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            font-size: 1rem;
-            background: #fafafa;
-            transition: box-shadow 0.2s ease, border-color 0.2s ease;
-        }
+    input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        font-size: 1rem;
+        background: #fafafa;
+        transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    }
 
-        input:focus {
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
-            border-color: var(--primary);
-            background: #fff;
-        }
+    input:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+        border-color: var(--primary);
+        background: #fff;
+    }
 
-        button {
-            width: 100%;
-            padding: 0.85rem;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            position: relative;
-            transition: background-color 0.2s ease;
-            margin-top: 0.5rem;
-        }
+    button {
+        width: 100%;
+        padding: 0.85rem;
+        background-color: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        position: relative;
+        transition: background-color 0.2s ease;
+    }
 
-        button:disabled {
-            background-color: #a0cfff;
-            cursor: not-allowed;
-        }
+    button:disabled {
+        background-color: #a0cfff;
+        cursor: not-allowed;
+    }
 
-        .loader {
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-top: 3px solid white;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            animation: spin 1s linear infinite;
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            display: none;
-        }
+    .loader {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid white;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        animation: spin 1s linear infinite;
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: none; /* Attivabile via JS */
+    }
 
-        @keyframes spin {
-            0% { transform: translateY(-50%) rotate(0deg); }
-            100% { transform: translateY(-50%) rotate(360deg); }
-        }
+    @keyframes spin {
+        0% { transform: translateY(-50%) rotate(0deg); }
+        100% { transform: translateY(-50%) rotate(360deg); }
+    }
 
-        .error {
-            color: var(--error);
-            margin-top: 1rem;
-            text-align: center;
-            font-size: 0.95rem;
-            min-height: 20px;
-        }
+    .error {
+        color: #ff3b30;
+        margin-top: 1rem;
+        text-align: center;
+        font-size: 0.95rem;
+    }
 
-        .success {
-            color: var(--success);
-            margin-top: 1rem;
-            text-align: center;
-            font-size: 0.95rem;
-        }
+    .register-link {
+        margin-top: 1.5rem;
+        text-align: center;
+        font-size: 0.9rem;
+    }
 
-        .register-link {
-            margin-top: 1.5rem;
-            text-align: center;
-            font-size: 0.9rem;
-            color: var(--text);
-        }
+    .register-link a {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s ease;
+    }
 
-        .register-link a {
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.2s ease;
-        }
+    .register-link a:hover {
+        color: #0051c7;
+    }
+</style>
 
-        .register-link a:hover {
-            color: #0051c7;
-        }
-
-        .input-error {
-            border-color: var(--error) !important;
-        }
-
-        .error-message {
-            color: var(--error);
-            font-size: 0.8rem;
-            margin-top: 0.3rem;
-            display: none;
-        }
-    </style>
 </head>
 <body>
     <div class="login-container">
@@ -161,147 +138,66 @@
         <form id="loginForm">
             <div class="form-group">
                 <label for="username">Username</label>
-                <input type="text" id="username" required>
-                <div id="username-error" class="error-message">Please enter your username</div>
+                <input type="text" id="username" required style="max-width: 300px; margin: 0 auto; display: block;">
             </div>
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" required>
-                <div id="password-error" class="error-message">Please enter your password</div>
+                <input type="password" id="password" required style="max-width: 300px; margin: 0 auto; display: block;">
             </div>
-            <button type="submit" id="loginButton">
-                <span id="buttonText">Login</span>
-                <div class="loader" id="loader"></div>
-            </button>
+            <button type="submit" style="max-width: 300px; margin: 0 auto; display: block;">Login</button>
             <div id="error" class="error"></div>
-            <div id="success" class="success"></div>
 
-            <div class="register-link">
-                Don't have an account? <a href="register.html">Register here</a>
+            <div class="register-link" style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem;">
+                Don't have an account? <a href="register.html" style="color: #007aff; text-decoration: none; font-weight: 500;">Register here</a>
             </div>
         </form>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const loginForm = document.getElementById('loginForm');
-            const usernameInput = document.getElementById('username');
-            const passwordInput = document.getElementById('password');
-            const loginButton = document.getElementById('loginButton');
-            const buttonText = document.getElementById('buttonText');
-            const loader = document.getElementById('loader');
-            const errorDiv = document.getElementById('error');
-            const successDiv = document.getElementById('success');
-            const usernameError = document.getElementById('username-error');
-            const passwordError = document.getElementById('password-error');
 
-            // Verifica se c'è un messaggio di successo dalla registrazione
-            const urlParams = new URLSearchParams(window.location.search);
-            const registrationSuccess = urlParams.get('registration');
-            
-            if (registrationSuccess === 'success') {
-                successDiv.textContent = 'Registration successful! Please login.';
-                setTimeout(() => {
-                    successDiv.textContent = '';
-                }, 5000);
-            }
+<script>
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
 
-            loginForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                // Reset error states
-                errorDiv.textContent = '';
-                usernameInput.classList.remove('input-error');
-                passwordInput.classList.remove('input-error');
-                usernameError.style.display = 'none';
-                passwordError.style.display = 'none';
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value.trim();
+  const errorDiv = document.getElementById('error');
 
-                const username = usernameInput.value.trim();
-                const password = passwordInput.value.trim();
+  errorDiv.textContent = '';
 
-                // Validazione lato client
-                let isValid = true;
-                
-                if (!username) {
-                    usernameInput.classList.add('input-error');
-                    usernameError.style.display = 'block';
-                    isValid = false;
-                }
-                
-                if (!password) {
-                    passwordInput.classList.add('input-error');
-                    passwordError.style.display = 'block';
-                    isValid = false;
-                }
-                
-                if (!isValid) return;
+  try {
+    const response = await fetch('http://localhost:5501/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ username, password })
+    });
 
-                // Mostra lo stato di caricamento
-                loginButton.disabled = true;
-                buttonText.textContent = 'Logging in...';
-                loader.style.display = 'block';
+    const data = await response.json();
 
-                try {
-                    const response = await fetch('http://localhost:5501/login', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ username, password })
-                    });
-
-                    const data = await response.json();
-
-                    if (!response.ok) {
-                        throw new Error(data.error || 'Login failed');
-                    }
-
-                    // Salva i dati dell'utente
-                    localStorage.setItem('token', data.token);
-                    localStorage.setItem('user_id', data.user.id);
-                    localStorage.setItem('user_type', data.user.user_type);
-                    localStorage.setItem('username', data.user.username);
-                    localStorage.setItem('nome', data.user.nome);
-                    localStorage.setItem('cognome', data.user.cognome);
-
-                    // Reindirizza alla pagina corretta
-                    window.location.href = 'index.html';
-
-                } catch (error) {
-                    console.error('Login error:', error);
-                    
-                    // Mostra messaggio di errore appropriato
-                    if (error.message.includes('Failed to fetch')) {
-                        errorDiv.textContent = 'Connection error. Please check your network.';
-                    } else if (error.message.includes('User not found') || 
-                               error.message.includes('Invalid password')) {
-                        errorDiv.textContent = 'Invalid username or password';
-                    } else {
-                        errorDiv.textContent = error.message || 'An error occurred during login';
-                    }
-                    
-                    // Ripristina il pulsante
-                    loginButton.disabled = false;
-                    buttonText.textContent = 'Login';
-                    loader.style.display = 'none';
-                }
-            });
-
-            // Validazione in tempo reale
-            usernameInput.addEventListener('input', () => {
-                if (usernameInput.value.trim()) {
-                    usernameInput.classList.remove('input-error');
-                    usernameError.style.display = 'none';
-                }
-            });
-
-            passwordInput.addEventListener('input', () => {
-                if (passwordInput.value.trim()) {
-                    passwordInput.classList.remove('input-error');
-                    passwordError.style.display = 'none';
-                }
-            });
-        });
-    </script>
+    if (response.ok) {
+      // Salva i dati correttamente nel localStorage
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user_id', data.user.id);
+      localStorage.setItem('user_type', data.user.user_type);
+      localStorage.setItem('username', data.user.username);
+      localStorage.setItem('nome', data.user.nome);
+      localStorage.setItem('cognome', data.user.cognome);
+      
+      // Reindirizza alla pagina corretta in base al tipo di utente
+      if (data.user.user_type === 'doctor') {
+        window.location.href = 'index.html';
+      } else {
+        window.location.href = 'index.html';
+      }
+    } else {
+      errorDiv.textContent = data.error || 'Login failed';
+    }
+  } catch (error) {
+    errorDiv.textContent = 'Connection error';
+    console.error('Login error:', error);
+  }
+});
+</script>
 </body>
 </html>

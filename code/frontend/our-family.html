@@ -77,31 +77,51 @@
       margin-bottom: 2rem;
     }
 
-    .filter {
+    .filter-card {
       background-color: var(--card);
-      padding: 1rem;
-      border-radius: 16px;
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+      padding: 1.5rem 2rem;
+      border-radius: 18px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
       width: 100%;
-      max-width: 400px;
+      max-width: 700px;
+      margin: 0 auto;
     }
 
-    .filter label {
+    .filter-row {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+      align-items: flex-end;
+    }
+
+    .filter-item {
+      flex: 1 1 0;
+      min-width: 180px;
+    }
+
+    .filter-item label {
       display: block;
       margin-bottom: 0.5rem;
-      font-weight: 500;
+      font-weight: 600;
+      color: var(--primary);
+      letter-spacing: 0.02em;
     }
 
-    .filter select {
+    .filter-item select {
       width: 100%;
       padding: 0.75rem;
       border: 1px solid #ddd;
       border-radius: 12px;
       font-size: 1rem;
       background-color: var(--bg);
+      transition: border-color 0.2s;
     }
 
-    /* Nuovo stile per la barra di ricerca */
+    .filter-item select:focus {
+      border-color: var(--primary);
+      outline: none;
+    }
+
     .search-container {
       display: flex;
       justify-content: center;
@@ -165,6 +185,34 @@
       margin-top: 0.5rem;
     }
 
+    .rating-bar {
+      margin-top: 0.5rem;
+      color: #ffb400;
+      font-size: 1.1rem;
+    }
+
+    .stars {
+      display: inline-block;
+      letter-spacing: 2px;
+      margin: 0 0.5rem;
+    }
+
+    .specialties-list {
+      margin-top: 0.5rem;
+    }
+
+    .specialty-pill {
+      display: inline-block;
+      background: #e3f2fd;
+      color: #1976d2;
+      border-radius: 20px;
+      padding: 0.2rem 0.8rem;
+      margin: 0.15rem 0.25rem 0.15rem 0;
+      font-size: 0.95rem;
+      font-weight: 500;
+      box-shadow: 0 1px 3px rgba(25, 118, 210, 0.07);
+    }
+
     footer {
       text-align: center;
       padding: 2rem 1rem;
@@ -195,7 +243,13 @@
       main {
         margin: 2rem auto;
       }
-      
+      .filter-row {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .filter-card {
+        padding: 1rem;
+      }
       .doctor-card {
         padding: 1rem;
       }
@@ -216,32 +270,48 @@
 
   <main>
     <div class="filter-container">
-      <div class="filter">
-        <label for="specialization">Filter by specialization:</label>
-        <select id="specialization">
-          <option value="all">All Specializations</option>
-          <option>Cardiology</option>
-          <option>Dermatology</option>
-          <option>Endocrinology</option>
-          <option>Gastroenterology</option>
-          <option>General Surgery</option>
-          <option>Gynecology</option>
-          <option>Neurology</option>
-          <option>Ophthalmology</option>
-          <option>Orthopedics</option>
-          <option>Otolaryngology (ENT)</option>
-          <option>Pediatrics</option>
-          <option>Psychiatry</option>
-          <option>Pulmonology</option>
-          <option>Radiology</option>
-          <option>Urology</option>
-          <option>Oncology</option>
-          <option>Rheumatology</option>
-          <option>Nephrology</option>
-          <option>Hematology</option>
-          <option>Infectious Diseases</option>
-          <option>Other</option>
-        </select>
+      <div class="filter-card">
+        <div class="filter-row">
+          <div class="filter-item">
+            <label for="specialization">Filter by specialization:</label>
+            <select id="specialization">
+              <option value="all">All Specializations</option>
+              <option>Cardiology</option>
+              <option>Dermatology</option>
+              <option>Endocrinology</option>
+              <option>Gastroenterology</option>
+              <option>General Surgery</option>
+              <option>Gynecology</option>
+              <option>Neurology</option>
+              <option>Ophthalmology</option>
+              <option>Orthopedics</option>
+              <option>Otolaryngology (ENT)</option>
+              <option>Pediatrics</option>
+              <option>Psychiatry</option>
+              <option>Pulmonology</option>
+              <option>Radiology</option>
+              <option>Urology</option>
+              <option>Oncology</option>
+              <option>Rheumatology</option>
+              <option>Nephrology</option>
+              <option>Hematology</option>
+              <option>Infectious Diseases</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="filter-item">
+            <label for="specialty">Filter by specialty:</label>
+            <select id="specialty">
+              <option value="all">All Specialties</option>
+              <option>Clinical Testing</option>
+              <option>Workflow Management</option>
+              <option>Quality Assurance</option>
+              <option>Coronary Artery Disease</option>
+              <option>Hypertension</option>
+              <option>Arrhythmia</option>
+            </select>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -284,11 +354,17 @@
   function renderDoctors() {
     const list = document.getElementById('doctorList');
     const specialization = document.getElementById('specialization').value;
+    const specialty = document.getElementById('specialty').value;
     const search = document.getElementById('searchName').value.trim().toLowerCase();
 
     let filtered = window.allDoctors || [];
     if (specialization !== 'all') {
       filtered = filtered.filter(doc => doc.specialization === specialization);
+    }
+    if (specialty !== 'all') {
+      filtered = filtered.filter(doc =>
+        doc.specialties && doc.specialties.toLowerCase().includes(specialty.toLowerCase())
+      );
     }
     if (search) {
       filtered = filtered.filter(doc =>
@@ -313,12 +389,29 @@
       li.innerHTML = `
         <strong>Dr. ${doc.nome} ${doc.cognome}</strong>
         ${doc.specialization ? `<div class="specialization">${doc.specialization}</div>` : ''}
+        ${doc.specialties ? `<div class="specialties-list">${doc.specialties.split(',').map(s => `<span class="specialty-pill">${s.trim()}</span>`).join('')}</div>` : ''}
+        ${doc.bio ? `<div style="margin: 0.5rem 0; color: var(--subtext);">${doc.bio}</div>` : ''}
+        <div class="rating-bar">
+          <span>Rating:</span>
+          <span class="stars">${renderStars(doc.rating)}</span>
+          <span>${doc.rating ? doc.rating : 'N/A'}/5</span>
+        </div>
       `;
       list.appendChild(li);
     });
   }
 
+  function renderStars(rating) {
+    rating = Math.round(rating || 0);
+    let stars = '';
+    for (let i = 1; i <= 5; i++) {
+      stars += i <= rating ? '★' : '☆';
+    }
+    return stars;
+  }
+
   document.getElementById('specialization').addEventListener('change', renderDoctors);
+  document.getElementById('specialty').addEventListener('change', renderDoctors);
   document.addEventListener('DOMContentLoaded', loadDoctors);
   document.getElementById('searchName').addEventListener('input', renderDoctors);
   </script>

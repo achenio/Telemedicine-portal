@@ -81,7 +81,10 @@ db.serialize(() => {
       username TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
       user_type TEXT NOT NULL CHECK(user_type IN ('patient', 'doctor', 'admin')),
-      specialization TEXT
+      specialization TEXT,
+      bio TEXT,
+      specialties TEXT,
+      rating REAL DEFAULT 0
     )
   `);
 
@@ -767,11 +770,8 @@ app.put('/users/:id', authenticateToken, (req, res) => {
 
 // ==================== Doctor Routes ====================
 app.get('/doctors', (req, res) => {
-  db.all("SELECT id, nome, cognome, specialization FROM utenti WHERE user_type='doctor'", (err, rows) => {
-    if (err) {
-      console.error('Get doctors error:', err);
-      return res.status(500).json({ error: err.message });
-    }
+  db.all("SELECT id, nome, cognome, specialization, bio, specialties, rating FROM utenti WHERE user_type='doctor'", (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
 });

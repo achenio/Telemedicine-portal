@@ -6,35 +6,66 @@ import jwt from 'jsonwebtoken';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import fetch from 'node-fetch';
+import url from 'url';
 
+// ==================== Configuration ====================
 const app = express();
 const PORT = 5501;
 const JWT_SECRET = 'your-secret-key-here';
 
-app.use(cors());
-app.use(express.json());
+// Email configuration
+const CLIENT_ID = 'b4ebe754-d2ce-412a-bee5-c06f87a50cd2';
+const CLIENT_SECRET = 'dVh8Q~hTU07Kf4otVIy-zfOl~37PlyxHJdNJNawp';
+const TENANT_ID = '97a29f68-d5d4-46b2-b6b3-c1436a513f32';
+const REDIRECT_URI = 'http://localhost:5501/auth/email/callback'; // Modificato per puntare al nostro server
 
-// Assicurati che la cartella uploads esista
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const TOKEN_PATH = path.join(__dirname, 'token.json');
+
+// File upload configuration
 const uploadsDir = path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Configurazione upload file
+// ==================== Middleware Setup ====================
+app.use(cors({
+  origin: 'http://localhost:5500',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// File upload middleware
 const upload = multer({
   dest: uploadsDir,
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'application/pdf') cb(null, true);
-    else cb(new Error('Only PDF files are allowed'));
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PDF files are allowed'), false);
+    }
+  },
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB
   }
 });
 
+// ==================== Database Setup ====================
 const db = new sqlite3.Database('./utenti.db', (err) => {
-  if (err) console.error("DB Error:", err);
-  else console.log('Connected to SQLite DB.');
+  if (err) {
+    console.error("DB Error:", err);
+    process.exit(1);
+  }
+  console.log('Connected to SQLite DB.');
 });
 
-// Create tables
+// Initialize database tables
 db.serialize(() => {
   db.run(`
     CREATE TABLE IF NOT EXISTS utenti (
@@ -64,26 +95,310 @@ db.serialize(() => {
       doctor_name TEXT NOT NULL,
       status TEXT DEFAULT 'booked' CHECK(status IN ('booked', 'confirmed', 'cancelled', 'completed')),
       medical_report_url TEXT,
+      payment_method TEXT,
+      insurance_package TEXT,
       FOREIGN KEY(user_id) REFERENCES utenti(id),
       FOREIGN KEY(doctor_id) REFERENCES utenti(id)
     )
   `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      sender_id INTEGER NOT NULL,
+      receiver_id INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      is_read BOOLEAN DEFAULT FALSE,
+      sender_type TEXT NOT NULL CHECK(sender_type IN ('patient', 'doctor')),
+      FOREIGN KEY(sender_id) REFERENCES utenti(id),
+      FOREIGN KEY(receiver_id) REFERENCES utenti(id)
+    )
+  `);
 });
 
+// ==================== Email Token Management ====================
+function loadToken() {
+  try {
+    if (fs.existsSync(TOKEN_PATH)) {
+      return JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf8'));
+    }
+    return {};
+  } catch (err) {
+    console.error('Error loading token:', err);
+    return {};
+  }
+}
+
+function saveToken(data) {
+  try {
+    fs.writeFileSync(TOKEN_PATH, JSON.stringify(data, null, 2));
+  } catch (err) {
+    console.error('Error saving token:', err);
+  }
+}
+
+function isTokenExpired(tokenData) {
+  if (!tokenData || !tokenData.expires_at) return true;
+  return Date.now() > (tokenData.expires_at - 60000); // expires 1 min before
+}
+
+async function getAccessToken() {
+  let tokenData = loadToken();
+
+  if (!tokenData.refresh_token) {
+    throw new Error("No refresh token available. Please authenticate first by visiting /auth/email");
+  }
+
+  if (!isTokenExpired(tokenData)) {
+    return tokenData.access_token;
+  }
+
+  console.log("Refreshing access token...");
+
+  try {
+    const params = new URLSearchParams({
+      client_id: CLIENT_ID,
+      client_secret: CLIENT_SECRET,
+      grant_type: 'refresh_token',
+      refresh_token: tokenData.refresh_token,
+      redirect_uri: REDIRECT_URI,
+      scope: 'https://graph.microsoft.com/.default'
+    });
+
+    const response = await fetch(`https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(`Token refresh error: ${JSON.stringify(data)}`);
+    }
+
+    tokenData = {
+      access_token: data.access_token,
+      refresh_token: data.refresh_token || tokenData.refresh_token,
+      expires_at: Date.now() + (data.expires_in * 1000)
+    };
+
+    saveToken(tokenData);
+    console.log("Token refreshed successfully");
+    return tokenData.access_token;
+  } catch (err) {
+    console.error('Error refreshing token:', err);
+    throw err;
+  }
+}
+
+// ==================== Email Authentication Routes ====================
+app.get('/auth/email', (req, res) => {
+  const authUrl = `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/authorize?` +
+    `client_id=${CLIENT_ID}` +
+    `&response_type=code` +
+    `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
+    `&response_mode=query` +
+    `&scope=https%3A%2F%2Fgraph.microsoft.com%2Fmail.send%20offline_access` +
+    `&state=12345`;
+  
+  res.redirect(authUrl);
+});
+
+app.get('/auth/email/callback', async (req, res) => {
+  const { code, error, error_description } = req.query;
+
+  if (error) {
+    return res.status(400).send(`Error: ${error_description || error}`);
+  }
+
+  if (!code) {
+    return res.status(400).send('Authorization code missing');
+  }
+
+  try {
+    const params = new URLSearchParams({
+      client_id: CLIENT_ID,
+      client_secret: CLIENT_SECRET,
+      code: code,
+      redirect_uri: REDIRECT_URI,
+      grant_type: 'authorization_code',
+      scope: 'https://graph.microsoft.com/mail.send offline_access'
+    });
+
+    const response = await fetch(`https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(`Token exchange failed: ${JSON.stringify(data)}`);
+    }
+
+    const tokenData = {
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+      expires_at: Date.now() + (data.expires_in * 1000)
+    };
+
+    saveToken(tokenData);
+    
+    // Invia una pagina HTML di successo con un pulsante per tornare all'app
+    res.send(`
+      <html>
+        <head>
+          <title>Email Authentication Successful</title>
+          <style>
+            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+            .success { color: green; font-size: 24px; }
+            .btn { 
+              display: inline-block; 
+              margin-top: 20px; 
+              padding: 10px 20px; 
+              background-color: #4CAF50; 
+              color: white; 
+              text-decoration: none; 
+              border-radius: 5px; 
+            }
+          </style>
+        </head>
+        <body>
+          <div class="success">✅ Email authentication successful!</div>
+          <p>You can now close this window or return to the application.</p>
+          <a href="http://localhost:5500" class="btn">Return to App</a>
+        </body>
+      </html>
+    `);
+  } catch (err) {
+    console.error('Authentication error:', err);
+    res.status(500).send(`
+      <html>
+        <head>
+          <title>Authentication Failed</title>
+          <style>
+            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+            .error { color: red; font-size: 24px; }
+          </style>
+        </head>
+        <body>
+          <div class="error">❌ Authentication failed</div>
+          <p>${err.message}</p>
+        </body>
+      </html>
+    `);
+  }
+});
+
+// Send email function (HTML version) with better error handling
+async function sendEmail(to, subject, htmlContent) {
+  try {
+    let accessToken;
+    try {
+      accessToken = await getAccessToken();
+    } catch (err) {
+      if (err.message.includes('No refresh token available')) {
+        throw new Error('Email not configured. Please authenticate first by visiting /auth/email');
+      }
+      throw err;
+    }
+
+    const email = {
+      message: {
+        subject: subject,
+        body: {
+          contentType: "HTML",
+          content: htmlContent
+        },
+        toRecipients: [
+          {
+            emailAddress: {
+              address: to
+            }
+          }
+        ]
+      },
+      saveToSentItems: "true"
+    };
+
+    const res = await fetch('https://graph.microsoft.com/v1.0/me/sendMail', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(email)
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(`Email send error: ${JSON.stringify(error)}`);
+    }
+
+    console.log('Email sent successfully to:', to);
+    return true;
+  } catch (err) {
+    console.error('Error sending email:', err.message);
+    throw err;
+  }
+}
+
+// Test endpoint for email functionality
+app.get('/test-email', async (req, res) => {
+  try {
+    const success = await sendEmail(
+      'recipient@example.com', // Sostituisci con un indirizzo email reale
+      'Test Email from MediConnect',
+      '<h1>Test Email</h1><p>This is a test email sent from the MediConnect server.</p>'
+    );
+    res.json({ success });
+  } catch (err) {
+    console.error('Test email error:', err);
+    res.status(500).json({ 
+      error: err.message,
+      authUrl: `http://localhost:${PORT}/auth/email` 
+    });
+  }
+});
+
+// ==================== Authentication Middleware ====================
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
-  if (!token) return res.sendStatus(401);
+  if (!token) {
+    return res.status(401).json({ error: 'Authorization token required' });
+  }
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403);
+    if (err) {
+      console.error('Token verification error:', err);
+      return res.status(403).json({ error: 'Invalid or expired token' });
+    }
     req.user = user;
     next();
   });
 }
 
-// Endpoint per il login
+function checkUserType(allowedTypes) {
+  return (req, res, next) => {
+    if (!allowedTypes.includes(req.user.user_type)) {
+      return res.status(403).json({ error: `Access restricted to ${allowedTypes.join(', ')} users` });
+    }
+    next();
+  };
+}
+
+// ==================== Error Handling Middleware ====================
+app.use((err, req, res, next) => {
+  console.error('Error:', err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
+});
+
+// ==================== User Routes ====================
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
 
@@ -92,12 +407,22 @@ app.post('/login', (req, res) => {
   }
 
   db.get('SELECT * FROM utenti WHERE username = ?', [username], (err, user) => {
-    if (err) return res.status(500).json({ error: 'Database error' });
-    if (!user) return res.status(401).json({ error: 'User not found' });
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
 
     bcrypt.compare(password, user.password_hash, (err, match) => {
-      if (err) return res.status(500).json({ error: 'Password verification error' });
-      if (!match) return res.status(401).json({ error: 'Invalid password' });
+      if (err) {
+        console.error('Password comparison error:', err);
+        return res.status(500).json({ error: 'Password verification error' });
+      }
+      if (!match) {
+        return res.status(401).json({ error: 'Invalid password' });
+      }
 
       const tokenUser = {
         id: user.id,
@@ -116,7 +441,7 @@ app.post('/login', (req, res) => {
     });
   });
 });
-// Endpoint per la registrazione
+
 app.post('/register', async (req, res) => {
   try {
     const { nome, cognome, codice_fiscale, luogo_nascita, data_nascita, email, telefono, username, password, user_type, specialization } = req.body;
@@ -138,10 +463,20 @@ app.post('/register', async (req, res) => {
     `);
 
     stmt.run(
-      nome, cognome, codice_fiscale, luogo_nascita || null, data_nascita || null,
-      email || null, telefono || null, username, password_hash, user_type, specialization || null,
+      nome, 
+      cognome, 
+      codice_fiscale, 
+      luogo_nascita || null, 
+      data_nascita || null,
+      email || null, 
+      telefono || null, 
+      username, 
+      password_hash, 
+      user_type, 
+      specialization || null,
       function(err) {
         if (err) {
+          console.error('Registration error:', err);
           if (err.message.includes('UNIQUE')) {
             return res.status(409).json({ error: "User with this username, codice fiscale, email or phone already exists" });
           }
@@ -158,6 +493,24 @@ app.post('/register', async (req, res) => {
 
         const token = jwt.sign(user, JWT_SECRET, { expiresIn: '1h' });
 
+        if (email) {
+          const welcomeEmail = `
+            <h1>Welcome to MediConnect!</h1>
+            <p>Dear ${nome} ${cognome},</p>
+            <p>Your registration has been completed successfully.</p>
+            <p>Your login details:</p>
+            <ul>
+              <li><strong>Username:</strong> ${username}</li>
+              <li><strong>Account type:</strong> ${user_type}</li>
+            </ul>
+            <p>You can access your account at: <a href="http://localhost:5500">http://localhost:5500</a></p>
+            <p>Thank you for choosing our service!</p>
+          `;
+          
+          sendEmail(email, 'Welcome to MediConnect', welcomeEmail)
+            .catch(err => console.error('Error sending welcome email:', err));
+        }
+
         res.json({ 
           success: true, 
           userId: this.lastID,
@@ -166,23 +519,27 @@ app.post('/register', async (req, res) => {
         });
       }
     );
-  } catch (e) {
+  } catch (err) {
+    console.error('Registration error:', err);
     res.status(500).json({ error: "Server error" });
   }
 });
 
-// Endpoint per ottenere i dati dell'utente
 app.get('/user-data', authenticateToken, (req, res) => {
   db.get('SELECT * FROM utenti WHERE id = ?', [req.user.id], (err, user) => {
-    if (err) return res.status(500).json({ error: "Database error" });
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ error: "Database error" });
+    }
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
     const { password_hash, ...userData } = user;
     res.json(userData);
   });
 });
 
-// Endpoint per aggiornare i dati dell'utente
 app.put('/users/:id', authenticateToken, (req, res) => {
   const { nome, cognome, email, telefono, luogo_nascita, specialization } = req.body;
   const userId = req.params.id;
@@ -206,9 +563,16 @@ app.put('/users/:id', authenticateToken, (req, res) => {
      WHERE id = ?`,
     [nome, cognome, email || null, telefono || null, luogo_nascita || null, specialization || null, userId],
     function(err) {
-      if (err) return res.status(500).json({ error: "Database error" });
+      if (err) {
+        console.error('Update user error:', err);
+        return res.status(500).json({ error: "Database error" });
+      }
+      
       db.get('SELECT * FROM utenti WHERE id = ?', [userId], (err, user) => {
-        if (err || !user) return res.status(500).json({ error: "Failed to fetch updated user" });
+        if (err || !user) {
+          console.error('Fetch updated user error:', err);
+          return res.status(500).json({ error: "Failed to fetch updated user" });
+        }
         const { password_hash, ...userData } = user;
         res.json(userData);
       });
@@ -216,77 +580,169 @@ app.put('/users/:id', authenticateToken, (req, res) => {
   );
 });
 
-// Endpoint per ottenere la lista dei dottori
+// ==================== Doctor Routes ====================
 app.get('/doctors', (req, res) => {
-  const db = new sqlite3.Database('./utenti.db');
-  db.all("SELECT nome, cognome, specialization FROM utenti WHERE user_type='doctor'", (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
+  db.all("SELECT id, nome, cognome, specialization FROM utenti WHERE user_type='doctor'", (err, rows) => {
+    if (err) {
+      console.error('Get doctors error:', err);
+      return res.status(500).json({ error: err.message });
+    }
     res.json(rows);
   });
-  db.close();
 });
 
-// Endpoint per creare un appuntamento con upload file
-app.post('/appointments', authenticateToken, upload.single('medical_report'), (req, res) => {
-  const { doctor_id, date, time } = req.body;
-  const user_id = req.user.id;
-  const username = req.user.username;
+// ==================== Appointment Routes ====================
+app.post('/appointments', authenticateToken, upload.single('medical_report'), async (req, res) => {
+  try {
+    const { doctor_id, date, time, payment_method, insurance_package } = req.body;
+    const user_id = req.user.id;
+    const username = req.user.username;
 
-  if (!doctor_id || !date || !time) {
-    return res.status(400).json({ error: "Missing required fields" });
-  }
+    if (!doctor_id || !date || !time || !payment_method) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
 
-  if (user_id == doctor_id) {
-    return res.status(403).json({ error: "Cannot book an appointment with yourself" });
-  }
+    if (payment_method === 'insurance' && !insurance_package) {
+      return res.status(400).json({ error: "Insurance package required when payment method is insurance" });
+    }
 
-  db.get('SELECT * FROM utenti WHERE id = ?', [user_id], (err, user) => {
-    if (err) return res.status(500).json({ error: "Database error" });
-    if (!user) return res.status(400).json({ error: "User not found" });
+    if (user_id == doctor_id) {
+      return res.status(403).json({ error: "Cannot book an appointment with yourself" });
+    }
 
-    db.get('SELECT * FROM utenti WHERE id = ? AND user_type = "doctor"', [doctor_id], (err, doctor) => {
-      if (err || !doctor) return res.status(400).json({ error: "Invalid doctor" });
+    const user = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM utenti WHERE id = ?', [user_id], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
 
+    if (!user) {
+      return res.status(400).json({ error: "User not found" });
+    }
+
+    const doctor = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM utenti WHERE id = ? AND user_type = "doctor"', [doctor_id], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    if (!doctor) {
+      return res.status(400).json({ error: "Invalid doctor" });
+    }
+
+    const existing = await new Promise((resolve, reject) => {
       db.get(
         `SELECT id FROM appointments 
          WHERE doctor_id = ? AND date = ? AND time = ? 
          AND status IN ('booked', 'confirmed')`,
         [doctor_id, date, time],
-        (err, existing) => {
-          if (err) return res.status(500).json({ error: "Database error" });
-          if (existing) return res.status(409).json({ error: "Time slot already booked" });
-
-          let medicalReportUrl = null;
-          if (req.file) {
-            const ext = path.extname(req.file.originalname);
-            const newFilename = `report_${Date.now()}_${user_id}${ext}`;
-            const newPath = path.join(uploadsDir, newFilename);
-            fs.renameSync(req.file.path, newPath);
-            medicalReportUrl = `/code/backend/uploads/${newFilename}`; // <-- Percorso corretto
-          }
-
-          db.run(
-            `INSERT INTO appointments (user_id, username, date, time, doctor_id, doctor_name, status, medical_report_url) 
-             VALUES (?, ?, ?, ?, ?, ?, 'booked', ?)`,
-            [user_id, username, date, time, doctor_id, `${doctor.nome} ${doctor.cognome}`, medicalReportUrl],
-            function(err) {
-              if (err) return res.status(500).json({ error: "Database error" });
-              res.json({ success: true, appointmentId: this.lastID, medical_report_url: medicalReportUrl });
-            }
-          );
+        (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
         }
       );
     });
-  });
+
+    if (existing) {
+      return res.status(409).json({ error: "Time slot already booked" });
+    }
+
+    let medicalReportUrl = null;
+    if (req.file) {
+      try {
+        const ext = path.extname(req.file.originalname || '.pdf');
+        const newFilename = `report_${Date.now()}_${user_id}${ext}`;
+        const newPath = path.join(uploadsDir, newFilename);
+        
+        await fs.promises.rename(req.file.path, newPath);
+        medicalReportUrl = `/uploads/${newFilename}`;
+      } catch (err) {
+        console.error('File upload error:', err);
+        return res.status(500).json({ error: "Failed to save medical report" });
+      }
+    }
+
+    const result = await new Promise((resolve, reject) => {
+      db.run(
+        `INSERT INTO appointments 
+         (user_id, username, date, time, doctor_id, doctor_name, status, medical_report_url, payment_method, insurance_package) 
+         VALUES (?, ?, ?, ?, ?, ?, 'booked', ?, ?, ?)`,
+        [
+          user_id, 
+          username, 
+          date, 
+          time, 
+          doctor_id, 
+          `${doctor.nome} ${doctor.cognome}`,
+          medicalReportUrl,
+          payment_method,
+          payment_method === 'insurance' ? insurance_package : null
+        ],
+        function(err) {
+          if (err) reject(err);
+          else resolve(this);
+        }
+      );
+    });
+
+    try {
+      if (user.email) {
+        const patientEmailContent = `
+          <h1>Appointment Booked</h1>
+          <p>Dear ${user.nome} ${user.cognome},</p>
+          <p>Your appointment has been successfully booked.</p>
+          <p><strong>Appointment details:</strong></p>
+          <ul>
+            <li><strong>Doctor:</strong> ${doctor.nome} ${doctor.cognome}</li>
+            <li><strong>Date:</strong> ${date}</li>
+            <li><strong>Time:</strong> ${time}</li>
+            <li><strong>Payment method:</strong> ${payment_method}${payment_method === 'insurance' ? ` (${insurance_package})` : ''}</li>
+          </ul>
+          <p>You can view your appointments in your profile.</p>
+        `;
+        
+        await sendEmail(user.email, 'Appointment Confirmation', patientEmailContent);
+      }
+
+      if (doctor.email) {
+        const doctorEmailContent = `
+          <h1>New Appointment Booked</h1>
+          <p>Dr. ${doctor.cognome},</p>
+          <p>A new appointment has been booked with you.</p>
+          <p><strong>Appointment details:</strong></p>
+          <ul>
+            <li><strong>Patient:</strong> ${user.nome} ${user.cognome}</li>
+            <li><strong>Date:</strong> ${date}</li>
+            <li><strong>Time:</strong> ${time}</li>
+          </ul>
+        `;
+        
+        await sendEmail(doctor.email, 'New Appointment Booked', doctorEmailContent);
+      }
+    } catch (err) {
+      console.error('Email send error:', err);
+    }
+
+    res.json({ 
+      success: true, 
+      appointmentId: result.lastID, 
+      medical_report_url: medicalReportUrl 
+    });
+
+  } catch (err) {
+    console.error('Book appointment error:', err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
-// Endpoint per ottenere gli appuntamenti del paziente
 app.get('/appointments', authenticateToken, (req, res) => {
   const user_id = req.user.id;
   const { date, status, page = 1, limit = 10, order = 'asc' } = req.query;
 
   const offset = (parseInt(page) - 1) * parseInt(limit);
-  const whereClauses = [`a.user_id = ?`, `a.status != 'cancelled'`];
+  const whereClauses = [`a.user_id = ?`];
   const params = [user_id];
 
   if (date) {
@@ -297,6 +753,8 @@ app.get('/appointments', authenticateToken, (req, res) => {
   if (status) {
     whereClauses.push('a.status = ?');
     params.push(status);
+  } else {
+    whereClauses.push(`a.status != 'cancelled'`);
   }
 
   const where = whereClauses.length ? 'WHERE ' + whereClauses.join(' AND ') : '';
@@ -310,18 +768,20 @@ app.get('/appointments', authenticateToken, (req, res) => {
      LIMIT ? OFFSET ?`,
     [...params, parseInt(limit), offset],
     (err, appointments) => {
-      if (err) return res.status(500).json({ error: "Database error" });
-      res.json({ page: parseInt(page), limit: parseInt(limit), appointments });
+      if (err) {
+        console.error('Get appointments error:', err);
+        return res.status(500).json({ error: "Database error" });
+      }
+      res.json({ 
+        page: parseInt(page), 
+        limit: parseInt(limit), 
+        appointments 
+      });
     }
   );
 });
 
-// Endpoint per ottenere gli appuntamenti del dottore (versione corretta)
-app.get('/doctor/appointments', authenticateToken, (req, res) => {
-  if (req.user.user_type !== 'doctor') {
-    return res.status(403).json({ error: "Only doctors can access this endpoint" });
-  }
-
+app.get('/doctor/appointments', authenticateToken, checkUserType(['doctor']), (req, res) => {
   const doctorId = req.user.id;
   const { date, status, page = 1, limit = 10, order = 'asc' } = req.query;
 
@@ -350,66 +810,127 @@ app.get('/doctor/appointments', authenticateToken, (req, res) => {
      LIMIT ? OFFSET ?`,
     [...params, parseInt(limit), offset],
     (err, appointments) => {
-      if (err) return res.status(500).json({ error: "Database error" });
-      res.json(appointments); // Modificato per restituire direttamente l'array
+      if (err) {
+        console.error('Get doctor appointments error:', err);
+        return res.status(500).json({ error: "Database error" });
+      }
+      res.json(appointments);
     }
   );
 });
 
-// Aggiungi questo endpoint per ottenere i dottori con cui il paziente ha interagito
-app.get('/patient/doctors-with-conversations', authenticateToken, (req, res) => {
-  if (req.user.user_type !== 'patient') {
-    return res.status(403).json({ error: "Only patients can access this endpoint" });
-  }
-
-  db.all(`
-    SELECT DISTINCT u.id, u.nome, u.cognome, u.specialization
-    FROM messages m
-    JOIN utenti u ON m.sender_id = u.id OR m.receiver_id = u.id
-    WHERE (m.sender_id = ? OR m.receiver_id = ?) 
-    AND u.user_type = 'doctor'
-    UNION
-    SELECT DISTINCT u.id, u.nome, u.cognome, u.specialization
-    FROM appointments a
-    JOIN utenti u ON a.doctor_id = u.id
-    WHERE a.user_id = ? AND u.user_type = 'doctor'
-    ORDER BY cognome, nome
-  `, [req.user.id, req.user.id, req.user.id], (err, doctors) => {
-    if (err) {
-      console.error('Database error:', err);
-      return res.status(500).json({ error: "Database error" });
+app.get('/patient/doctors-with-conversations', authenticateToken, checkUserType(['patient']), (req, res) => {
+  db.all(
+    `SELECT DISTINCT u.id, u.nome, u.cognome, u.specialization
+     FROM messages m
+     JOIN utenti u ON m.sender_id = u.id OR m.receiver_id = u.id
+     WHERE (m.sender_id = ? OR m.receiver_id = ?) 
+     AND u.user_type = 'doctor'
+     UNION
+     SELECT DISTINCT u.id, u.nome, u.cognome, u.specialization
+     FROM appointments a
+     JOIN utenti u ON a.doctor_id = u.id
+     WHERE a.user_id = ? AND u.user_type = 'doctor'
+     ORDER BY cognome, nome`,
+    [req.user.id, req.user.id, req.user.id],
+    (err, doctors) => {
+      if (err) {
+        console.error('Get doctors with conversations error:', err);
+        return res.status(500).json({ error: "Database error" });
+      }
+      res.json(doctors);
     }
-    res.json(doctors);
-  });
+  );
 });
 
-// Endpoint per cancellare un appuntamento
-app.delete('/appointments/:id', authenticateToken, (req, res) => {
+app.delete('/appointments/:id', authenticateToken, async (req, res) => {
   const appointmentId = req.params.id;
   const userId = req.user.id;
 
-  db.get('SELECT * FROM appointments WHERE id = ?', [appointmentId], (err, appointment) => {
-    if (err) return res.status(500).json({ error: "Database error" });
-    if (!appointment) return res.status(404).json({ error: "Appointment not found" });
+  try {
+    const appointment = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM appointments WHERE id = ?', [appointmentId], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    if (!appointment) {
+      return res.status(404).json({ error: "Appointment not found" });
+    }
 
     if (appointment.user_id !== userId && appointment.doctor_id !== userId) {
       return res.status(403).json({ error: "Unauthorized to cancel this appointment" });
     }
 
-    db.run(
-      'UPDATE appointments SET status = "cancelled" WHERE id = ?',
-      [appointmentId],
-      function(err) {
-        if (err) return res.status(500).json({ error: "Database error" });
-        res.json({ success: true });
+    await new Promise((resolve, reject) => {
+      db.run(
+        'UPDATE appointments SET status = "cancelled" WHERE id = ?',
+        [appointmentId],
+        function(err) {
+          if (err) reject(err);
+          else resolve();
+        }
+      );
+    });
+
+    const user = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM utenti WHERE id = ?', [appointment.user_id], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    const doctor = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM utenti WHERE id = ?', [appointment.doctor_id], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    try {
+      if (user && user.email) {
+        const patientEmailContent = `
+          <h1>Appointment Cancelled</h1>
+          <p>Dear ${user.nome} ${user.cognome},</p>
+          <p>Your appointment with Dr. ${doctor.cognome} has been cancelled.</p>
+          <p><strong>Appointment details:</strong></p>
+          <ul>
+            <li><strong>Date:</strong> ${appointment.date}</li>
+            <li><strong>Time:</strong> ${appointment.time}</li>
+          </ul>
+          <p>You can book a new appointment from your profile.</p>
+        `;
+        
+        await sendEmail(user.email, 'Appointment Cancelled', patientEmailContent);
       }
-    );
-  });
+
+      if (doctor && doctor.email) {
+        const doctorEmailContent = `
+          <h1>Appointment Cancelled</h1>
+          <p>Dr. ${doctor.cognome},</p>
+          <p>The appointment with ${user.nome} ${user.cognome} has been cancelled.</p>
+          <p><strong>Appointment details:</strong></p>
+          <ul>
+            <li><strong>Date:</strong> ${appointment.date}</li>
+            <li><strong>Time:</strong> ${appointment.time}</li>
+          </ul>
+        `;
+        
+        await sendEmail(doctor.email, 'Appointment Cancelled', doctorEmailContent);
+      }
+    } catch (err) {
+      console.error('Email send error:', err);
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Cancel appointment error:', err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
-
-// Endpoint per aggiornare lo stato di un appuntamento
-app.patch('/appointments/:id', authenticateToken, (req, res) => {
+app.patch('/appointments/:id', authenticateToken, checkUserType(['doctor']), async (req, res) => {
   const { status } = req.body;
   const appointmentId = req.params.id;
   const userId = req.user.id;
@@ -418,43 +939,83 @@ app.patch('/appointments/:id', authenticateToken, (req, res) => {
     return res.status(400).json({ error: "Invalid status" });
   }
 
-  db.get('SELECT * FROM appointments WHERE id = ?', [appointmentId], (err, appointment) => {
-    if (err) return res.status(500).json({ error: "Database error" });
-    if (!appointment) return res.status(404).json({ error: "Appointment not found" });
+  try {
+    const appointment = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM appointments WHERE id = ?', [appointmentId], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
 
-    // Solo il dottore può cambiare lo stato
+    if (!appointment) {
+      return res.status(404).json({ error: "Appointment not found" });
+    }
+
     if (appointment.doctor_id !== userId) {
       return res.status(403).json({ error: "Only the assigned doctor can update appointment status" });
     }
 
-    db.run(
-      'UPDATE appointments SET status = ? WHERE id = ?',
-      [status, appointmentId],
-      function(err) {
-        if (err) return res.status(500).json({ error: "Database error" });
-        res.json({ success: true });
+    await new Promise((resolve, reject) => {
+      db.run(
+        'UPDATE appointments SET status = ? WHERE id = ?',
+        [status, appointmentId],
+        function(err) {
+          if (err) reject(err);
+          else resolve();
+        }
+      );
+    });
+
+    try {
+      const user = await new Promise((resolve, reject) => {
+        db.get('SELECT * FROM utenti WHERE id = ?', [appointment.user_id], (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        });
+      });
+
+      if (user && user.email) {
+        let subject = '';
+        let content = '';
+        
+        if (status === 'confirmed') {
+          subject = 'Appointment Confirmed';
+          content = `
+            <h1>Appointment Confirmed</h1>
+            <p>Dear ${user.nome} ${user.cognome},</p>
+            <p>Dr. ${req.user.cognome} has confirmed your appointment.</p>
+            <p><strong>Appointment details:</strong></p>
+            <ul>
+              <li><strong>Date:</strong> ${appointment.date}</li>
+              <li><strong>Time:</strong> ${appointment.time}</li>
+            </ul>
+          `;
+        } else if (status === 'completed') {
+          subject = 'Appointment Completed';
+          content = `
+            <h1>Appointment Completed</h1>
+            <p>Dear ${user.nome} ${user.cognome},</p>
+            <p>Your appointment with Dr. ${req.user.cognome} has been completed.</p>
+            <p>You can view the medical report in your profile.</p>
+          `;
+        }
+        
+        if (subject && content) {
+          await sendEmail(user.email, subject, content);
+        }
       }
-    );
-  });
+    } catch (err) {
+      console.error('Email send error:', err);
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Update appointment status error:', err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
-// Aggiungi questa parte al server.js prima dell'avvio del server
 
-// Creazione tabella messaggi
-db.run(`
-  CREATE TABLE IF NOT EXISTS messages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    sender_id INTEGER NOT NULL,
-    receiver_id INTEGER NOT NULL,
-    content TEXT NOT NULL,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    is_read BOOLEAN DEFAULT FALSE,
-    sender_type TEXT NOT NULL CHECK(sender_type IN ('patient', 'doctor')),
-    FOREIGN KEY(sender_id) REFERENCES utenti(id),
-    FOREIGN KEY(receiver_id) REFERENCES utenti(id)
-  )
-`);
-
-// Endpoint per inviare un messaggio
+// ==================== Messaging Routes ====================
 app.post('/messages', authenticateToken, (req, res) => {
   const { receiver_id, content } = req.body;
   const sender_id = req.user.id;
@@ -468,7 +1029,10 @@ app.post('/messages', authenticateToken, (req, res) => {
      VALUES (?, ?, ?, ?)`,
     [sender_id, receiver_id, content, req.user.user_type],
     function(err) {
-      if (err) return res.status(500).json({ error: "Database error" });
+      if (err) {
+        console.error('Send message error:', err);
+        return res.status(500).json({ error: "Database error" });
+      }
       
       res.json({
         id: this.lastID,
@@ -481,7 +1045,6 @@ app.post('/messages', authenticateToken, (req, res) => {
   );
 });
 
-// Endpoint per ottenere i messaggi di una conversazione
 app.get('/messages/conversation/:otherUserId', authenticateToken, (req, res) => {
   const userId = req.user.id;
   const otherUserId = req.params.otherUserId;
@@ -493,13 +1056,18 @@ app.get('/messages/conversation/:otherUserId', authenticateToken, (req, res) => 
      ORDER BY timestamp ASC`,
     [userId, otherUserId, otherUserId, userId],
     (err, messages) => {
-      if (err) return res.status(500).json({ error: "Database error" });
+      if (err) {
+        console.error('Get conversation error:', err);
+        return res.status(500).json({ error: "Database error" });
+      }
       
-      // Segna i messaggi come letti
       db.run(
         `UPDATE messages SET is_read = TRUE 
          WHERE receiver_id = ? AND sender_id = ? AND is_read = FALSE`,
-        [userId, otherUserId]
+        [userId, otherUserId],
+        (err) => {
+          if (err) console.error('Mark messages as read error:', err);
+        }
       );
       
       res.json(messages);
@@ -507,7 +1075,6 @@ app.get('/messages/conversation/:otherUserId', authenticateToken, (req, res) => 
   );
 });
 
-// Endpoint per ottenere il conteggio dei messaggi non letti
 app.get('/messages/unread-count', authenticateToken, (req, res) => {
   db.get(
     `SELECT COUNT(*) as unread_count 
@@ -515,13 +1082,15 @@ app.get('/messages/unread-count', authenticateToken, (req, res) => {
      WHERE receiver_id = ? AND is_read = FALSE`,
     [req.user.id],
     (err, row) => {
-      if (err) return res.status(500).json({ error: "Database error" });
-      res.json({ unread_count: row.unread_count });
+      if (err) {
+        console.error('Get unread count error:', err);
+        return res.status(500).json({ error: "Database error" });
+      }
+      res.json({ unread_count: row ? row.unread_count : 0 });
     }
   );
 });
 
-// Endpoint per ottenere le conversazioni
 app.get('/messages/conversations', authenticateToken, (req, res) => {
   db.all(
     `SELECT 
@@ -537,18 +1106,17 @@ app.get('/messages/conversations', authenticateToken, (req, res) => {
      ORDER BY last_message_time DESC`,
     [req.user.id, req.user.id, req.user.id, req.user.id],
     (err, conversations) => {
-      if (err) return res.status(500).json({ error: "Database error" });
-      res.json(conversations);
+      if (err) {
+        console.error('Get conversations error:', err);
+        return res.status(500).json({ error: "Database error" });
+      }
+      res.json(conversations || []);
     }
   );
 });
 
-// Add this endpoint to server.js to get only patients with appointments for a doctor
-app.get('/doctor/patients', authenticateToken, (req, res) => {
-  if (req.user.user_type !== 'doctor') {
-    return res.status(403).json({ error: "Only doctors can access this endpoint" });
-  }
-
+// ==================== Doctor Patient Routes ====================
+app.get('/doctor/patients', authenticateToken, checkUserType(['doctor']), (req, res) => {
   db.all(
     `SELECT DISTINCT u.id, u.nome, u.cognome, u.codice_fiscale, u.email, u.telefono
      FROM appointments a
@@ -556,19 +1124,20 @@ app.get('/doctor/patients', authenticateToken, (req, res) => {
      WHERE a.doctor_id = ? AND u.user_type = 'patient'`,
     [req.user.id],
     (err, patients) => {
-      if (err) return res.status(500).json({ error: "Database error" });
-      res.json(patients);
+      if (err) {
+        console.error('Get doctor patients error:', err);
+        return res.status(500).json({ error: "Database error" });
+      }
+      res.json(patients || []);
     }
   );
 });
 
-// Servi i file PDF caricati con percorso accessibile da /uploads/filename.pdf
+// Serve uploaded PDF files
 app.use('/uploads', express.static(uploadsDir));
 
-
-// Avvio del server
+// Start the server
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`[First time only] To setup email authentication, visit: http://localhost:${PORT}/auth/email`);
 });
-
-

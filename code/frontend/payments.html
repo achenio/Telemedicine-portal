@@ -12,249 +12,444 @@
       --primary: #007aff;
       --card: #ffffff;
       --error: #ff3b30;
+      --success: #34c759;
+      --input-bg: #f1f3f5;
+      --input-border: #ced4da;
     }
+
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background-color: var(--bg);
       color: var(--text);
-      min-height: 100vh;
+      line-height: 1.6;
     }
+
     header {
       background-color: var(--card);
-      padding: 2rem 1rem 1rem 1rem;
+      padding: 2rem 1rem;
       text-align: center;
-      border-bottom: 1px solid #eee;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+      border-bottom: 1px solid #ddd;
+      animation: fadeIn 1s ease-out;
     }
-    header h1 {
-      font-size: 2.2rem;
-      color: var(--primary);
-      margin-bottom: 0.5rem;
-    }
+
     nav ul {
+      list-style: none;
       display: flex;
       justify-content: center;
-      gap: 2rem;
-      list-style: none;
-      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding: 0;
+      margin-top: 1rem;
     }
+
     nav ul li a {
+      text-decoration: none;
       color: var(--primary);
       font-weight: 600;
-      text-decoration: none;
       padding: 0.5rem 1rem;
       border-radius: 20px;
-      transition: background-color 0.3s;
+      transition: background-color 0.3s ease;
     }
+
     nav ul li a:hover {
-      background-color: rgba(0,122,255,0.08);
+      background-color: rgba(0, 122, 255, 0.1);
     }
+
     main {
-      max-width: 500px;
-      margin: 3rem auto;
-      background: var(--card);
-      border-radius: 16px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.07);
-      padding: 2rem;
-      animation: fadeInUp 0.8s;
+      max-width: 800px;
+      margin: 4rem auto;
+      padding: 1rem;
+      animation: fadeInUp 1s ease-out;
     }
-    label {
+
+    h2 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    #login-message {
+      text-align: center;
+      margin: 2rem 0;
       font-weight: 600;
-      margin-top: 1rem;
+      color: var(--error);
+    }
+
+    .card {
+      background-color: var(--card);
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+      margin-bottom: 2rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    label {
       display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
       color: var(--subtext);
     }
+
     input, select {
       width: 100%;
-      padding: 0.75rem;
-      margin: 0.5rem 0 1rem 0;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      border: 1px solid var(--input-border);
       border-radius: 8px;
-      border: 1px solid #ddd;
-      font-size: 1rem;
-      background: var(--bg);
-      color: var(--text);
+      background-color: var(--input-bg);
+      transition: border-color 0.3s ease;
     }
-    button {
-      background: var(--primary);
-      color: #fff;
+
+    input:focus, select:focus {
+      border-color: var(--primary);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      background-color: var(--primary);
+      color: white;
       border: none;
-      padding: 0.75rem 2rem;
-      border-radius: 20px;
+      border-radius: 8px;
       font-weight: 600;
-      cursor: pointer;
       font-size: 1rem;
-      margin-top: 0.5rem;
-      transition: background 0.2s;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      width: 100%;
     }
-    button:hover {
-      background: #005bb5;
+
+    .btn:hover {
+      background-color: #0062cc;
     }
+
+    .payment-section {
+      display: none;
+      margin-top: 1.5rem;
+      padding: 1.5rem;
+      background-color: var(--input-bg);
+      border-radius: 8px;
+    }
+
+    .message {
+      text-align: center;
+      margin-top: 1.5rem;
+      padding: 1rem;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+
     .success {
-      color: var(--primary);
-      text-align: center;
-      margin-top: 1rem;
-      font-weight: 600;
+      background-color: rgba(52, 199, 89, 0.1);
+      color: var(--success);
     }
+
     .error {
+      background-color: rgba(255, 59, 48, 0.1);
       color: var(--error);
-      text-align: center;
-      margin-top: 1rem;
-      font-weight: 600;
     }
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(30px);}
-      to { opacity: 1; transform: translateY(0);}
-    }
+
     footer {
       text-align: center;
-      color: var(--subtext);
-      padding: 2rem 0 1rem 0;
-      font-size: 1rem;
-      background: var(--card);
+      padding: 2rem 1rem;
+      font-size: 0.9rem;
+      color: #999;
       border-top: 1px solid #eee;
-      margin-top: 3rem;
+      margin-top: 4rem;
+      animation: fadeIn 1s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .card {
+        padding: 1.5rem;
+      }
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>Payments</h1>
     <nav>
       <ul>
         <li><a href="index.html">Home</a></li>
         <li><a href="appointments.html">Book Appointment</a></li>
         <li><a href="bookings.html">My Bookings</a></li>
-        <li><a href="our-family.html">Our Family</a></li>
-        <li><a href="payments.html" style="background: var(--primary); color: #fff;">Payments</a></li>
-        <li><a href="login.html">Login</a></li>
+        <li><a href="payments.html">Payments</a></li>
+        <li><a href="chat.html">Secure Chat</a></li>
       </ul>
     </nav>
   </header>
+
   <main>
-    <form id="payment-form">
-      <label for="appointment">Select Appointment:</label>
-      <select id="appointment" name="appointment" required>
-        <option value="">Select an appointment</option>
-        <!-- Appointments will be loaded here -->
-      </select>
+    <h2>Complete Payment</h2>
+    
+    <div id="login-message" style="display: none;">
+      Please <a href="login.html">login</a> to view payment options.
+    </div>
 
-      <label for="payment-method">Payment Method:</label>
-      <select id="payment-method" name="payment-method" required>
-        <option value="">Select payment method</option>
-        <option value="credit_card">Credit Card</option>
-        <option value="paypal">PayPal</option>
-        <option value="bank_transfer">Bank Transfer</option>
-        <option value="insurance">Insurance Package</option>
-      </select>
+    <div class="card" style="display: none;" id="payment-card">
+      <form id="payment-form">
+        <div class="form-group">
+          <label for="appointment">Select Appointment:</label>
+          <select id="appointment" name="appointment" required>
+            <option value="">Select an appointment</option>
+            <!-- Appointments will be loaded here -->
+          </select>
+        </div>
 
-      <div id="insurance-options" style="display:none;">
-        <label for="insurance-package">Choose Insurance Package:</label>
-        <select id="insurance-package" name="insurance-package">
-          <option value="">Select package</option>
-          <option value="basic">Basic</option>
-          <option value="premium">Premium</option>
-          <option value="family">Family</option>
-        </select>
-      </div>
+        <div class="form-group">
+          <label for="payment-method">Payment Method:</label>
+          <select id="payment-method" name="payment-method" required>
+            <option value="">Select payment method</option>
+            <option value="credit_card">Credit Card</option>
+            <option value="paypal">PayPal</option>
+            <option value="bank_transfer">Bank Transfer</option>
+            <option value="insurance">Insurance Package</option>
+          </select>
+        </div>
 
-      <!-- PayPal card info section (hidden by default) -->
-      <div id="paypal-card-section" style="display:none;">
-        <label for="paypal-card-number">PayPal Card Number:</label>
-        <input type="text" id="paypal-card-number" name="paypal-card-number" maxlength="19" placeholder="Card number" pattern="\d{16,19}">
-        <label for="paypal-card-expiry">Expiry Date:</label>
-        <input type="text" id="paypal-card-expiry" name="paypal-card-expiry" maxlength="5" placeholder="MM/YY" pattern="\d{2}/\d{2}">
-        <label for="paypal-card-cvc">CVC:</label>
-        <input type="text" id="paypal-card-cvc" name="paypal-card-cvc" maxlength="4" placeholder="CVC" pattern="\d{3,4}">
-      </div>
+        <!-- Insurance Options -->
+        <div id="insurance-options" class="payment-section">
+          <div class="form-group">
+            <label for="insurance-package">Choose Insurance Package:</label>
+            <select id="insurance-package" name="insurance-package">
+              <option value="">Select package</option>
+              <option value="basic">Basic</option>
+              <option value="premium">Premium</option>
+              <option value="family">Family</option>
+            </select>
+          </div>
+        </div>
 
-      <!-- Credit Card info section -->
-      <div id="credit-card-section" style="display:none;">
-        <label for="credit-card-number">Credit Card Number:</label>
-        <input type="text" id="credit-card-number" name="credit-card-number" maxlength="19" placeholder="Card number" pattern="\d{16,19}">
-        <label for="credit-card-expiry">Expiry Date:</label>
-        <input type="text" id="credit-card-expiry" name="credit-card-expiry" maxlength="5" placeholder="MM/YY" pattern="\d{2}/\d{2}">
-        <label for="credit-card-cvc">CVC:</label>
-        <input type="text" id="credit-card-cvc" name="credit-card-cvc" maxlength="4" placeholder="CVC" pattern="\d{3,4}">
-        <label for="credit-card-holder">Card Holder Name:</label>
-        <input type="text" id="credit-card-holder" name="credit-card-holder" maxlength="40" placeholder="Name on card">
-      </div>
+        <!-- PayPal Card Section -->
+        <div id="paypal-card-section" class="payment-section">
+          <div class="form-group">
+            <label for="paypal-card-number">PayPal Card Number:</label>
+            <input type="text" id="paypal-card-number" name="paypal-card-number" maxlength="19" placeholder="Card number" pattern="\d{16,19}">
+          </div>
+          <div class="form-group">
+            <label for="paypal-card-expiry">Expiry Date:</label>
+            <input type="text" id="paypal-card-expiry" name="paypal-card-expiry" maxlength="5" placeholder="MM/YY" pattern="\d{2}/\d{2}">
+          </div>
+          <div class="form-group">
+            <label for="paypal-card-cvc">CVC:</label>
+            <input type="text" id="paypal-card-cvc" name="paypal-card-cvc" maxlength="4" placeholder="CVC" pattern="\d{3,4}">
+          </div>
+        </div>
 
-      <!-- Bank Transfer info section -->
-      <div id="bank-transfer-section" style="display:none;">
-        <label for="bank-account">Bank Account IBAN:</label>
-        <input type="text" id="bank-account" name="bank-account" maxlength="34" placeholder="IBAN">
-        <label for="bank-holder">Account Holder Name:</label>
-        <input type="text" id="bank-holder" name="bank-holder" maxlength="40" placeholder="Name on account">
-      </div>
+        <!-- Credit Card Section -->
+        <div id="credit-card-section" class="payment-section">
+          <div class="form-group">
+            <label for="credit-card-number">Credit Card Number:</label>
+            <input type="text" id="credit-card-number" name="credit-card-number" maxlength="19" placeholder="Card number" pattern="\d{16,19}">
+          </div>
+          <div class="form-group">
+            <label for="credit-card-expiry">Expiry Date:</label>
+            <input type="text" id="credit-card-expiry" name="credit-card-expiry" maxlength="5" placeholder="MM/YY" pattern="\d{2}/\d{2}">
+          </div>
+          <div class="form-group">
+            <label for="credit-card-cvc">CVC:</label>
+            <input type="text" id="credit-card-cvc" name="credit-card-cvc" maxlength="4" placeholder="CVC" pattern="\d{3,4}">
+          </div>
+          <div class="form-group">
+            <label for="credit-card-holder">Card Holder Name:</label>
+            <input type="text" id="credit-card-holder" name="credit-card-holder" maxlength="40" placeholder="Name on card">
+          </div>
+        </div>
 
-      <label for="amount">Amount (€):</label>
-      <input type="number" id="amount" name="amount" min="1" step="0.01" required />
+        <!-- Bank Transfer Section -->
+        <div id="bank-transfer-section" class="payment-section">
+          <div class="form-group">
+            <label for="bank-account">Bank Account IBAN:</label>
+            <input type="text" id="bank-account" name="bank-account" maxlength="34" placeholder="IBAN">
+          </div>
+          <div class="form-group">
+            <label for="bank-holder">Account Holder Name:</label>
+            <input type="text" id="bank-holder" name="bank-holder" maxlength="40" placeholder="Name on account">
+          </div>
+        </div>
 
-      <button type="submit">Pay Now</button>
-      <div id="payment-message"></div>
-    </form>
+        <div class="form-group">
+          <label for="amount">Amount (€):</label>
+          <input type="number" id="amount" name="amount" min="1" step="0.01" required />
+        </div>
+
+        <button type="submit" class="btn">Pay Now</button>
+        <div id="payment-message" class="message"></div>
+      </form>
+    </div>
   </main>
-  <footer>
-    &copy; 2025 Telemedicine Portal
-  </footer>
-  <script>
-    // Show insurance options if selected
-    document.getElementById('payment-method').addEventListener('change', function() {
-      const insuranceDiv = document.getElementById('insurance-options');
-      const paypalDiv = document.getElementById('paypal-card-section');
-      const creditDiv = document.getElementById('credit-card-section');
-      const bankDiv = document.getElementById('bank-transfer-section');
-      // Reset all sections
-      insuranceDiv.style.display = 'none';
-      paypalDiv.style.display = 'none';
-      creditDiv.style.display = 'none';
-      bankDiv.style.display = 'none';
-      document.getElementById('insurance-package').removeAttribute('required');
-      document.getElementById('paypal-card-number').removeAttribute('required');
-      document.getElementById('paypal-card-expiry').removeAttribute('required');
-      document.getElementById('paypal-card-cvc').removeAttribute('required');
-      document.getElementById('credit-card-number').removeAttribute('required');
-      document.getElementById('credit-card-expiry').removeAttribute('required');
-      document.getElementById('credit-card-cvc').removeAttribute('required');
-      document.getElementById('credit-card-holder').removeAttribute('required');
-      document.getElementById('bank-account').removeAttribute('required');
-      document.getElementById('bank-holder').removeAttribute('required');
 
-      if (this.value === 'insurance') {
-        insuranceDiv.style.display = '';
-        document.getElementById('insurance-package').setAttribute('required', 'required');
-      } else if (this.value === 'paypal') {
-        paypalDiv.style.display = '';
-        document.getElementById('paypal-card-number').setAttribute('required', 'required');
-        document.getElementById('paypal-card-expiry').setAttribute('required', 'required');
-        document.getElementById('paypal-card-cvc').setAttribute('required', 'required');
-      } else if (this.value === 'credit_card') {
-        creditDiv.style.display = '';
-        document.getElementById('credit-card-number').setAttribute('required', 'required');
-        document.getElementById('credit-card-expiry').setAttribute('required', 'required');
-        document.getElementById('credit-card-cvc').setAttribute('required', 'required');
-        document.getElementById('credit-card-holder').setAttribute('required', 'required');
-      } else if (this.value === 'bank_transfer') {
-        bankDiv.style.display = '';
-        document.getElementById('bank-account').setAttribute('required', 'required');
-        document.getElementById('bank-holder').setAttribute('required', 'required');
+  <footer>
+    <p>&copy; 2025 Telemedicine Portal</p>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const token = localStorage.getItem('token');
+      const paymentCard = document.getElementById('payment-card');
+      const loginMessage = document.getElementById('login-message');
+
+      if (!token) {
+        showLoginPrompt();
+        return;
+      }
+
+      try {
+        const verifyResponse = await fetch('http://localhost:5501/user-data', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!verifyResponse.ok) {
+          throw new Error('Session expired');
+        }
+
+        // Load appointments for payment
+        await loadAppointments(token);
+        
+        // Setup payment method selection
+        document.getElementById('payment-method').addEventListener('change', function() {
+          const sections = document.querySelectorAll('.payment-section');
+          sections.forEach(section => section.style.display = 'none');
+          
+          // Reset required attributes
+          document.querySelectorAll('.payment-section input, .payment-section select').forEach(el => {
+            el.removeAttribute('required');
+          });
+
+          switch(this.value) {
+            case 'insurance':
+              document.getElementById('insurance-options').style.display = 'block';
+              document.getElementById('insurance-package').setAttribute('required', 'required');
+              break;
+            case 'paypal':
+              document.getElementById('paypal-card-section').style.display = 'block';
+              document.getElementById('paypal-card-number').setAttribute('required', 'required');
+              document.getElementById('paypal-card-expiry').setAttribute('required', 'required');
+              document.getElementById('paypal-card-cvc').setAttribute('required', 'required');
+              break;
+            case 'credit_card':
+              document.getElementById('credit-card-section').style.display = 'block';
+              document.getElementById('credit-card-number').setAttribute('required', 'required');
+              document.getElementById('credit-card-expiry').setAttribute('required', 'required');
+              document.getElementById('credit-card-cvc').setAttribute('required', 'required');
+              document.getElementById('credit-card-holder').setAttribute('required', 'required');
+              break;
+            case 'bank_transfer':
+              document.getElementById('bank-transfer-section').style.display = 'block';
+              document.getElementById('bank-account').setAttribute('required', 'required');
+              document.getElementById('bank-holder').setAttribute('required', 'required');
+              break;
+          }
+        });
+
+        // Handle payment submission
+        document.getElementById('payment-form').addEventListener('submit', async function(e) {
+          e.preventDefault();
+          
+          const appointmentId = document.getElementById('appointment').value;
+          const method = document.getElementById('payment-method').value;
+          const amount = document.getElementById('amount').value;
+          const message = document.getElementById('payment-message');
+          
+          let payload = {
+            user_id: localStorage.getItem('user_id'),
+            appointment_id: appointmentId,
+            method,
+            amount,
+            insurance_package: method === 'insurance' ? document.getElementById('insurance-package').value : null
+          };
+
+          // Add payment method specific fields
+          if (method === 'paypal') {
+            payload.card_number = document.getElementById('paypal-card-number').value.trim();
+            payload.card_expiry = document.getElementById('paypal-card-expiry').value.trim();
+            payload.card_cvc = document.getElementById('paypal-card-cvc').value.trim();
+          } else if (method === 'credit_card') {
+            payload.card_number = document.getElementById('credit-card-number').value.trim();
+            payload.card_expiry = document.getElementById('credit-card-expiry').value.trim();
+            payload.card_cvc = document.getElementById('credit-card-cvc').value.trim();
+            payload.card_holder = document.getElementById('credit-card-holder').value.trim();
+          } else if (method === 'bank_transfer') {
+            payload.bank_iban = document.getElementById('bank-account').value.trim();
+            payload.bank_holder = document.getElementById('bank-holder').value.trim();
+          }
+
+          try {
+            const res = await fetch('http://localhost:5502/payments', {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(payload)
+            });
+            
+            const data = await res.json();
+            if (data.success) {
+              message.textContent = "Payment successful!";
+              message.className = "message success";
+            } else {
+              message.textContent = data.error || "Payment failed!";
+              message.className = "message error";
+            }
+          } catch (error) {
+            console.error('Payment error:', error);
+            message.textContent = "Payment failed! Please try again.";
+            message.className = "message error";
+          }
+          
+          setTimeout(() => { 
+            message.textContent = "";
+            message.className = "message";
+          }, 4000);
+        });
+
+        paymentCard.style.display = 'block';
+        loginMessage.style.display = 'none';
+      } catch (error) {
+        console.error('Error:', error);
+        handleError(error);
       }
     });
 
-    // Load appointments for the logged-in user
-    async function loadAppointments() {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-      const res = await fetch('http://localhost:5501/appointments', {
+    async function loadAppointments(token) {
+      const response = await fetch('http://localhost:5501/appointments', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      const data = await res.json();
+
+      if (!response.ok) {
+        throw new Error('Failed to load appointments');
+      }
+
+      const data = await response.json();
       const select = document.getElementById('appointment');
+      
       data.appointments.forEach(app => {
         const opt = document.createElement('option');
         opt.value = app.id;
@@ -262,65 +457,29 @@
         select.appendChild(opt);
       });
     }
-    loadAppointments();
 
-    // Handle payment submission (mockup)
-    document.getElementById('payment-form').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const appointmentId = document.getElementById('appointment').value;
-      const method = document.getElementById('payment-method').value;
-      const amount = document.getElementById('amount').value;
-      const insurance = method === 'insurance' ? document.getElementById('insurance-package').value : null;
-      let payload = {
-        user_id: localStorage.getItem('user_id'), // oppure recupera dal token
-        appointment_id: appointmentId,
-        method,
-        amount,
-        insurance_package: insurance
-      };
+    function showLoginPrompt() {
+      document.getElementById('payment-card').style.display = 'none';
+      document.getElementById('login-message').style.display = 'block';
+    }
 
-      if (method === 'paypal') {
-        payload.card_number = document.getElementById('paypal-card-number').value.trim();
-        payload.card_expiry = document.getElementById('paypal-card-expiry').value.trim();
-        payload.card_cvc = document.getElementById('paypal-card-cvc').value.trim();
-      }
-      if (method === 'credit_card') {
-        payload.card_number = document.getElementById('credit-card-number').value.trim();
-        payload.card_expiry = document.getElementById('credit-card-expiry').value.trim();
-        payload.card_cvc = document.getElementById('credit-card-cvc').value.trim();
-        payload.card_holder = document.getElementById('credit-card-holder').value.trim();
-      }
-      if (method === 'bank_transfer') {
-        payload.bank_iban = document.getElementById('bank-account').value.trim();
-        payload.bank_holder = document.getElementById('bank-holder').value.trim();
+    function handleError(error) {
+      if (error.message.includes('Session')) {
+        localStorage.clear();
+        window.location.href = 'login.html';
+        return;
       }
 
-      const msg = document.getElementById('payment-message');
-      try {
-        const res = await fetch('http://localhost:5502/payments', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (data.success) {
-          msg.textContent = "Payment successful!";
-          msg.className = "success";
-        } else {
-          msg.textContent = "Payment failed!";
-          msg.className = "error";
-        }
-      } catch {
-        msg.textContent = "Payment failed!";
-        msg.className = "error";
-      }
-      setTimeout(() => { msg.textContent = ""; }, 4000);
-      this.reset();
-      document.getElementById('insurance-options').style.display = 'none';
-      document.getElementById('paypal-card-section').style.display = 'none';
-      document.getElementById('credit-card-section').style.display = 'none';
-      document.getElementById('bank-transfer-section').style.display = 'none';
-    });
+      const paymentCard = document.getElementById('payment-card');
+      paymentCard.innerHTML = `
+        <div style="color: var(--error); text-align: center;">
+          ${error.message}<br>
+          <button onclick="location.reload()">Retry</button>
+        </div>
+      `;
+      paymentCard.style.display = 'block';
+      document.getElementById('login-message').style.display = 'none';
+    }
   </script>
 </body>
 </html>

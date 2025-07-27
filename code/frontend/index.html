@@ -380,11 +380,19 @@
           <h3>Our Medical Team</h3>
           <p>Meet our medical Team. From routine check-ups to specialist advice, our medical team is here to support your health journey.</p>
         </a>
+        <a href="video-call.html" class="feature-card" id="card-video-call"> 
+          <h3>Video Calls</h3>
+          <p>Meet our medical Team. From routine check-ups to specialist advice, our medical team is here to support your health journey.</p>
+        </a>
+        <a href="bot-chat.html" class="feature-card"> 
+          <h3>AI ChatBot</h3>
+          <p>Meet our medical Team. From routine check-ups to specialist advice, our medical team is here to support your health journey.</p>
+        </a>
       </div>
     </section>
 
     <section class="cta">
-      <a href="register.html">Get Started Now</a>
+      <a href="register.html" id="get-started-link">Get Started Now</a>
     </section>
   </main>
 
@@ -403,6 +411,7 @@
     const doctorWarningText = document.getElementById('doctor-warning-text');
     const secureChatLink = document.getElementById('secure-chat-link');
     const cardSecureChat = document.getElementById('card-secure-chat');
+    const getStartedLink = document.getElementById('get-started-link');
 
     const username = localStorage.getItem('username');
     const userType = localStorage.getItem('user_type');
@@ -470,6 +479,11 @@
           const myAppLi = document.getElementById('nav-my-appointments');
           if (myAppLi) myAppLi.remove();
         }
+
+        // Aggiorna il link "Get Started" per gli utenti loggati
+        if (getStartedLink) {
+          getStartedLink.href = 'appointments.html';
+        }
       } else {
         // Utente non loggato: mostra Login/Register, nascondi profilo e "My Appointments"
         navLogin.style.display = '';
@@ -486,6 +500,11 @@
         
         const myAppLi = document.getElementById('nav-my-appointments');
         if (myAppLi) myAppLi.remove();
+
+        // Ripristina il link "Get Started" alla pagina di registrazione
+        if (getStartedLink) {
+          getStartedLink.href = 'register.html';
+        }
       }
     }
 

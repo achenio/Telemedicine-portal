@@ -158,38 +158,32 @@
 <script>
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
   e.preventDefault();
-
+  
   const username = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value.trim();
   const errorDiv = document.getElementById('error');
-
+  const submitBtn = document.querySelector('button[type="submit"]');
+  
   errorDiv.textContent = '';
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = 'Logging in... <div class="loader"></div>';
 
   try {
     const response = await fetch('http://localhost:5501/login', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     });
 
     const data = await response.json();
 
     if (response.ok) {
-      // Salva i dati correttamente nel localStorage
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user_id', data.user.id);
-      localStorage.setItem('user_type', data.user.user_type);
-      localStorage.setItem('username', data.user.username);
-      localStorage.setItem('nome', data.user.nome);
-      localStorage.setItem('cognome', data.user.cognome);
-      
-      // Reindirizza alla pagina corretta in base al tipo di utente
-      if (data.user.user_type === 'doctor') {
-        window.location.href = 'index.html';
+      if (data.requires2FA) {
+        // Mostra il modal per la 2FA
+        show2FAModal(data.tempToken);
       } else {
-        window.location.href = 'index.html';
+        // Login normale senza 2FA
+        handleSuccessfulLogin(data);
       }
     } else {
       errorDiv.textContent = data.error || 'Login failed';
@@ -197,8 +191,265 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
   } catch (error) {
     errorDiv.textContent = 'Connection error';
     console.error('Login error:', error);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Login';
   }
 });
+
+function handleSuccessfulLogin(data) {
+  localStorage.setItem('token', data.token);
+  localStorage.setItem('user_id', data.user.id);
+  localStorage.setItem('user_type', data.user.user_type);
+  localStorage.setItem('username', data.user.username);
+  localStorage.setItem('nome', data.user.nome);
+  localStorage.setItem('cognome', data.user.cognome);
+  
+  // Reindirizza alla dashboard appropriata
+  window.location.href = data.user.user_type === 'doctor' 
+    ? 'index.html' 
+    : 'index.html';
+}
+
+function show2FAModal(tempToken) {
+  // Crea il modal per la 2FA
+  const modalHTML = `
+    <div id="2faModal" style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    ">
+      <div style="
+        background-color: white;
+        padding: 2rem;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 400px;
+        text-align: center;
+      ">
+        <h2 style="margin-bottom: 1.5rem; color: var(--primary);">Two-Factor Authentication</h2>
+        <p style="margin-bottom: 1.5rem;">Please enter the 6-digit code from your authenticator app</p>
+        
+        <div style="margin-bottom: 1.5rem;">
+          <input type="text" id="2faCode" placeholder="123456" maxlength="6" 
+            style="
+              width: 100%;
+              padding: 0.8rem;
+              font-size: 1.2rem;
+              text-align: center;
+              border: 1px solid var(--border);
+              border-radius: 8px;
+            "
+          >
+        </div>
+        
+        <div style="display: flex; gap: 1rem; justify-content: center;">
+          <button id="submit2FA" style="
+            padding: 0.8rem 1.5rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+          ">Verify</button>
+          
+          <button id="cancel2FA" style="
+            padding: 0.8rem 1.5rem;
+            background-color: #f1f1f1;
+            color: var(--text);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+          ">Cancel</button>
+        </div>
+        
+        <p id="2faError" style="color: var(--error); margin-top: 1rem;"></p>
+        
+        <div style="margin-top: 1.5rem; font-size: 0.9rem;">
+          <p>Lost your device? <a href="#" id="useBackupCode" style="color: var(--primary);">Use a backup code</a></p>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  
+  // Gestisci la verifica del codice 2FA
+  document.getElementById('submit2FA').addEventListener('click', async () => {
+    const code = document.getElementById('2faCode').value.trim();
+    const errorElement = document.getElementById('2faError');
+    
+    if (!code || code.length !== 6) {
+      errorElement.textContent = 'Please enter a valid 6-digit code';
+      return;
+    }
+    
+    errorElement.textContent = '';
+    document.getElementById('submit2FA').disabled = true;
+    document.getElementById('submit2FA').textContent = 'Verifying...';
+    
+    try {
+      const response = await fetch('http://localhost:5501/login/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          tempToken: tempToken,
+          twoFAToken: code 
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        handleSuccessfulLogin(data);
+        document.getElementById('2faModal').remove();
+      } else {
+        errorElement.textContent = data.error || 'Invalid 2FA code';
+      }
+    } catch (error) {
+      errorElement.textContent = 'Connection error';
+      console.error('2FA verification error:', error);
+    } finally {
+      document.getElementById('submit2FA').disabled = false;
+      document.getElementById('submit2FA').textContent = 'Verify';
+    }
+  });
+  
+  // Gestisci l'annullamento
+  document.getElementById('cancel2FA').addEventListener('click', () => {
+    document.getElementById('2faModal').remove();
+  });
+  
+  // Gestisci i codici di backup
+  document.getElementById('useBackupCode').addEventListener('click', (e) => {
+    e.preventDefault();
+    showBackupCodeModal(tempToken);
+  });
+}
+
+function showBackupCodeModal(tempToken) {
+  // Crea il modal per i codici di backup
+  const modalHTML = `
+    <div id="backupCodeModal" style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1001;
+    ">
+      <div style="
+        background-color: white;
+        padding: 2rem;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 400px;
+        text-align: center;
+      ">
+        <h2 style="margin-bottom: 1.5rem; color: var(--primary);">Use Backup Code</h2>
+        <p style="margin-bottom: 1.5rem;">Enter one of your backup codes to login</p>
+        
+        <div style="margin-bottom: 1.5rem;">
+          <input type="text" id="backupCode" placeholder="Backup code" 
+            style="
+              width: 100%;
+              padding: 0.8rem;
+              font-size: 1rem;
+              border: 1px solid var(--border);
+              border-radius: 8px;
+            "
+          >
+        </div>
+        
+        <div style="display: flex; gap: 1rem; justify-content: center;">
+          <button id="submitBackupCode" style="
+            padding: 0.8rem 1.5rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+          ">Verify</button>
+          
+          <button id="cancelBackupCode" style="
+            padding: 0.8rem 1.5rem;
+            background-color: #f1f1f1;
+            color: var(--text);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+          ">Cancel</button>
+        </div>
+        
+        <p id="backupCodeError" style="color: var(--error); margin-top: 1rem;"></p>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  
+  // Chiudi il modal 2FA se esiste
+  const faModal = document.getElementById('2faModal');
+  if (faModal) faModal.remove();
+  
+  // Gestisci la verifica del codice di backup
+  document.getElementById('submitBackupCode').addEventListener('click', async () => {
+    const code = document.getElementById('backupCode').value.trim();
+    const errorElement = document.getElementById('backupCodeError');
+    
+    if (!code) {
+      errorElement.textContent = 'Please enter a backup code';
+      return;
+    }
+    
+    errorElement.textContent = '';
+    document.getElementById('submitBackupCode').disabled = true;
+    document.getElementById('submitBackupCode').textContent = 'Verifying...';
+    
+    try {
+      const response = await fetch('http://localhost:5501/login/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          tempToken: tempToken,
+          twoFAToken: code 
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        handleSuccessfulLogin(data);
+        document.getElementById('backupCodeModal').remove();
+      } else {
+        errorElement.textContent = data.error || 'Invalid backup code';
+      }
+    } catch (error) {
+      errorElement.textContent = 'Connection error';
+      console.error('Backup code verification error:', error);
+    } finally {
+      document.getElementById('submitBackupCode').disabled = false;
+      document.getElementById('submitBackupCode').textContent = 'Verify';
+    }
+  });
+  
+  // Gestisci l'annullamento
+  document.getElementById('cancelBackupCode').addEventListener('click', () => {
+    document.getElementById('backupCodeModal').remove();
+    show2FAModal(tempToken);
+  });
+}
 </script>
 </body>
 </html>

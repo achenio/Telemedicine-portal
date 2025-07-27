@@ -327,6 +327,16 @@
       color: var(--warning);
     }
 
+    .status-booked {
+      background-color: rgba(26, 115, 232, 0.1);
+      color: var(--primary);
+    }
+
+    .status-completed {
+      background-color: rgba(217, 48, 37, 0.1);
+      color: var(--danger);
+    }
+
     .appointment-actions {
       margin-left: 24px;
     }
@@ -425,6 +435,18 @@
       }
     }
 
+    /* Loading State */
+    .loading-skeleton {
+      background-color: #e0e0e0;
+      border-radius: 4px;
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 0.3; }
+    }
+
     /* Icons (using Unicode as placeholder - replace with actual icon font) */
     .icon {
       font-style: normal;
@@ -441,20 +463,21 @@
         <div class="user-info">
           <div class="user-avatar" id="user-avatar">JD</div>
           <div class="user-details">
-            <div class="user-name" id="user-name">John Doe</div>
-            <div class="user-type" id="user-type">Patient</div>
+            <div class="user-name" id="user-name">Loading...</div>
+            <div class="user-type" id="user-type"></div>
           </div>
         </div>
       </div>
-      <ul class="nav-menu">
-        <li class="nav-item"><a href="#" class="nav-link active"><i class="icon">🏠</i> Dashboard</a></li>
+      <ul class="nav-menu" id="nav-menu">
+        <li class="nav-item"><a href="dashboard.html" class="nav-link active"><i class="icon">🏠</i> Dashboard</a></li>
         <li class="nav-item"><a href="bookings.html" class="nav-link"><i class="icon">📅</i> Appointments</a></li>
         <li class="nav-item"><a href="doctor-chat.html" class="nav-link"><i class="icon">💬</i> Secure Chat</a></li>
         <li class="nav-item"><a href="medical-records.html" class="nav-link"><i class="icon">📋</i> Medical Records</a></li>
         <li class="nav-item"><a href="prescriptions.html" class="nav-link"><i class="icon">💊</i> Prescriptions</a></li>
         <li class="nav-item"><a href="payments.html" class="nav-link"><i class="icon">💰</i> Billing & Payments</a></li>
-        <li class="nav-item"><a href="#" class="nav-link"><i class="icon">⚙️</i> Settings</a></li>
-        </ul>
+        <li class="nav-item"><a href="settings.html" class="nav-link"><i class="icon">⚙️</i> Settings</a></li>
+        <li class="nav-item"><a href="#" class="nav-link" id="logout-btn"><i class="icon">🚪</i> Logout</a></li>
+      </ul>
     </aside>
 
     <!-- Main Content Area -->
@@ -462,8 +485,8 @@
       <div class="header">
         <h1>Dashboard</h1>
         <div class="header-actions">
-          <button class="btn btn-outline"><i class="icon">🔔</i> Notifications</button>
-          <button class="btn btn-primary"><i class="icon">+</i> New Appointment</button>
+          <button class="btn btn-outline" id="notifications-btn"><i class="icon">🔔</i> Notifications</button>
+          <button class="btn btn-primary" id="new-appointment-btn"><i class="icon">+</i> New Appointment</button>
         </div>
       </div>
 
@@ -474,15 +497,15 @@
             <div class="card-title">Upcoming Appointments</div>
             <div class="card-icon blue"><i class="icon">📅</i></div>
           </div>
-          <div class="card-value" id="upcoming-count">2</div>
-          <div class="card-description">Next appointment in 3 days</div>
+          <div class="card-value" id="upcoming-count">0</div>
+          <div class="card-description" id="next-appointment-text">Loading...</div>
         </div>
         <div class="card">
           <div class="card-header">
             <div class="card-title">Unread Messages</div>
             <div class="card-icon green"><i class="icon">💬</i></div>
           </div>
-          <div class="card-value" id="unread-messages">3</div>
+          <div class="card-value" id="unread-messages">0</div>
           <div class="card-description">From your care team</div>
         </div>
         <div class="card">
@@ -490,7 +513,7 @@
             <div class="card-title">Pending Prescriptions</div>
             <div class="card-icon orange"><i class="icon">💊</i></div>
           </div>
-          <div class="card-value" id="pending-rx">1</div>
+          <div class="card-value" id="pending-rx">0</div>
           <div class="card-description">Ready for review</div>
         </div>
         <div class="card">
@@ -498,54 +521,26 @@
             <div class="card-title">Outstanding Balance</div>
             <div class="card-icon red"><i class="icon">💰</i></div>
           </div>
-          <div class="card-value" id="balance">$45.00</div>
-          <div class="card-description">Due in 15 days</div>
+          <div class="card-value" id="balance">$0.00</div>
+          <div class="card-description" id="balance-due-text">Loading...</div>
         </div>
       </div>
 
       <!-- Upcoming Appointments -->
       <h2 class="section-title">Upcoming Appointments</h2>
-      <div class="appointments-list">
+      <div class="appointments-list" id="appointments-list">
         <div class="appointment-item">
           <div class="appointment-time">
-            <div class="appointment-date">Tomorrow</div>
-            <div class="appointment-hour">10:30 AM</div>
+            <div class="appointment-date loading-skeleton" style="width: 100px; height: 20px;"></div>
+            <div class="appointment-hour loading-skeleton" style="width: 60px; height: 16px; margin-top: 4px;"></div>
           </div>
           <div class="appointment-details">
-            <div class="appointment-title">Annual Physical Checkup</div>
-            <div class="appointment-doctor">Dr. Sarah Johnson, Family Medicine</div>
+            <div class="appointment-title loading-skeleton" style="width: 200px; height: 20px;"></div>
+            <div class="appointment-doctor loading-skeleton" style="width: 150px; height: 16px; margin-top: 4px;"></div>
           </div>
-          <div class="appointment-status status-confirmed">Confirmed</div>
+          <div class="appointment-status loading-skeleton" style="width: 80px; height: 24px;"></div>
           <div class="appointment-actions">
-            <button class="btn btn-outline" style="padding: 4px 8px; font-size: 0.8rem;">Details</button>
-          </div>
-        </div>
-        <div class="appointment-item">
-          <div class="appointment-time">
-            <div class="appointment-date">June 15</div>
-            <div class="appointment-hour">2:00 PM</div>
-          </div>
-          <div class="appointment-details">
-            <div class="appointment-title">Follow-up Consultation</div>
-            <div class="appointment-doctor">Dr. Michael Chen, Cardiology</div>
-          </div>
-          <div class="appointment-status status-confirmed">Confirmed</div>
-          <div class="appointment-actions">
-            <button class="btn btn-outline" style="padding: 4px 8px; font-size: 0.8rem;">Details</button>
-          </div>
-        </div>
-        <div class="appointment-item">
-          <div class="appointment-time">
-            <div class="appointment-date">June 22</div>
-            <div class="appointment-hour">9:15 AM</div>
-          </div>
-          <div class="appointment-details">
-            <div class="appointment-title">Lab Results Review</div>
-            <div class="appointment-doctor">Dr. Emily Wong, Internal Medicine</div>
-          </div>
-          <div class="appointment-status status-pending">Pending</div>
-          <div class="appointment-actions">
-            <button class="btn btn-outline" style="padding: 4px 8px; font-size: 0.8rem;">Details</button>
+            <button class="btn btn-outline loading-skeleton" style="padding: 4px 8px; font-size: 0.8rem; width: 70px; height: 28px;"></button>
           </div>
         </div>
       </div>
@@ -554,53 +549,47 @@
       <div class="health-summary">
         <div class="health-card">
           <h2 class="section-title">Health Summary</h2>
-          <div class="health-metrics">
+          <div class="health-metrics" id="health-metrics">
             <div class="metric-item">
-              <div class="metric-value">120/80</div>
-              <div class="metric-label">Blood Pressure</div>
+              <div class="metric-value loading-skeleton" style="width: 80px; height: 32px; margin: 0 auto;"></div>
+              <div class="metric-label loading-skeleton" style="width: 120px; height: 16px; margin: 4px auto 0;"></div>
             </div>
             <div class="metric-item">
-              <div class="metric-value">72</div>
-              <div class="metric-label">Heart Rate (bpm)</div>
+              <div class="metric-value loading-skeleton" style="width: 50px; height: 32px; margin: 0 auto;"></div>
+              <div class="metric-label loading-skeleton" style="width: 100px; height: 16px; margin: 4px auto 0;"></div>
             </div>
             <div class="metric-item">
-              <div class="metric-value">98.6°F</div>
-              <div class="metric-label">Temperature</div>
+              <div class="metric-value loading-skeleton" style="width: 60px; height: 32px; margin: 0 auto;"></div>
+              <div class="metric-label loading-skeleton" style="width: 100px; height: 16px; margin: 4px auto 0;"></div>
             </div>
             <div class="metric-item">
-              <div class="metric-value">22.5</div>
-              <div class="metric-label">BMI</div>
+              <div class="metric-value loading-skeleton" style="width: 50px; height: 32px; margin: 0 auto;"></div>
+              <div class="metric-label loading-skeleton" style="width: 80px; height: 16px; margin: 4px auto 0;"></div>
             </div>
           </div>
         </div>
         <div class="health-card">
           <h2 class="section-title">Recent Activity</h2>
-          <div style="margin-top: 16px;">
+          <div id="recent-activity">
             <div style="display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border);">
-              <div style="width: 32px; height: 32px; background-color: rgba(26, 115, 232, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
-                <i class="icon" style="color: var(--primary);">💊</i>
-              </div>
-              <div>
-                <div style="font-size: 0.9rem;">New prescription added</div>
-                <div style="font-size: 0.8rem; color: var(--subtext);">2 days ago</div>
+              <div style="width: 32px; height: 32px; background-color: #e0e0e0; border-radius: 50%; margin-right: 12px;"></div>
+              <div style="flex: 1;">
+                <div class="loading-skeleton" style="width: 80%; height: 16px;"></div>
+                <div class="loading-skeleton" style="width: 60%; height: 14px; margin-top: 4px;"></div>
               </div>
             </div>
             <div style="display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border);">
-              <div style="width: 32px; height: 32px; background-color: rgba(52, 168, 83, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
-                <i class="icon" style="color: var(--success);">📋</i>
-              </div>
-              <div>
-                <div style="font-size: 0.9rem;">Lab results received</div>
-                <div style="font-size: 0.8rem; color: var(--subtext);">1 week ago</div>
+              <div style="width: 32px; height: 32px; background-color: #e0e0e0; border-radius: 50%; margin-right: 12px;"></div>
+              <div style="flex: 1;">
+                <div class="loading-skeleton" style="width: 70%; height: 16px;"></div>
+                <div class="loading-skeleton" style="width: 50%; height: 14px; margin-top: 4px;"></div>
               </div>
             </div>
             <div style="display: flex; align-items: center; padding: 8px 0;">
-              <div style="width: 32px; height: 32px; background-color: rgba(249, 171, 0, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
-                <i class="icon" style="color: var(--warning);">💬</i>
-              </div>
-              <div>
-                <div style="font-size: 0.9rem;">Message from Dr. Johnson</div>
-                <div style="font-size: 0.8rem; color: var(--subtext);">2 weeks ago</div>
+              <div style="width: 32px; height: 32px; background-color: #e0e0e0; border-radius: 50%; margin-right: 12px;"></div>
+              <div style="flex: 1;">
+                <div class="loading-skeleton" style="width: 90%; height: 16px;"></div>
+                <div class="loading-skeleton" style="width: 40%; height: 14px; margin-top: 4px;"></div>
               </div>
             </div>
           </div>
@@ -609,75 +598,323 @@
     </main>
   </div>
 
-  <script>
-    // Load user data from localStorage
-    const username = localStorage.getItem('username') || 'John Doe';
-    const userType = localStorage.getItem('user_type') || 'patient';
-    const userId = localStorage.getItem('user_id') || 'user123';
+<script>
+  // Common function to make authenticated API calls
+  async function makeAuthenticatedRequest(url, method = 'GET', body = null) {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = 'login.html';
+        return null;
+      }
 
-    // Set user info in the sidebar
-    document.getElementById('user-name').textContent = username;
-    document.getElementById('user-type').textContent = userType === 'doctor' ? 'Doctor' : 'Patient';
-    
-    // Generate avatar initials
-    const nameParts = username.split(' ');
-    const initials = nameParts.length >= 2 
-      ? nameParts[0].charAt(0) + nameParts[nameParts.length - 1].charAt(0)
-      : username.substring(0, 2);
-    document.getElementById('user-avatar').textContent = initials.toUpperCase();
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
 
-    // Adjust dashboard for doctors
-    if (userType === 'doctor') {
-      // Update card titles and values
-      document.querySelector('.card:nth-child(1) .card-title').textContent = 'Today\'s Appointments';
-      document.getElementById('upcoming-count').textContent = '5';
-      document.querySelector('.card:nth-child(1) .card-description').textContent = 'Next appointment in 1 hour';
+      const options = {
+        method,
+        headers
+      };
+
+      if (body) {
+        options.body = JSON.stringify(body);
+      }
+
+      const response = await fetch(url, options);
       
-      document.querySelector('.card:nth-child(2) .card-title').textContent = 'Patient Messages';
-      document.getElementById('unread-messages').textContent = '7';
-      document.querySelector('.card:nth-child(2) .card-description').textContent = 'Requiring your response';
-      
-      document.querySelector('.card:nth-child(3) .card-title').textContent = 'Prescriptions to Approve';
-      document.getElementById('pending-rx').textContent = '3';
-      
-      // Update section titles
-      document.querySelector('.section-title').textContent = 'Today\'s Appointments';
-      
-      // Update appointment items
-      const appointmentItems = document.querySelectorAll('.appointment-item');
-      appointmentItems[0].querySelector('.appointment-title').textContent = 'Follow-up - Hypertension';
-      appointmentItems[1].querySelector('.appointment-title').textContent = 'New Patient Consultation';
-      appointmentItems[2].querySelector('.appointment-title').textContent = 'Annual Physical';
-      
-      // Add doctor-specific menu items
-      const navMenu = document.querySelector('.nav-menu');
-      const existingItems = navMenu.querySelectorAll('.nav-item');
-      
-      // Insert after the 3rd item (Medical Records)
-      const doctorItem = document.createElement('li');
-      doctorItem.className = 'nav-item';
-      doctorItem.innerHTML = '<a href="doctor-schedule.html" class="nav-link"><i class="icon">⏰</i> My Schedule</a>';
-      navMenu.insertBefore(doctorItem, existingItems[3]);
-      
-      const patientsItem = document.createElement('li');
-      patientsItem.className = 'nav-item';
-      patientsItem.innerHTML = '<a href="my-patients.html" class="nav-link"><i class="icon">👥</i> My Patients</a>';
-      navMenu.insertBefore(patientsItem, existingItems[4]);
+      if (!response.ok) {
+        if (response.status === 401) {
+          // Token expired or invalid
+          localStorage.removeItem('token');
+          window.location.href = 'login.html';
+          return null;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('API request error:', error);
+      showError('Failed to fetch data. Please try again.');
+      return null;
     }
+  }
 
-    // Logout functionality
-    document.getElementById('logout-btn').addEventListener('click', () => {
-      localStorage.removeItem('username');
-      localStorage.removeItem('user_type');
-      localStorage.removeItem('user_id');
-      window.location.href = 'login.html';
-    });
+  // Function to format date
+  function formatDate(dateStr) {
+    const date = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    if (date.toDateString() === today.toDateString()) {
+      return 'Today';
+    } else if (date.toDateString() === tomorrow.toDateString()) {
+      return 'Tomorrow';
+    } else {
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+  }
 
-    // Simulate loading data
+  // Function to format time
+  function formatTime(timeStr) {
+    const [hours, minutes] = timeStr.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
+  }
+
+  // Function to calculate days until appointment
+  function daysUntil(dateStr) {
+    const date = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const diffTime = date - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays;
+  }
+
+  // Function to show error messages
+  function showError(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.style.position = 'fixed';
+    errorDiv.style.top = '20px';
+    errorDiv.style.right = '20px';
+    errorDiv.style.backgroundColor = 'var(--danger)';
+    errorDiv.style.color = 'white';
+    errorDiv.style.padding = '12px 16px';
+    errorDiv.style.borderRadius = '4px';
+    errorDiv.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+    errorDiv.style.zIndex = '1000';
+    errorDiv.textContent = message;
+    
+    document.body.appendChild(errorDiv);
+    
     setTimeout(() => {
-      // This would be replaced with actual API calls in production
-      console.log('Loading user data...');
-    }, 500);
-  </script>
+      errorDiv.style.opacity = '0';
+      setTimeout(() => errorDiv.remove(), 300);
+    }, 5000);
+  }
+
+  // Function to get status class based on appointment status
+  function getStatusClass(status) {
+    switch(status.toLowerCase()) {
+      case 'confirmed':
+        return 'status-confirmed';
+      case 'booked':
+        return 'status-booked';
+      case 'completed':
+        return 'status-completed';
+      case 'cancelled':
+        return 'status-cancelled';
+      default:
+        return 'status-pending';
+    }
+  }
+
+  // Function to load dashboard data
+  async function loadDashboardData() {
+    try {
+      // Load user profile data
+      const userData = await makeAuthenticatedRequest('http://localhost:5501/user/profile');
+      if (!userData) return;
+
+      // Load dashboard stats
+      const statsData = await makeAuthenticatedRequest('http://localhost:5501/dashboard-stats');
+      if (!statsData) return;
+
+      // Load recent appointments
+      const appointmentsData = await makeAuthenticatedRequest('http://localhost:5501/user/recent-appointments?limit=3');
+      if (!appointmentsData) return;
+
+      // Update UI with user data
+      document.getElementById('user-name').textContent = `${userData.nome} ${userData.cognome}`;
+      document.getElementById('user-type').textContent = userData.user_type === 'doctor' ? 'Doctor' : 'Patient';
+      
+      // Generate initials for avatar
+      const initials = `${userData.nome.charAt(0)}${userData.cognome.charAt(0)}`.toUpperCase();
+      document.getElementById('user-avatar').textContent = initials;
+
+      // Update stats cards
+      document.getElementById('upcoming-count').textContent = statsData.upcomingAppointments;
+      document.getElementById('unread-messages').textContent = statsData.unreadMessages;
+      document.getElementById('pending-rx').textContent = statsData.pendingPrescriptions;
+      document.getElementById('balance').textContent = `$${statsData.outstandingBalance.toFixed(2)}`;
+      
+      // Update descriptive text
+      if (statsData.upcomingAppointments > 0 && appointmentsData.appointments && appointmentsData.appointments.length > 0) {
+        const nextAppointment = appointmentsData.appointments[0];
+        const days = daysUntil(nextAppointment.date);
+        document.getElementById('next-appointment-text').textContent = 
+          `Next appointment in ${days} day${days !== 1 ? 's' : ''}`;
+      } else {
+        document.getElementById('next-appointment-text').textContent = 'No upcoming appointments';
+      }
+
+      // Update balance due text
+      if (statsData.outstandingBalance > 0) {
+        const dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + 15);
+        document.getElementById('balance-due-text').textContent = 
+          `Due by ${dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+      } else {
+        document.getElementById('balance-due-text').textContent = 'All payments settled';
+      }
+
+      // Update appointments list
+      const appointmentsContainer = document.getElementById('appointments-list');
+      appointmentsContainer.innerHTML = ''; // Clear existing content
+      
+      if (appointmentsData.appointments && appointmentsData.appointments.length > 0) {
+        appointmentsData.appointments.forEach(appointment => {
+          const appointmentItem = document.createElement('div');
+          appointmentItem.className = 'appointment-item';
+          
+          appointmentItem.innerHTML = `
+            <div class="appointment-time">
+              <div class="appointment-date">${formatDate(appointment.date)}</div>
+              <div class="appointment-hour">${formatTime(appointment.time)}</div>
+            </div>
+            <div class="appointment-details">
+              <div class="appointment-title">${appointment.doctor_name || 'Medical Consultation'}</div>
+              <div class="appointment-doctor">${appointment.specialization ? appointment.specialization : 'General Consultation'}</div>
+            </div>
+            <div class="appointment-status ${getStatusClass(appointment.status)}">
+              ${appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+            </div>
+            <div class="appointment-actions">
+              <button class="btn btn-outline view-appointment" data-id="${appointment.id}" 
+                style="padding: 4px 8px; font-size: 0.8rem;">
+                Details
+              </button>
+            </div>
+          `;
+          
+          appointmentsContainer.appendChild(appointmentItem);
+        });
+      } else {
+        appointmentsContainer.innerHTML = `
+          <div class="appointment-item">
+            <div class="appointment-details" style="width: 100%; text-align: center;">
+              <div class="appointment-title">No upcoming appointments</div>
+              <div class="appointment-doctor">Book your first appointment to get started</div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Update health metrics (example data - you can replace with real data from your backend)
+      const healthMetrics = [
+        { value: '120/80', label: 'Blood Pressure' },
+        { value: '72', label: 'Heart Rate (bpm)' },
+        { value: '98.6°F', label: 'Temperature' },
+        { value: '22.5', label: 'BMI' }
+      ];
+      
+      const healthContainer = document.getElementById('health-metrics');
+      healthContainer.innerHTML = '';
+      
+      healthMetrics.forEach(metric => {
+        const metricItem = document.createElement('div');
+        metricItem.className = 'metric-item';
+        metricItem.innerHTML = `
+          <div class="metric-value">${metric.value}</div>
+          <div class="metric-label">${metric.label}</div>
+        `;
+        healthContainer.appendChild(metricItem);
+      });
+
+      // Update recent activities (example data - you can replace with real data from your backend)
+      const recentActivities = [
+        { icon: '💊', color: 'primary', title: 'New prescription added', date: '2 days ago' },
+        { icon: '📋', color: 'success', title: 'Lab results received', date: '1 week ago' },
+        { icon: '💬', color: 'warning', title: 'Message from your doctor', date: '2 weeks ago' }
+      ];
+      
+      const activityContainer = document.getElementById('recent-activity');
+      activityContainer.innerHTML = '';
+      
+      recentActivities.forEach(activity => {
+        const activityItem = document.createElement('div');
+        activityItem.style.display = 'flex';
+        activityItem.style.alignItems = 'center';
+        activityItem.style.padding = '8px 0';
+        activityItem.style.borderBottom = '1px solid var(--border)';
+        
+        activityItem.innerHTML = `
+          <div style="width: 32px; height: 32px; 
+            background-color: rgba(26, 115, 232, 0.1); 
+            border-radius: 50%; display: flex; 
+            align-items: center; justify-content: center; 
+            margin-right: 12px;">
+            <i class="icon" style="color: var(--${activity.color});">${activity.icon}</i>
+          </div>
+          <div>
+            <div style="font-size: 0.9rem;">${activity.title}</div>
+            <div style="font-size: 0.8rem; color: var(--subtext);">${activity.date}</div>
+          </div>
+        `;
+        
+        activityContainer.appendChild(activityItem);
+      });
+
+      // If user is a doctor, add specific menu items
+      if (userData.user_type === 'doctor') {
+        const navMenu = document.getElementById('nav-menu');
+        
+        const scheduleItem = document.createElement('li');
+        scheduleItem.className = 'nav-item';
+        scheduleItem.innerHTML = '<a href="doctor-schedule.html" class="nav-link"><i class="icon">⏰</i> My Schedule</a>';
+        
+        const patientsItem = document.createElement('li');
+        patientsItem.className = 'nav-item';
+        patientsItem.innerHTML = '<a href="my-patients.html" class="nav-link"><i class="icon">👥</i> My Patients</a>';
+        
+        // Insert after "Medical Records"
+        const medicalRecordsItem = document.querySelector('.nav-item a[href="medical-records.html"]').parentNode;
+        navMenu.insertBefore(scheduleItem, medicalRecordsItem.nextSibling);
+        navMenu.insertBefore(patientsItem, scheduleItem.nextSibling);
+      }
+
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+      showError('Error loading dashboard data. Please try again.');
+    }
+  }
+
+  // Handle logout
+  document.getElementById('logout-btn').addEventListener('click', () => {
+    localStorage.removeItem('token');
+    window.location.href = 'login.html';
+  });
+
+  // Handle new appointment button
+  document.getElementById('new-appointment-btn').addEventListener('click', () => {
+    window.location.href = 'book-appointment.html';
+  });
+
+  // Handle notifications button
+  document.getElementById('notifications-btn').addEventListener('click', () => {
+    window.location.href = 'notifications.html';
+  });
+
+  // Event delegation for appointment buttons
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('view-appointment')) {
+      const appointmentId = e.target.getAttribute('data-id');
+      window.location.href = `appointment-details.html?id=${appointmentId}`;
+    }
+  });
+
+  // Load data when page is ready
+  document.addEventListener('DOMContentLoaded', loadDashboardData);
+</script>
 </body>
 </html>

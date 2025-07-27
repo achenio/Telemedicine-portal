@@ -9,6 +9,8 @@ import fs from 'fs';
 import fetch from 'node-fetch';
 import url from 'url';
 import crypto from 'crypto';
+import speakeasy from 'speakeasy';
+import QRCode from 'qrcode';
 
 // ==================== Configuration ====================
 const app = express();
@@ -84,7 +86,9 @@ db.serialize(() => {
       specialization TEXT,
       bio TEXT,
       specialties TEXT,
-      rating REAL DEFAULT 0
+      rating REAL DEFAULT 0,
+      two_factor_secret TEXT,
+      two_factor_backup_codes TEXT
     )
   `);
 
@@ -129,7 +133,117 @@ db.serialize(() => {
       FOREIGN KEY(user_id) REFERENCES utenti(id)
     )
   `);
+
+  // Aggiungi colonna two_factor_secret se non esiste
+  db.run(`
+    ALTER TABLE utenti ADD COLUMN two_factor_secret TEXT;
+  `, (err) => {
+    if (err && !err.message.includes('duplicate column name')) {
+      console.error('Error adding two_factor_secret column:', err);
+    }
+  });
+
+  // Aggiungi colonna two_factor_backup_codes se non esiste
+  db.run(`
+    ALTER TABLE utenti ADD COLUMN two_factor_backup_codes TEXT;
+  `, (err) => {
+    if (err && !err.message.includes('duplicate column name')) {
+      console.error('Error adding two_factor_backup_codes column:', err);
+    }
+  });
 });
+
+// ==================== Email Template Function ====================
+function getEmailTemplate(title, content) {
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>${title}</title>
+      <style>
+        :root {
+          --bg: #fefefe;
+          --text: #1c1c1e;
+          --subtext: #555;
+          --primary: #007aff;
+          --card: #ffffff;
+        }
+
+        * {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+        }
+
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+          background-color: var(--bg);
+          color: var(--text);
+          line-height: 1.6;
+          overflow-x: hidden;
+          padding: 20px;
+        }
+
+        .header {
+          position: relative;
+          background-color: var(--card);
+          padding: 2rem 1.5rem;
+          text-align: center;
+          border-radius: 16px 16px 0 0;
+        }
+
+        .header h1 {
+          font-size: 2rem;
+          margin-bottom: 1rem;
+          color: var(--primary);
+        }
+
+        .content {
+          background-color: var(--card);
+          padding: 2rem;
+          border-radius: 0 0 16px 16px;
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .button {
+          display: inline-block;
+          padding: 0.8rem 1.5rem;
+          background-color: var(--primary);
+          color: white;
+          text-decoration: none;
+          border-radius: 25px;
+          font-weight: bold;
+          margin: 1rem 0;
+        }
+
+        .button:hover {
+          background-color: #005fcc;
+        }
+
+        .footer {
+          text-align: center;
+          margin-top: 2rem;
+          color: var(--subtext);
+          font-size: 0.9rem;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>Telemedicine Portal</h1>
+      </div>
+      <div class="content">
+        ${content}
+      </div>
+      <div class="footer">
+        <p>&copy; ${new Date().getFullYear()} Telemedicine Portal. All rights reserved.</p>
+      </div>
+    </body>
+    </html>
+  `;
+}
 
 // ==================== Email Token Management ====================
 function loadToken() {
@@ -259,12 +373,17 @@ async function sendResetPasswordEmail(email, resetLink) {
         subject: RESET_PASSWORD_SUBJECT,
         body: {
           contentType: "HTML",
-          content: `
-            <h2>Password Reset Request</h2>
-            <p>You requested to reset your password. Click the link below to set a new password:</p>
-            <p><a href="${resetLink}" style="background-color: #007aff; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">Reset Password</a></p>
-            <p>This link will expire in 1 hour. If you didn't request this, please ignore this email.</p>
-          `
+          content: getEmailTemplate(
+            'Password Reset Request',
+            `
+              <h2>Password Reset Request</h2>
+              <p>You requested to reset your password for your Telemedicine Portal account.</p>
+              <p>Click the button below to set a new password:</p>
+              <a href="${resetLink}" class="button">Reset Password</a>
+              <p>This link will expire in 1 hour. If you didn't request this, please ignore this email.</p>
+              <p style="font-size: 0.8em; color: var(--subtext);">Or copy and paste this link into your browser: ${resetLink}</p>
+            `
+          )
         },
         toRecipients: [{
           emailAddress: { address: email }
@@ -422,7 +541,12 @@ async function sendEmail(to, subject, htmlContent) {
               address: to
             }
           }
-        ]
+        ],
+        from: {
+          emailAddress: {
+            address: FROM_EMAIL
+          }
+        }
       },
       saveToSentItems: "true"
     };
@@ -533,7 +657,6 @@ app.post('/auth/reset-password', async (req, res) => {
   }
 });
 
-// Aggiungi questa rotta nel tuo server.js
 app.get('/reset-password', (req, res) => {
     const { token, id } = req.query;
     if (!token || !id) {
@@ -552,6 +675,233 @@ app.get('/reset-password', (req, res) => {
     });
 });
 
+// ==================== 2FA Routes ====================
+
+// Genera segreto e QR code per 2FA
+app.post('/2fa/setup', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user;
+    
+    // Genera un segreto temporaneo
+    const secret = speakeasy.generateSecret({
+      name: `Telemedicine Portal (${user.username})`,
+      issuer: 'Telemedicine Portal'
+    });
+    
+    // Genera QR code come data URL
+    const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url);
+    
+    res.json({
+      secret: secret.base32,
+      qrCodeUrl,
+      manualEntryCode: secret.base32
+    });
+    
+  } catch (err) {
+    console.error('2FA setup error:', err);
+    res.status(500).json({ error: 'Failed to setup 2FA' });
+  }
+});
+
+// Verifica e attiva 2FA
+app.post('/2fa/verify', authenticateToken, async (req, res) => {
+  try {
+    const { token, secret } = req.body;
+    const user = req.user;
+    
+    // Verifica il token
+    const verified = speakeasy.totp.verify({
+      secret: secret,
+      encoding: 'base32',
+      token: token,
+      window: 1
+    });
+    
+    if (!verified) {
+      return res.status(400).json({ error: 'Invalid 2FA code' });
+    }
+    
+    // Genera codici di backup
+    const backupCodes = Array.from({ length: 10 }, () => 
+      crypto.randomBytes(5).toString('hex').toUpperCase()
+    );
+    
+    // Hash dei codici di backup
+    const hashedBackupCodes = await Promise.all(
+      backupCodes.map(code => bcrypt.hash(code, 10))
+    );
+    
+    // Salva il segreto e i codici di backup nel database
+    await new Promise((resolve, reject) => {
+      db.run(
+        'UPDATE utenti SET two_factor_secret = ?, two_factor_backup_codes = ? WHERE id = ?',
+        [secret, JSON.stringify(hashedBackupCodes), user.id],
+        (err) => {
+          if (err) reject(err);
+          else resolve();
+        }
+      );
+    });
+    
+    res.json({ 
+      success: true, 
+      message: '2FA activated successfully',
+      backupCodes // Invia i codici in chiaro solo questa volta
+    });
+    
+  } catch (err) {
+    console.error('2FA verify error:', err);
+    res.status(500).json({ error: 'Failed to activate 2FA' });
+  }
+});
+
+// Disattiva 2FA
+app.post('/2fa/disable', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user;
+    
+    // Rimuovi il segreto e i codici di backup dal database
+    await new Promise((resolve, reject) => {
+      db.run(
+        'UPDATE utenti SET two_factor_secret = NULL, two_factor_backup_codes = NULL WHERE id = ?',
+        [user.id],
+        (err) => {
+          if (err) reject(err);
+          else resolve();
+        }
+      );
+    });
+    
+    res.json({ success: true, message: '2FA disabled successfully' });
+    
+  } catch (err) {
+    console.error('2FA disable error:', err);
+    res.status(500).json({ error: 'Failed to disable 2FA' });
+  }
+});
+
+// Verifica token 2FA durante il login
+app.post('/2fa/validate', async (req, res) => {
+  try {
+    const { username, token } = req.body;
+    
+    if (!username || !token) {
+      return res.status(400).json({ error: 'Username and token required' });
+    }
+    
+    // Ottieni l'utente e il suo segreto 2FA
+    const user = await new Promise((resolve, reject) => {
+      db.get(
+        'SELECT id, username, two_factor_secret, two_factor_backup_codes FROM utenti WHERE username = ?',
+        [username],
+        (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        }
+      );
+    });
+    
+    if (!user) {
+      return res.status(400).json({ error: 'User not found' });
+    }
+    
+    if (!user.two_factor_secret) {
+      return res.status(400).json({ error: '2FA not enabled for this user' });
+    }
+    
+    // Prima verifica con il codice TOTP normale
+    const verified = speakeasy.totp.verify({
+      secret: user.two_factor_secret,
+      encoding: 'base32',
+      token: token,
+      window: 1
+    });
+    
+    if (verified) {
+      return res.json({ success: true, message: '2FA verification successful' });
+    }
+    
+    // Se il codice TOTP non è valido, verifica i codici di backup
+    if (user.two_factor_backup_codes) {
+      const backupCodes = JSON.parse(user.two_factor_backup_codes);
+      
+      for (const hashedCode of backupCodes) {
+        const match = await bcrypt.compare(token, hashedCode);
+        if (match) {
+          // Rimuovi il codice di backup usato
+          const updatedCodes = backupCodes.filter(code => code !== hashedCode);
+          
+          await new Promise((resolve, reject) => {
+            db.run(
+              'UPDATE utenti SET two_factor_backup_codes = ? WHERE id = ?',
+              [JSON.stringify(updatedCodes), user.id],
+              (err) => {
+                if (err) reject(err);
+                else resolve();
+              }
+            );
+          });
+          
+          return res.json({ 
+            success: true, 
+            message: '2FA verification successful (backup code used)',
+            remainingBackupCodes: updatedCodes.length
+          });
+        }
+      }
+    }
+    
+    return res.status(400).json({ error: 'Invalid 2FA code' });
+    
+  } catch (err) {
+    console.error('2FA validation error:', err);
+    res.status(500).json({ error: 'Failed to validate 2FA code' });
+  }
+});
+
+// Genera nuovi codici di backup
+app.post('/2fa/regenerate-backup-codes', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user;
+    
+    if (!user.two_factor_secret) {
+      return res.status(400).json({ error: '2FA not enabled for this user' });
+    }
+    
+    // Genera 10 nuovi codici di backup
+    const backupCodes = Array.from({ length: 10 }, () => 
+      crypto.randomBytes(5).toString('hex').toUpperCase()
+    );
+    
+    // Hash dei nuovi codici di backup
+    const hashedBackupCodes = await Promise.all(
+      backupCodes.map(code => bcrypt.hash(code, 10))
+    );
+    
+    // Salva i nuovi codici nel database
+    await new Promise((resolve, reject) => {
+      db.run(
+        'UPDATE utenti SET two_factor_backup_codes = ? WHERE id = ?',
+        [JSON.stringify(hashedBackupCodes), user.id],
+        (err) => {
+          if (err) reject(err);
+          else resolve();
+        }
+      );
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Backup codes regenerated',
+      backupCodes // Invia i nuovi codici in chiaro
+    });
+    
+  } catch (err) {
+    console.error('Regenerate backup codes error:', err);
+    res.status(500).json({ error: 'Failed to regenerate backup codes' });
+  }
+});
+
 // ==================== Authentication Middleware ====================
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
@@ -566,6 +916,15 @@ function authenticateToken(req, res, next) {
       console.error('Token verification error:', err);
       return res.status(403).json({ error: 'Invalid or expired token' });
     }
+    
+    // Verifica se è un token parziale che richiede 2FA
+    if (user.requires2FA) {
+      return res.status(403).json({ 
+        error: '2FA required',
+        requires2FA: true
+      });
+    }
+    
     req.user = user;
     next();
   });
@@ -603,7 +962,7 @@ app.post('/login', (req, res) => {
       return res.status(401).json({ error: 'User not found' });
     }
 
-    bcrypt.compare(password, user.password_hash, (err, match) => {
+    bcrypt.compare(password, user.password_hash, async (err, match) => {
       if (err) {
         console.error('Password comparison error:', err);
         return res.status(500).json({ error: 'Password verification error' });
@@ -612,6 +971,26 @@ app.post('/login', (req, res) => {
         return res.status(401).json({ error: 'Invalid password' });
       }
 
+      // Verifica se l'utente ha 2FA abilitato
+      if (user.two_factor_secret) {
+        // Restituisci un token parziale che indica che è richiesta la 2FA
+        const tempToken = jwt.sign(
+          { 
+            id: user.id,
+            username: user.username,
+            requires2FA: true 
+          }, 
+          JWT_SECRET, 
+          { expiresIn: '5m' }
+        );
+        
+        return res.json({
+          requires2FA: true,
+          tempToken
+        });
+      }
+
+      // Se non c'è 2FA, procedi con il login normale
       const tokenUser = {
         id: user.id,
         username: user.username,
@@ -628,6 +1007,115 @@ app.post('/login', (req, res) => {
       });
     });
   });
+});
+
+app.post('/login/complete', async (req, res) => {
+  try {
+    const { tempToken, twoFAToken } = req.body;
+    
+    if (!tempToken || !twoFAToken) {
+      return res.status(400).json({ error: 'Temporary token and 2FA token required' });
+    }
+    
+    // Verifica il token temporaneo
+    const decoded = jwt.verify(tempToken, JWT_SECRET);
+    
+    if (!decoded.requires2FA || !decoded.id) {
+      return res.status(400).json({ error: 'Invalid temporary token' });
+    }
+    
+    // Ottieni l'utente e verifica il token 2FA
+    const user = await new Promise((resolve, reject) => {
+      db.get(
+        'SELECT * FROM utenti WHERE id = ?',
+        [decoded.id],
+        (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        }
+      );
+    });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    if (!user.two_factor_secret) {
+      return res.status(400).json({ error: '2FA not enabled for this user' });
+    }
+    
+    // Verifica il token 2FA
+    const verified = speakeasy.totp.verify({
+      secret: user.two_factor_secret,
+      encoding: 'base32',
+      token: twoFAToken,
+      window: 1
+    });
+    
+    if (!verified) {
+      // Se il codice TOTP non è valido, verifica i codici di backup
+      if (user.two_factor_backup_codes) {
+        const backupCodes = JSON.parse(user.two_factor_backup_codes);
+        
+        for (const hashedCode of backupCodes) {
+          const match = await bcrypt.compare(twoFAToken, hashedCode);
+          if (match) {
+            // Rimuovi il codice di backup usato
+            const updatedCodes = backupCodes.filter(code => code !== hashedCode);
+            
+            await new Promise((resolve, reject) => {
+              db.run(
+                'UPDATE utenti SET two_factor_backup_codes = ? WHERE id = ?',
+                [JSON.stringify(updatedCodes), user.id],
+                (err) => {
+                  if (err) reject(err);
+                  else resolve();
+                }
+              );
+            });
+            
+            // Procedi con il login
+            break;
+          }
+        }
+        
+        if (!match) {
+          return res.status(400).json({ error: 'Invalid 2FA code' });
+        }
+      } else {
+        return res.status(400).json({ error: 'Invalid 2FA code' });
+      }
+    }
+    
+    // Se tutto è corretto, genera il token finale
+    const tokenUser = {
+      id: user.id,
+      username: user.username,
+      user_type: user.user_type,
+      nome: user.nome,
+      cognome: user.cognome
+    };
+
+    const token = jwt.sign(tokenUser, JWT_SECRET, { expiresIn: '1h' });
+
+    res.json({
+      token,
+      user: tokenUser
+    });
+    
+  } catch (err) {
+    console.error('Login completion error:', err);
+    
+    if (err.name === 'JsonWebTokenError') {
+      return res.status(400).json({ error: 'Invalid token' });
+    }
+    
+    if (err.name === 'TokenExpiredError') {
+      return res.status(400).json({ error: 'Temporary token expired' });
+    }
+    
+    res.status(500).json({ error: 'Login completion failed' });
+  }
 });
 
 app.post('/register', async (req, res) => {
@@ -682,18 +1170,22 @@ app.post('/register', async (req, res) => {
         const token = jwt.sign(user, JWT_SECRET, { expiresIn: '1h' });
 
         if (email) {
-          const welcomeEmail = `
-            <h1>Welcome to Telemedicine Portal!</h1>
-            <p>Dear ${nome} ${cognome},</p>
-            <p>Your registration has been completed successfully.</p>
-            <p>Your login details:</p>
-            <ul>
-              <li><strong>Username:</strong> ${username}</li>
-              <li><strong>Account type:</strong> ${user_type}</li>
-            </ul>
-            <p>You can access your account at: <a href="http://localhost:5500">http://localhost:5500</a></p>
-            <p>Thank you for choosing our service!</p>
-          `;
+          const welcomeEmail = getEmailTemplate(
+            'Welcome to Telemedicine Portal',
+            `
+              <h2>Welcome to Telemedicine Portal!</h2>
+              <p>Dear ${nome} ${cognome},</p>
+              <p>Your registration has been completed successfully.</p>
+              <p>Your login details:</p>
+              <ul>
+                <li><strong>Username:</strong> ${username}</li>
+                <li><strong>Account type:</strong> ${user_type}</li>
+              </ul>
+              <p>You can access your account at: <a href="http://localhost:5500/frontend/dashboard.html">http://localhost:5500/frontend/dashboard.html</a></p>
+              <p>Thank you for choosing our service!</p>
+              <a href="http://localhost:5500/frontend/dashboard.html" class="button">Access Your Account</a>
+            `
+          );
           
           sendEmail(email, 'Welcome to Telemedicine Portal', welcomeEmail)
             .catch(err => console.error('Error sending welcome email:', err));
@@ -723,7 +1215,11 @@ app.get('/user-data', authenticateToken, (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const { password_hash, ...userData } = user;
+    const { password_hash, two_factor_secret, two_factor_backup_codes, ...userData } = user;
+    
+    // Aggiungi flag per indicare se 2FA è abilitato
+    userData.twoFactorEnabled = !!two_factor_secret;
+    
     res.json(userData);
   });
 });
@@ -761,7 +1257,7 @@ app.put('/users/:id', authenticateToken, (req, res) => {
           console.error('Fetch updated user error:', err);
           return res.status(500).json({ error: "Failed to fetch updated user" });
         }
-        const { password_hash, ...userData } = user;
+        const { password_hash, two_factor_secret, two_factor_backup_codes, ...userData } = user;
         res.json(userData);
       });
     }
@@ -874,35 +1370,43 @@ app.post('/appointments', authenticateToken, upload.single('medical_report'), as
 
     try {
       if (user.email) {
-        const patientEmailContent = `
-          <h1>Appointment Booked</h1>
-          <p>Dear ${user.nome} ${user.cognome},</p>
-          <p>Your appointment has been successfully booked.</p>
-          <p><strong>Appointment details:</strong></p>
-          <ul>
-            <li><strong>Doctor:</strong> ${doctor.nome} ${doctor.cognome}</li>
-            <li><strong>Date:</strong> ${date}</li>
-            <li><strong>Time:</strong> ${time}</li>
-            <li><strong>Payment method:</strong> ${payment_method}${payment_method === 'insurance' ? ` (${insurance_package})` : ''}</li>
-          </ul>
-          <p>You can view your appointments in your profile.</p>
-        `;
+        const patientEmailContent = getEmailTemplate(
+          'Appointment Booked',
+          `
+            <h2>Appointment Booked</h2>
+            <p>Dear ${user.nome} ${user.cognome},</p>
+            <p>Your appointment has been successfully booked.</p>
+            <p><strong>Appointment details:</strong></p>
+            <ul>
+              <li><strong>Doctor:</strong> ${doctor.nome} ${doctor.cognome}</li>
+              <li><strong>Date:</strong> ${date}</li>
+              <li><strong>Time:</strong> ${time}</li>
+              <li><strong>Payment method:</strong> ${payment_method}${payment_method === 'insurance' ? ` (${insurance_package})` : ''}</li>
+            </ul>
+            <p>You can view your appointments in your profile.</p>
+            <a href="http://localhost:5500/frontend/bookings.html" class="button">View Appointments</a>
+          `
+        );
         
         await sendEmail(user.email, 'Appointment Confirmation', patientEmailContent);
       }
 
       if (doctor.email) {
-        const doctorEmailContent = `
-          <h1>New Appointment Booked</h1>
-          <p>Dr. ${doctor.cognome},</p>
-          <p>A new appointment has been booked with you.</p>
-          <p><strong>Appointment details:</strong></p>
-          <ul>
-            <li><strong>Patient:</strong> ${user.nome} ${user.cognome}</li>
-            <li><strong>Date:</strong> ${date}</li>
-            <li><strong>Time:</strong> ${time}</li>
-          </ul>
-        `;
+        const doctorEmailContent = getEmailTemplate(
+          'New Appointment Booked',
+          `
+            <h2>New Appointment Booked</h2>
+            <p>Dr. ${doctor.cognome},</p>
+            <p>A new appointment has been booked with you.</p>
+            <p><strong>Appointment details:</strong></p>
+            <ul>
+              <li><strong>Patient:</strong> ${user.nome} ${user.cognome}</li>
+              <li><strong>Date:</strong> ${date}</li>
+              <li><strong>Time:</strong> ${time}</li>
+            </ul>
+            <a href="http://localhost:5500/frontend/doctor-appointments.html" class="button">View Appointment</a>
+          `
+        );
         
         await sendEmail(doctor.email, 'New Appointment Booked', doctorEmailContent);
       }
@@ -1075,32 +1579,39 @@ app.delete('/appointments/:id', authenticateToken, async (req, res) => {
 
     try {
       if (user && user.email) {
-        const patientEmailContent = `
-          <h1>Appointment Cancelled</h1>
-          <p>Dear ${user.nome} ${user.cognome},</p>
-          <p>Your appointment with Dr. ${doctor.cognome} has been cancelled.</p>
-          <p><strong>Appointment details:</strong></p>
-          <ul>
-            <li><strong>Date:</strong> ${appointment.date}</li>
-            <li><strong>Time:</strong> ${appointment.time}</li>
-          </ul>
-          <p>You can book a new appointment from your profile.</p>
-        `;
+        const patientEmailContent = getEmailTemplate(
+          'Appointment Cancelled',
+          `
+            <h2>Appointment Cancelled</h2>
+            <p>Dear ${user.nome} ${user.cognome},</p>
+            <p>Your appointment with Dr. ${doctor.cognome} has been cancelled.</p>
+            <p><strong>Appointment details:</strong></p>
+            <ul>
+              <li><strong>Date:</strong> ${appointment.date}</li>
+              <li><strong>Time:</strong> ${appointment.time}</li>
+            </ul>
+            <p>You can book a new appointment from your profile.</p>
+            <a href="http://localhost:5500/frontend/appointments.html" class="button">Book New Appointment</a>
+          `
+        );
         
         await sendEmail(user.email, 'Appointment Cancelled', patientEmailContent);
       }
 
       if (doctor && doctor.email) {
-        const doctorEmailContent = `
-          <h1>Appointment Cancelled</h1>
-          <p>Dr. ${doctor.cognome},</p>
-          <p>The appointment with ${user.nome} ${user.cognome} has been cancelled.</p>
-          <p><strong>Appointment details:</strong></p>
-          <ul>
-            <li><strong>Date:</strong> ${appointment.date}</li>
-            <li><strong>Time:</strong> ${appointment.time}</li>
-          </ul>
-        `;
+        const doctorEmailContent = getEmailTemplate(
+          'Appointment Cancelled',
+          `
+            <h2>Appointment Cancelled</h2>
+            <p>Dr. ${doctor.cognome},</p>
+            <p>The appointment with ${user.nome} ${user.cognome} has been cancelled.</p>
+            <p><strong>Appointment details:</strong></p>
+            <ul>
+              <li><strong>Date:</strong> ${appointment.date}</li>
+              <li><strong>Time:</strong> ${appointment.time}</li>
+            </ul>
+          `
+        );
         
         await sendEmail(doctor.email, 'Appointment Cancelled', doctorEmailContent);
       }
@@ -1165,24 +1676,32 @@ app.patch('/appointments/:id', authenticateToken, checkUserType(['doctor']), asy
         
         if (status === 'confirmed') {
           subject = 'Appointment Confirmed';
-          content = `
-            <h1>Appointment Confirmed</h1>
-            <p>Dear ${user.nome} ${user.cognome},</p>
-            <p>Dr. ${req.user.cognome} has confirmed your appointment.</p>
-            <p><strong>Appointment details:</strong></p>
-            <ul>
-              <li><strong>Date:</strong> ${appointment.date}</li>
-              <li><strong>Time:</strong> ${appointment.time}</li>
-            </ul>
-          `;
+          content = getEmailTemplate(
+            'Appointment Confirmed',
+            `
+              <h2>Appointment Confirmed</h2>
+              <p>Dear ${user.nome} ${user.cognome},</p>
+              <p>Dr. ${req.user.cognome} has confirmed your appointment.</p>
+              <p><strong>Appointment details:</strong></p>
+              <ul>
+                <li><strong>Date:</strong> ${appointment.date}</li>
+                <li><strong>Time:</strong> ${appointment.time}</li>
+              </ul>
+              <a href="http://localhost:5500/frontend/appointments.html" class="button">View Appointment</a>
+            `
+          );
         } else if (status === 'completed') {
           subject = 'Appointment Completed';
-          content = `
-            <h1>Appointment Completed</h1>
-            <p>Dear ${user.nome} ${user.cognome},</p>
-            <p>Your appointment with Dr. ${req.user.cognome} has been completed.</p>
-            <p>You can view the medical report in your profile.</p>
-          `;
+          content = getEmailTemplate(
+            'Appointment Completed',
+            `
+              <h2>Appointment Completed</h2>
+              <p>Dear ${user.nome} ${user.cognome},</p>
+              <p>Your appointment with Dr. ${req.user.cognome} has been completed.</p>
+              <p>You can view the medical report in your profile.</p>
+              <a href="http://localhost:5500/frontend/appointments.html" class="button">View Report</a>
+            `
+          );
         }
         
         if (subject && content) {
@@ -1318,11 +1837,136 @@ app.get('/doctor/patients', authenticateToken, checkUserType(['doctor']), (req, 
   );
 });
 
+// ==================== Dashboard Routes ====================
+app.get('/dashboard-stats', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userType = req.user.user_type;
+// Add to your server.js
+app.get('/health-check', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+    // Ottieni il conteggio degli appuntamenti in programma
+    const upcomingAppointments = await new Promise((resolve, reject) => {
+      db.get(
+        `SELECT COUNT(*) as count FROM appointments 
+         WHERE (user_id = ? OR (doctor_id = ? AND user_type = 'doctor'))
+         AND status IN ('booked', 'confirmed')
+         AND date >= date('now')`,
+        [userId, userId],
+        (err, row) => {
+          if (err) reject(err);
+          else resolve(row ? row.count : 0);
+        }
+      );
+    });
+
+    // Ottieni il conteggio dei messaggi non letti
+    const unreadMessages = await new Promise((resolve, reject) => {
+      db.get(
+        `SELECT COUNT(*) as count FROM messages 
+         WHERE receiver_id = ? AND is_read = FALSE`,
+        [userId],
+        (err, row) => {
+          if (err) reject(err);
+          else resolve(row ? row.count : 0);
+        }
+      );
+    });
+
+    // Per pazienti: ottieni prescrizioni pendenti (esempio)
+    const pendingPrescriptions = await new Promise((resolve, reject) => {
+      if (userType === 'patient') {
+        db.get(
+          `SELECT COUNT(*) as count FROM prescriptions 
+           WHERE patient_id = ? AND status = 'pending'`,
+          [userId],
+          (err, row) => {
+            if (err) reject(err);
+            else resolve(row ? row.count : 0);
+          }
+        );
+      } else {
+        resolve(0); // Per i dottori, questo valore non è rilevante
+      }
+    });
+
+    // Saldo pendente (esempio)
+    const outstandingBalance = await new Promise((resolve, reject) => {
+      if (userType === 'patient') {
+        db.get(
+          `SELECT SUM(amount) as total FROM payments 
+           WHERE user_id = ? AND status = 'pending'`,
+          [userId],
+          (err, row) => {
+            if (err) reject(err);
+            else resolve(row && row.total ? row.total : 0);
+          }
+        );
+      } else {
+        resolve(0); // Per i dottori, questo valore non è rilevante
+      }
+    });
+
+    res.json({
+      upcomingAppointments,
+      unreadMessages,
+      pendingPrescriptions,
+      outstandingBalance
+    });
+
+  } catch (err) {
+    console.error('Dashboard stats error:', err);
+    res.status(500).json({ error: 'Failed to load dashboard stats' });
+  }
+});
+
+// Route per ottenere i dettagli completi dell'utente
+app.get('/user/profile', authenticateToken, (req, res) => {
+  db.get(
+    `SELECT id, nome, cognome, email, telefono, user_type, specialization, bio 
+     FROM utenti WHERE id = ?`,
+    [req.user.id],
+    (err, user) => {
+      if (err) {
+        console.error('User profile error:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      res.json(user);
+    }
+  );
+});
+
+// Route per ottenere gli appuntamenti recenti
+app.get('/user/recent-appointments', authenticateToken, (req, res) => {
+  const limit = parseInt(req.query.limit) || 3;
+  
+  db.all(
+    `SELECT a.*, d.specialization, d.nome as doctor_nome, d.cognome as doctor_cognome
+     FROM appointments a
+     JOIN utenti d ON a.doctor_id = d.id
+     WHERE a.user_id = ? AND a.status IN ('booked', 'confirmed')
+     ORDER BY a.date ASC, a.time ASC
+     LIMIT ?`,
+    [req.user.id, limit],
+    (err, appointments) => {
+      if (err) {
+        console.error('Recent appointments error:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      res.json({ appointments });
+    }
+  );
+});
+
 // Serve uploaded PDF files
 app.use('/uploads', express.static(uploadsDir));
 
-// Start the server
-app.listen(PORT, () => {
+// Start
+const server = app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
   console.log(`[First time only] To setup email authentication, visit: http://localhost:${PORT}/auth/email`);
 });

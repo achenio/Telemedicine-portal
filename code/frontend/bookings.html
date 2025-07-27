@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Bookings</title>
+  <title>My Bookings - Telemedicine Portal</title>
   <style>
     :root {
       --bg: #fefefe;
@@ -252,7 +252,7 @@
         // Modificato il percorso del report
         let reportLink = '';
         if (appt.medical_report_url) {
-          const reportUrl = `http://localhost:5500${appt.medical_report_url}`;
+          const reportUrl = `http://localhost:5500/backend/${appt.medical_report_url}`;
           reportLink = `
             <span>
               <a href="${reportUrl}" target="_blank" style="color: var(--primary); text-decoration: underline;">

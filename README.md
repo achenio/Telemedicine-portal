@@ -35,7 +35,7 @@ WIP
 
 | Home Page              | Secure Chat (Patient)           | Secure Chat (Doctor)          | Appointments          |
 | ---------------------- | ---------------------- | ---------------------- | ---------------------- |
-| ![Home Screenshot](./screenshots/screenshot_home.png) | ![Chat Screenshot](./screenshots/patientview-securechat.png) | ![Chat Screenshot](./screenshots/doctorview-securechat.png) | ![Appointment Booking](./screenshots/screenshot_appointmentbooking.png) |
+| ![Home Screenshot](./screenshots/screenshot_home.png) | ![Chat Screenshot](./screenshots/patientview_securechat.png) | ![Chat Screenshot](./screenshots/doctorview_securechat.png) | ![Appointment Booking](./screenshots/screenshot_appointmentbooking.png) |
 
 ---
 

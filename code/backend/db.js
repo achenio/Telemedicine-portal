@@ -7,7 +7,7 @@ sqlite3.verbose();
 
 export async function connectToDatabase() {
   const db = await open({
-    filename: './telemedicine.db', // or wherever you'd like the DB to live
+    filename: './utenti.db', // or wherever you'd like the DB to live
     driver: sqlite3.Database
   });
 

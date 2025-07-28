@@ -1,89 +1,103 @@
+const sqlite3 = require('sqlite3').verbose();
+const db = new sqlite3.Database('utenti.db');
+module.exports = db;
+
 const WebSocket = require('ws');
 const jwt = require('jsonwebtoken');
-const { db } = require('./db'); // Assuming you have a db connection module
+const crypto = require('crypto');
+const express = require('express');
+const app = express();
+
 const JWT_SECRET = 'your-secret-key-here';
+const ENCRYPTION_KEY = '12345678901234567890123456789012'; // 32 caratteri
+const IV_LENGTH = 16;
 
 const wss = new WebSocket.Server({ port: 8080 });
-
-// Store connected clients
 const clients = new Map();
-
-// Heartbeat interval to check for dead connections
-const HEARTBEAT_INTERVAL = 30000; // 30 seconds
 const heartbeat = new Map();
+const HEARTBEAT_INTERVAL = 30000; // 30 secondi
+
+function encrypt(text) {
+  const iv = crypto.randomBytes(IV_LENGTH);
+  const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
+  let encrypted = cipher.update(text, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  return iv.toString('hex') + ':' + encrypted;
+}
+
+function decrypt(text) {
+  const parts = text.split(':');
+  const iv = Buffer.from(parts.shift(), 'hex');
+  const encryptedText = parts.join(':');
+  const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
+  let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
+  return decrypted;
+}
 
 wss.on('connection', (ws, req) => {
-  // Get token from query string
   const token = new URL(`http://localhost${req.url}`).searchParams.get('token');
-  
+
   if (!token) {
     ws.close(1008, 'Authentication required');
     return;
   }
 
   try {
-    // Verify token
     const decoded = jwt.verify(token, JWT_SECRET);
     const userId = decoded.id;
     const userType = decoded.user_type;
 
-    // Only allow doctors and patients to connect
     if (userType !== 'doctor' && userType !== 'patient') {
       ws.close(1008, 'Unauthorized user type');
       return;
     }
 
-    // Add client to map
     clients.set(userId, ws);
-    console.log(`User ${userId} (${userType}) connected`);
-
-    // Set up heartbeat
     heartbeat.set(ws, Date.now());
     ws.isAlive = true;
 
-    // Message handler
+    console.log(`User ${userId} (${userType}) connected`);
+
     ws.on('message', async (message) => {
       try {
         const msg = JSON.parse(message);
-        
-        // Validate message structure
+
         if (!msg.receiver_id || !msg.content) {
           console.warn(`Invalid message format from user ${userId}`);
           return;
         }
 
-        // Prevent sending to self
         if (msg.receiver_id === userId) {
           console.warn(`User ${userId} attempted to send message to self`);
           return;
         }
 
-        // Save message to database
         try {
-          await db.run(
-            `INSERT INTO messages (sender_id, receiver_id, content, sender_type) 
-             VALUES (?, ?, ?, ?)`,
-            [userId, msg.receiver_id, msg.content, userType]
+          const encryptedContent = encrypt(msg.content);
+          db.run(
+            `INSERT INTO messages (sender_id, receiver_id, content, timestamp, is_read, sender_type)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [userId, msg.receiver_id, encryptedContent, new Date().toISOString(), 0, userType],
+            (err) => {
+              if (err) console.error('Error saving message to DB:', err);
+            }
           );
         } catch (dbError) {
-          console.error('Error saving message to DB:', dbError);
-          // Continue to send message even if DB fails
+          console.error('Error encrypting/saving message:', dbError);
         }
 
-        // Forward message to recipient if connected
         if (clients.has(msg.receiver_id)) {
           const receiverWs = clients.get(msg.receiver_id);
           const messageData = {
             sender_id: userId,
             content: msg.content,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           };
 
-          // Check if receiver connection is still alive
           if (receiverWs.readyState === WebSocket.OPEN) {
             receiverWs.send(JSON.stringify(messageData));
           } else {
-            console.log(`Receiver ${msg.receiver_id} connection not open`);
             clients.delete(msg.receiver_id);
           }
         }
@@ -92,20 +106,17 @@ wss.on('connection', (ws, req) => {
       }
     });
 
-    // Handle connection close
     ws.on('close', () => {
       clients.delete(userId);
       heartbeat.delete(ws);
       console.log(`User ${userId} disconnected`);
     });
 
-    // Handle errors
     ws.on('error', (error) => {
       console.error(`WebSocket error for user ${userId}:`, error);
       clients.delete(userId);
       heartbeat.delete(ws);
     });
-
   } catch (e) {
     console.error('Authentication error:', e);
     ws.close(1008, 'Invalid token');
@@ -115,7 +126,7 @@ wss.on('connection', (ws, req) => {
 // Heartbeat check
 const interval = setInterval(() => {
   const now = Date.now();
-  
+
   heartbeat.forEach((lastPing, ws) => {
     if (now - lastPing > HEARTBEAT_INTERVAL) {
       ws.isAlive = false;
@@ -124,7 +135,6 @@ const interval = setInterval(() => {
     }
   });
 
-  // Ping all clients
   wss.clients.forEach((ws) => {
     if (ws.isAlive === false) {
       const userId = [...clients.entries()].find(([_, client]) => client === ws)?.[0];
@@ -139,7 +149,7 @@ const interval = setInterval(() => {
   });
 }, HEARTBEAT_INTERVAL);
 
-// Handle pongs
+// PONG listener
 wss.on('pong', (ws) => {
   heartbeat.set(ws, Date.now());
   ws.isAlive = true;
@@ -153,3 +163,44 @@ wss.on('close', () => {
 });
 
 console.log('WebSocket server running on ws://localhost:8080');
+
+// EXPRESS API
+app.get('/messages', (req, res) => {
+  db.all('SELECT * FROM messages', [], (err, rows) => {
+    if (err) return res.status(500).json({ error: 'DB error' });
+    const messages = rows.map(row => ({
+      ...row,
+      content: decrypt(row.content)
+    }));
+    res.json(messages);
+  });
+});
+
+app.get('/messages/conversation/:patientId', (req, res) => {
+  const patientId = req.params.patientId;
+  db.all(
+    'SELECT * FROM messages WHERE (sender_id = ? OR receiver_id = ?) ORDER BY timestamp ASC',
+    [patientId, patientId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: 'DB error' });
+      const messages = rows.map(row => {
+        let decrypted = '';
+        try {
+          decrypted = decrypt(row.content);
+        } catch (e) {
+          decrypted = '[ERRORE DECRIPT]';
+        }
+        console.log(`Criptato: ${row.content} | Decriptato: ${decrypted}`);
+        return {
+          ...row,
+          content: decrypted
+        };
+      });
+      res.json(messages);
+    }
+  );
+});
+
+app.listen(3001, () => {
+  console.log('Express API listening on http://localhost:3001');
+});

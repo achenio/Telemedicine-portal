@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Community Forum - Telemedicine Portal</title>
+  <style>
+    :root {
+      --bg: #fefefe;
+      --text: #1c1c1e;
+      --subtext: #555;
+      --primary: #007aff;
+      --card: #ffffff;
+      --error: #ff3b30;
+      --success: #34c759;
+      --border: #e5e5ea;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    header {
+      background-color: var(--card);
+      padding: 2rem 1rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      animation: fadeIn 1s ease-out;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding: 0;
+      margin-top: 1rem;
+    }
+
+    nav ul li a {
+      text-decoration: none;
+      color: var(--primary);
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      transition: background-color 0.3s ease;
+    }
+
+    nav ul li a:hover {
+      background-color: rgba(0, 122, 255, 0.1);
+    }
+
+    main {
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 1rem;
+      animation: fadeInUp 1s ease-out;
+    }
+
+    h2 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    #login-message {
+      text-align: center;
+      margin: 2rem 0;
+      font-weight: 600;
+      color: var(--error);
+    }
+
+    #post-form {
+      background-color: var(--card);
+      padding: 1.5rem;
+      border-radius: 16px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+      margin-bottom: 2rem;
+      border: 1px solid var(--border);
+    }
+
+    #post-content {
+      width: 100%;
+      min-height: 100px;
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      resize: vertical;
+      font-family: inherit;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+    }
+
+    #post-submit {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: opacity 0.3s ease;
+    }
+
+    #post-submit:hover {
+      opacity: 0.9;
+    }
+
+    .posts-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .post {
+      background-color: var(--card);
+      padding: 1.5rem;
+      border-radius: 16px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border: 1px solid var(--border);
+    }
+
+    .post:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .post-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .post-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #ddd;
+      margin-right: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: var(--primary);
+      background-color: rgba(0, 122, 255, 0.1);
+    }
+
+    .post-author {
+      font-weight: 600;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .post-author-type {
+      font-size: 0.8rem;
+      color: var(--subtext);
+      font-weight: normal;
+    }
+
+    .post-date {
+      font-size: 0.8rem;
+      color: var(--subtext);
+      margin-left: auto;
+    }
+
+    .post-content {
+      margin-bottom: 1rem;
+      white-space: pre-line;
+    }
+
+    .post-actions {
+      display: flex;
+      gap: 1rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+    }
+
+    .post-action {
+      background: none;
+      border: none;
+      color: var(--subtext);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      transition: color 0.2s ease;
+    }
+
+    .post-action:hover {
+      color: var(--primary);
+    }
+
+    .post-action.liked {
+      color: var(--primary);
+    }
+
+    .post-stats {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.9rem;
+      color: var(--subtext);
+      margin-bottom: 1rem;
+    }
+
+    .comments-container {
+      margin-top: 1rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+    }
+
+    .comment {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .comment:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .comment-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background-color: #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: var(--primary);
+      background-color: rgba(0, 122, 255, 0.1);
+      flex-shrink: 0;
+    }
+
+    .comment-content {
+      flex-grow: 1;
+    }
+
+    .comment-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .comment-author {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-right: 0.5rem;
+    }
+
+    .comment-author-type {
+      font-size: 0.7rem;
+      color: var(--subtext);
+      margin-right: 0.5rem;
+    }
+
+    .comment-date {
+      font-size: 0.7rem;
+      color: var(--subtext);
+      margin-left: auto;
+    }
+
+    .comment-text {
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+      white-space: pre-line;
+    }
+
+    .comment-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .comment-action {
+      background: none;
+      border: none;
+      color: var(--subtext);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.8rem;
+      transition: color 0.2s ease;
+    }
+
+    .comment-action:hover {
+      color: var(--primary);
+    }
+
+    .comment-action.liked {
+      color: var(--primary);
+    }
+
+    .add-comment-form {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .comment-input {
+      flex-grow: 1;
+      padding: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 0.9rem;
+    }
+
+    .comment-submit {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 0 1rem;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: opacity 0.3s ease;
+    }
+
+    .comment-submit:hover {
+      opacity: 0.9;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: var(--subtext);
+    }
+
+    .error-message {
+      color: var(--error);
+      text-align: center;
+      padding: 1rem;
+    }
+
+    .success-message {
+      color: var(--success);
+      text-align: center;
+      padding: 1rem;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      font-size: 0.9rem;
+      color: #999;
+      border-top: 1px solid var(--border);
+      margin-top: 4rem;
+      animation: fadeIn 1s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .post-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .post-date {
+        margin-left: 0;
+        margin-top: 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Community Forum</h1>
+    <nav>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="appointments.html">Book Appointment</a></li>
+        <li><a href="chat.html">Secure Chat</a></li>
+        <li><a href="forum.html">Community Forum</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <h2>Community Discussions</h2>
+    
+    <div id="login-message" class="hidden">
+      Please <a href="login.html">login</a> to participate in the forum.
+    </div>
+
+    <form id="post-form" class="hidden">
+      <textarea id="post-content" placeholder="Share your thoughts with the community..." required></textarea>
+      <button type="submit" id="post-submit">Post</button>
+    </form>
+
+    <div id="message-container"></div>
+
+    <div class="posts-container" id="posts-container">
+      <div class="loading">Loading posts...</div>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Telemedicine Portal</p>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const token = localStorage.getItem('token');
+      const loginMessage = document.getElementById('login-message');
+      const postForm = document.getElementById('post-form');
+      const postsContainer = document.getElementById('posts-container');
+      const messageContainer = document.getElementById('message-container');
+
+      if (!token) {
+        showLoginPrompt();
+        return;
+      }
+
+      try {
+        // Verify user token with main server
+        const verifyResponse = await fetch('http://localhost:5501/user-data', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!verifyResponse.ok) {
+          throw new Error('Session expired');
+        }
+
+        const userData = await verifyResponse.json();
+        
+        // Show post form for logged in users
+        postForm.style.display = 'block';
+        loginMessage.style.display = 'none';
+
+        // Load posts
+        await loadPosts(token);
+
+        // Setup form submission
+        postForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          await submitPost(token);
+        });
+
+      } catch (error) {
+        console.error('Error:', error);
+        handleError(error);
+      }
+    });
+
+    async function loadPosts(token) {
+      const postsContainer = document.getElementById('posts-container');
+      postsContainer.innerHTML = '<div class="loading">Loading posts...</div>';
+      
+      try {
+        const response = await fetch('http://localhost:5502/posts', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to load posts');
+        }
+
+        const data = await response.json();
+        
+        if (data.posts.length === 0) {
+          postsContainer.innerHTML = '<div class="post">No posts yet. Be the first to share!</div>';
+          return;
+        }
+
+        renderPosts(data.posts);
+      } catch (error) {
+        postsContainer.innerHTML = `<div class="error-message">Error loading posts: ${error.message}</div>`;
+      }
+    }
+
+    function renderPosts(posts) {
+      const postsContainer = document.getElementById('posts-container');
+      
+      postsContainer.innerHTML = posts.map(post => {
+        const date = new Date(post.created_at);
+        const formattedDate = date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        // Get first letter of author's name for avatar
+        const avatarLetter = post.nome ? post.nome.charAt(0).toUpperCase() : 'U';
+        const authorType = post.user_type === 'doctor' ? 'Doctor' : 'Patient';
+
+        return `
+          <div class="post" data-id="${post.id}">
+            <div class="post-header">
+              <div class="post-avatar">${avatarLetter}</div>
+              <div class="post-author">
+                ${post.nome} ${post.cognome}
+                <span class="post-author-type">${authorType}</span>
+              </div>
+              <div class="post-date">${formattedDate}</div>
+            </div>
+            <div class="post-content">${post.content}</div>
+            <div class="post-stats">
+              <span>${post.likes_count} likes</span>
+              <span>${post.comments_count} comments</span>
+            </div>
+            <div class="post-actions">
+              <button class="post-action ${post.user_liked ? 'liked' : ''}" data-action="like">
+                <span>${post.user_liked ? '❤️' : '🤍'}</span> Like
+              </button>
+              <button class="post-action" data-action="comment">
+                <span>💬</span> Comment
+              </button>
+            </div>
+            <div class="comments-container hidden" id="comments-${post.id}">
+              <!-- Comments will be loaded here -->
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Setup event listeners for like and comment buttons
+      document.querySelectorAll('.post-action[data-action="like"]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const postId = btn.closest('.post').dataset.id;
+          await toggleLike(postId, btn);
+        });
+      });
+
+      document.querySelectorAll('.post-action[data-action="comment"]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const postId = btn.closest('.post').dataset.id;
+          await toggleComments(postId, btn);
+        });
+      });
+    }
+
+    async function toggleLike(postId, likeButton) {
+      const token = localStorage.getItem('token');
+      
+      try {
+        const response = await fetch(`http://localhost:5502/posts/${postId}/like`, {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to toggle like');
+        }
+
+        const data = await response.json();
+        
+        // Update UI
+        const isLiked = data.liked;
+        likeButton.classList.toggle('liked', isLiked);
+        likeButton.innerHTML = `<span>${isLiked ? '❤️' : '🤍'}</span> Like`;
+        
+        // Update likes count
+        const postElement = likeButton.closest('.post');
+        const likesCountElement = postElement.querySelector('.post-stats span:first-child');
+        const currentLikes = parseInt(likesCountElement.textContent.split(' ')[0]);
+        likesCountElement.textContent = `${isLiked ? currentLikes + 1 : currentLikes - 1} likes`;
+        
+      } catch (error) {
+        console.error('Error toggling like:', error);
+        showMessage(`Error: ${error.message}`, 'error');
+      }
+    }
+
+    async function toggleCommentLike(commentId, likeButton) {
+  const token = localStorage.getItem('token');
+  
+  try {
+    const response = await fetch(`http://localhost:5502/comments/${commentId}/like`, {
+      method: 'POST',
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to toggle comment like');
+    }
+
+    const data = await response.json();
+    
+    // Update UI
+    likeButton.classList.toggle('liked', data.liked);
+    
+    // Update likes count
+    const likesCountSpan = likeButton.querySelector('span:last-child');
+    likesCountSpan.textContent = data.likes_count;
+    
+    // Update heart icon
+    const heartIcon = likeButton.querySelector('span:first-child');
+    heartIcon.textContent = data.liked ? '❤️' : '🤍';
+    
+  } catch (error) {
+    console.error('Error toggling comment like:', error);
+    showMessage(`Error: ${error.message}`, 'error');
+  }
+}
+
+async function submitComment(postId) {
+  const token = localStorage.getItem('token');
+  const commentInput = document.getElementById(`comment-input-${postId}`);
+  const content = commentInput.value.trim();
+  
+  if (!content) {
+    showMessage('Comment cannot be empty', 'error');
+    return;
+  }
+  
+  try {
+    const response = await fetch(`http://localhost:5502/posts/${postId}/comments`, {
+      method: 'POST',
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ content })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to submit comment');
+    }
+
+    const comment = await response.json();
+    
+    // Clear input
+    commentInput.value = '';
+    
+    // Reload comments to ensure we have the latest data
+    await loadAndRenderComments(postId);
+    
+    // Update comments count in post
+    const postElement = document.querySelector(`.post[data-id="${postId}"]`);
+    const commentsCountElement = postElement.querySelector('.post-stats span:last-child');
+    const currentComments = parseInt(commentsCountElement.textContent.split(' ')[0]);
+    commentsCountElement.textContent = `${currentComments + 1} comments`;
+    
+  } catch (error) {
+    console.error('Error submitting comment:', error);
+    showMessage(`Error: ${error.message}`, 'error');
+  }
+}
+
+async function loadAndRenderComments(postId) {
+  const commentsContainer = document.getElementById(`comments-${postId}`);
+  commentsContainer.innerHTML = '<div class="loading">Loading comments...</div>';
+  
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`http://localhost:5502/posts/${postId}/comments`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to load comments');
+    }
+
+    const data = await response.json();
+    renderComments(postId, data.comments);
+    
+    // Add comment form
+    commentsContainer.innerHTML += `
+      <div class="add-comment-form">
+        <input type="text" class="comment-input" placeholder="Write a comment..." id="comment-input-${postId}">
+        <button class="comment-submit" data-post-id="${postId}">Post</button>
+      </div>
+    `;
+    
+    // Setup comment submission
+    document.querySelector(`.comment-submit[data-post-id="${postId}"]`).addEventListener('click', async () => {
+      await submitComment(postId);
+    });
+    
+  } catch (error) {
+    commentsContainer.innerHTML = `<div class="error-message">Error loading comments: ${error.message}</div>`;
+  }
+}
+
+    function renderComments(postId, comments) {
+        const commentsContainer = document.getElementById(`comments-${postId}`);
+        
+        if (comments.length === 0) {
+            commentsContainer.innerHTML = '<div>No comments yet</div>';
+            return;
+        }
+        
+        commentsContainer.innerHTML = comments.map(comment => {
+            const date = new Date(comment.created_at);
+            const formattedDate = date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+            });
+
+            // Get first letter of author's name for avatar
+            const avatarLetter = comment.nome ? comment.nome.charAt(0).toUpperCase() : 'U';
+            const authorType = comment.user_type === 'doctor' ? 'Doctor' : 'Patient';
+
+            return `
+            <div class="comment">
+                <div class="comment-avatar">${avatarLetter}</div>
+                <div class="comment-content">
+                <div class="comment-header">
+                    <span class="comment-author">${comment.nome} ${comment.cognome}</span>
+                    <span class="comment-author-type">${authorType}</span>
+                    <span class="comment-date">${formattedDate}</span>
+                </div>
+                <div class="comment-text">${comment.content}</div>
+                <div class="comment-actions">
+                    <button class="comment-action ${comment.user_liked ? 'liked' : ''}" data-comment-id="${comment.id}">
+                    <span>${comment.user_liked ? '❤️' : '🤍'}</span>
+                    <span class="likes-count">${comment.likes_count}</span>
+                    </button>
+                </div>
+                </div>
+            </div>
+            `;
+        }).join('');
+        
+        // Setup event listeners for comment likes
+        document.querySelectorAll(`#comments-${postId} .comment-action`).forEach(btn => {
+            btn.addEventListener('click', async () => {
+            const commentId = btn.dataset.commentId;
+            await toggleCommentLike(commentId, btn);
+            });
+        });
+        }
+
+    async function toggleCommentLike(commentId, likeButton) {
+      const token = localStorage.getItem('token');
+      
+      try {
+        const response = await fetch(`http://localhost:5502/comments/${commentId}/like`, {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to toggle comment like');
+        }
+
+        const data = await response.json();
+        
+        // Update UI
+        const isLiked = data.liked;
+        likeButton.classList.toggle('liked', isLiked);
+        
+        // Update likes count
+        const currentLikes = parseInt(likeButton.textContent.trim());
+        likeButton.innerHTML = `<span>${isLiked ? '❤️' : '🤍'}</span> ${isLiked ? currentLikes + 1 : currentLikes - 1}`;
+        
+      } catch (error) {
+        console.error('Error toggling comment like:', error);
+        showMessage(`Error: ${error.message}`, 'error');
+      }
+    }
+
+    async function submitComment(postId) {
+      const token = localStorage.getItem('token');
+      const commentInput = document.getElementById(`comment-input-${postId}`);
+      const content = commentInput.value.trim();
+      
+      if (!content) {
+        showMessage('Comment cannot be empty', 'error');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`http://localhost:5502/posts/${postId}/comments`, {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ content })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to submit comment');
+        }
+
+        const comment = await response.json();
+        
+        // Clear input
+        commentInput.value = '';
+        
+        // Reload comments
+        const commentsContainer = document.getElementById(`comments-${postId}`);
+        const loadingDiv = commentsContainer.querySelector('.loading');
+        if (loadingDiv) loadingDiv.remove();
+        
+        // Add new comment at the top
+        const commentDiv = document.createElement('div');
+        commentDiv.className = 'comment';
+        commentDiv.innerHTML = `
+          <div class="comment-avatar">${comment.nome.charAt(0).toUpperCase()}</div>
+          <div class="comment-content">
+            <div class="comment-header">
+              <span class="comment-author">${comment.nome} ${comment.cognome}</span>
+              <span class="comment-author-type">${comment.user_type === 'doctor' ? 'Doctor' : 'Patient'}</span>
+              <span class="comment-date">Just now</span>
+            </div>
+            <div class="comment-text">${comment.content}</div>
+            <div class="comment-actions">
+              <button class="comment-action" data-comment-id="${comment.id}">
+                <span>🤍</span> 0
+              </button>
+            </div>
+          </div>
+        `;
+        
+        // Insert at the top (before the comment form)
+        const commentForm = commentsContainer.querySelector('.add-comment-form');
+        commentsContainer.insertBefore(commentDiv, commentForm);
+        
+        // Setup like button for new comment
+        commentDiv.querySelector('.comment-action').addEventListener('click', async (e) => {
+          await toggleCommentLike(comment.id, e.target.closest('button'));
+        });
+        
+        // Update comments count in post
+        const postElement = document.querySelector(`.post[data-id="${postId}"]`);
+        const commentsCountElement = postElement.querySelector('.post-stats span:last-child');
+        const currentComments = parseInt(commentsCountElement.textContent.split(' ')[0]);
+        commentsCountElement.textContent = `${currentComments + 1} comments`;
+        
+      } catch (error) {
+        console.error('Error submitting comment:', error);
+        showMessage(`Error: ${error.message}`, 'error');
+      }
+    }
+
+    async function submitPost(token) {
+      const postContent = document.getElementById('post-content');
+      const messageContainer = document.getElementById('message-container');
+      
+      try {
+        const response = await fetch('http://localhost:5502/posts', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            content: postContent.value
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to submit post');
+        }
+
+        const post = await response.json();
+        
+        // Show success message
+        showMessage('Post published successfully!', 'success');
+        
+        // Clear form
+        postContent.value = '';
+        
+        // Add new post at the top
+        const postsContainer = document.getElementById('posts-container');
+        const postDiv = document.createElement('div');
+        postDiv.className = 'post';
+        postDiv.dataset.id = post.id;
+        postDiv.innerHTML = `
+          <div class="post-header">
+            <div class="post-avatar">${post.nome.charAt(0).toUpperCase()}</div>
+            <div class="post-author">
+              ${post.nome} ${post.cognome}
+              <span class="post-author-type">${post.user_type === 'doctor' ? 'Doctor' : 'Patient'}</span>
+            </div>
+            <div class="post-date">Just now</div>
+          </div>
+          <div class="post-content">${post.content}</div>
+          <div class="post-stats">
+            <span>0 likes</span>
+            <span>0 comments</span>
+          </div>
+          <div class="post-actions">
+            <button class="post-action" data-action="like">
+              <span>🤍</span> Like
+            </button>
+            <button class="post-action" data-action="comment">
+              <span>💬</span> Comment
+            </button>
+          </div>
+          <div class="comments-container hidden" id="comments-${post.id}">
+            <!-- Comments will be loaded here -->
+          </div>
+        `;
+        
+        // Insert at the top
+        postsContainer.insertBefore(postDiv, postsContainer.firstChild);
+        
+        // Setup event listeners for new post
+        postDiv.querySelector('.post-action[data-action="like"]').addEventListener('click', async () => {
+          await toggleLike(post.id, postDiv.querySelector('.post-action[data-action="like"]'));
+        });
+        
+        postDiv.querySelector('.post-action[data-action="comment"]').addEventListener('click', async () => {
+          await toggleComments(post.id, postDiv.querySelector('.post-action[data-action="comment"]'));
+        });
+        
+        // Scroll to top
+        window.scrollTo(0, 0);
+        
+        // Hide message after 3 seconds
+        setTimeout(() => {
+          messageContainer.innerHTML = '';
+        }, 3000);
+        
+      } catch (error) {
+        console.error('Error submitting post:', error);
+        showMessage(`Error: ${error.message}`, 'error');
+      }
+    }
+
+    function showMessage(message, type) {
+      const messageContainer = document.getElementById('message-container');
+      messageContainer.innerHTML = `
+        <div class="${type}-message">${message}</div>
+      `;
+    }
+
+    function showLoginPrompt() {
+      document.getElementById('posts-container').style.display = 'none';
+      document.getElementById('post-form').style.display = 'none';
+      document.getElementById('login-message').style.display = 'block';
+    }
+
+    function handleError(error) {
+      if (error.message.includes('Session')) {
+        localStorage.clear();
+        window.location.href = 'login.html';
+        return;
+      }
+
+      const messageContainer = document.getElementById('message-container');
+      messageContainer.innerHTML = `
+        <div class="error-message">
+          ${error.message}<br>
+          <button onclick="location.reload()">Retry</button>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>

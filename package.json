@@ -1,0 +1,20 @@
+{
+  "name": "telemedicine-portal-main",
+  "version": "1.0.0",
+  "description": "[![GitHub](https://img.shields.io/badge/GitHub-Repo-black?logo=github&logoColor=white)](https://github.com/achenio/telemedicine-portal) [![Docs](https://img.shields.io/badge/Docs-API-green?logo=read-the-docs&logoColor=white)](/documentation/docs.md)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.11.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "openai": "^5.10.2",
+    "socket.io": "^4.8.1"
+  }
+}

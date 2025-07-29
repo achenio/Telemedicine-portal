@@ -6,7 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 const sqlite3 = require('sqlite3').verbose();
 
 const app = express();
-const PORT = 5502;
+const PORT = 5502; // Da cambiare per evitare conflitto con payments.py
 
 // Middleware
 app.use(cors({
@@ -537,6 +537,128 @@ app.post('/comments/:id/like', verifyToken, async (req, res) => {
     }
   } catch (err) {
     console.error('Error handling comment like:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Delete a post
+app.delete('/posts/:id', verifyToken, async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const userId = req.userId;
+    
+    // Verify the post exists and belongs to the user
+    const post = await new Promise((resolve, reject) => {
+      db.get(
+        'SELECT id, author_id FROM posts WHERE id = ?',
+        [postId],
+        (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        }
+      );
+    });
+    
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    
+    if (post.author_id !== userId) {
+      return res.status(403).json({ error: 'You can only delete your own posts' });
+    }
+    
+    // Begin transaction
+    await new Promise((resolve, reject) => {
+      db.run('BEGIN TRANSACTION', (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+    
+    try {
+      // Delete post likes
+      await new Promise((resolve, reject) => {
+        db.run(
+          'DELETE FROM post_likes WHERE post_id = ?',
+          [postId],
+          function(err) {
+            if (err) reject(err);
+            else resolve();
+          }
+        );
+      });
+      
+      // Get all comment IDs for this post
+      const commentIds = await new Promise((resolve, reject) => {
+        db.all(
+          'SELECT id FROM comments WHERE post_id = ?',
+          [postId],
+          (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows.map(row => row.id));
+          }
+        );
+      });
+      
+      // Delete comment likes for each comment
+      for (const commentId of commentIds) {
+        await new Promise((resolve, reject) => {
+          db.run(
+            'DELETE FROM comment_likes WHERE comment_id = ?',
+            [commentId],
+            function(err) {
+              if (err) reject(err);
+              else resolve();
+            }
+          );
+        });
+      }
+      
+      // Delete comments
+      await new Promise((resolve, reject) => {
+        db.run(
+          'DELETE FROM comments WHERE post_id = ?',
+          [postId],
+          function(err) {
+            if (err) reject(err);
+            else resolve();
+          }
+        );
+      });
+      
+      // Finally, delete the post
+      await new Promise((resolve, reject) => {
+        db.run(
+          'DELETE FROM posts WHERE id = ?',
+          [postId],
+          function(err) {
+            if (err) reject(err);
+            else resolve();
+          }
+        );
+      });
+      
+      // Commit transaction
+      await new Promise((resolve, reject) => {
+        db.run('COMMIT', (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+      
+      res.status(200).json({ message: 'Post deleted successfully' });
+    } catch (err) {
+      // Rollback on error
+      await new Promise((resolve, reject) => {
+        db.run('ROLLBACK', (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+      throw err;
+    }
+  } catch (err) {
+    console.error('Error deleting post:', err);
     res.status(500).json({ error: 'Database error' });
   }
 });

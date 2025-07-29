@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Community Forum - Telemedicine Portal</title>
+  <title>Forum - Telemedicine Portal</title>
   <style>
     :root {
       --bg: #fefefe;
@@ -31,7 +31,7 @@
 
     header {
       background-color: var(--card);
-      padding: 2rem 1rem;
+      padding: 1.5rem 1rem;
       text-align: center;
       border-bottom: 1px solid var(--border);
       animation: fadeIn 1s ease-out;
@@ -70,7 +70,13 @@
     h2 {
       text-align: center;
       font-size: 2rem;
-      margin-bottom: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    #user-info {
+      margin-bottom: 1rem;
+      font-weight: 600;
+      color: var(--primary);
     }
 
     #login-message {
@@ -337,6 +343,22 @@
       opacity: 0.9;
     }
 
+    .delete-post {
+      background: none;
+      border: none;
+      color: var(--error);
+      cursor: pointer;
+      font-size: 0.8rem;
+      margin-left: auto;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      transition: background-color 0.2s ease;
+    }
+
+    .delete-post:hover {
+      background-color: rgba(255, 59, 48, 0.1);
+    }
+
     .loading {
       text-align: center;
       padding: 2rem;
@@ -406,14 +428,14 @@
         <li><a href="index.html">Home</a></li>
         <li><a href="appointments.html">Book Appointment</a></li>
         <li><a href="chat.html">Secure Chat</a></li>
-        <li><a href="forum.html">Community Forum</a></li>
       </ul>
     </nav>
   </header>
 
   <main>
     <h2>Community Discussions</h2>
-    
+    <div id="user-info"></div>
+
     <div id="login-message" class="hidden">
       Please <a href="login.html">login</a> to participate in the forum.
     </div>
@@ -441,6 +463,7 @@
       const postForm = document.getElementById('post-form');
       const postsContainer = document.getElementById('posts-container');
       const messageContainer = document.getElementById('message-container');
+      const userInfoElement = document.getElementById('user-info');
 
       if (!token) {
         showLoginPrompt();
@@ -459,12 +482,15 @@
 
         const userData = await verifyResponse.json();
         
+        // Show user info
+        userInfoElement.textContent = `Logged in as: ${userData.nome} ${userData.cognome} (${userData.user_type === 'doctor' ? 'Doctor' : 'Patient'})`;
+        
         // Show post form for logged in users
-        postForm.style.display = 'block';
-        loginMessage.style.display = 'none';
+        postForm.classList.remove('hidden');
+        loginMessage.classList.add('hidden');
 
         // Load posts
-        await loadPosts(token);
+        await loadPosts(token, userData.id);
 
         // Setup form submission
         postForm.addEventListener('submit', async (e) => {
@@ -478,7 +504,7 @@
       }
     });
 
-    async function loadPosts(token) {
+    async function loadPosts(token, currentUserId) {
       const postsContainer = document.getElementById('posts-container');
       postsContainer.innerHTML = '<div class="loading">Loading posts...</div>';
       
@@ -498,13 +524,13 @@
           return;
         }
 
-        renderPosts(data.posts);
+        renderPosts(data.posts, currentUserId);
       } catch (error) {
         postsContainer.innerHTML = `<div class="error-message">Error loading posts: ${error.message}</div>`;
       }
     }
 
-    function renderPosts(posts) {
+    function renderPosts(posts, currentUserId) {
       const postsContainer = document.getElementById('posts-container');
       
       postsContainer.innerHTML = posts.map(post => {
@@ -520,6 +546,7 @@
         // Get first letter of author's name for avatar
         const avatarLetter = post.nome ? post.nome.charAt(0).toUpperCase() : 'U';
         const authorType = post.user_type === 'doctor' ? 'Doctor' : 'Patient';
+        const isAuthor = post.author_id === currentUserId;
 
         return `
           <div class="post" data-id="${post.id}">
@@ -530,6 +557,7 @@
                 <span class="post-author-type">${authorType}</span>
               </div>
               <div class="post-date">${formattedDate}</div>
+              ${isAuthor ? '<button class="delete-post">Delete</button>' : ''}
             </div>
             <div class="post-content">${post.content}</div>
             <div class="post-stats">
@@ -565,6 +593,42 @@
           await toggleComments(postId, btn);
         });
       });
+
+      // Setup event listeners for delete buttons
+      document.querySelectorAll('.delete-post').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const postId = btn.closest('.post').dataset.id;
+          if (confirm('Are you sure you want to delete this post?')) {
+            await deletePost(postId);
+          }
+        });
+      });
+    }
+
+    async function deletePost(postId) {
+      const token = localStorage.getItem('token');
+      
+      try {
+        const response = await fetch(`http://localhost:5502/posts/${postId}`, {
+          method: 'DELETE',
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to delete post');
+        }
+
+        // Remove post from UI
+        document.querySelector(`.post[data-id="${postId}"]`).remove();
+        showMessage('Post deleted successfully', 'success');
+        
+      } catch (error) {
+        console.error('Error deleting post:', error);
+        showMessage(`Error: ${error.message}`, 'error');
+      }
     }
 
     async function toggleLike(postId, likeButton) {
@@ -576,7 +640,8 @@
           headers: { 
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
-          }
+          },
+          credentials: 'include' // Add this line
         });
 
         if (!response.ok) {
@@ -602,171 +667,107 @@
       }
     }
 
-    async function toggleCommentLike(commentId, likeButton) {
-  const token = localStorage.getItem('token');
-  
-  try {
-    const response = await fetch(`http://localhost:5502/comments/${commentId}/like`, {
-      method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+    async function toggleComments(postId, commentButton) {
+      const commentsContainer = document.getElementById(`comments-${postId}`);
+      
+      if (commentsContainer.classList.contains('hidden')) {
+        // Load comments if not already loaded
+        if (commentsContainer.innerHTML === '') {
+          await loadAndRenderComments(postId);
+        }
+        commentsContainer.classList.remove('hidden');
+        commentButton.innerHTML = '<span>💬</span> Hide Comments';
+      } else {
+        commentsContainer.classList.add('hidden');
+        commentButton.innerHTML = '<span>💬</span> Comment';
       }
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to toggle comment like');
     }
 
-    const data = await response.json();
-    
-    // Update UI
-    likeButton.classList.toggle('liked', data.liked);
-    
-    // Update likes count
-    const likesCountSpan = likeButton.querySelector('span:last-child');
-    likesCountSpan.textContent = data.likes_count;
-    
-    // Update heart icon
-    const heartIcon = likeButton.querySelector('span:first-child');
-    heartIcon.textContent = data.liked ? '❤️' : '🤍';
-    
-  } catch (error) {
-    console.error('Error toggling comment like:', error);
-    showMessage(`Error: ${error.message}`, 'error');
-  }
-}
+    async function loadAndRenderComments(postId) {
+      const commentsContainer = document.getElementById(`comments-${postId}`);
+      commentsContainer.innerHTML = '<div class="loading">Loading comments...</div>';
+      
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`http://localhost:5502/posts/${postId}/comments`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
 
-async function submitComment(postId) {
-  const token = localStorage.getItem('token');
-  const commentInput = document.getElementById(`comment-input-${postId}`);
-  const content = commentInput.value.trim();
-  
-  if (!content) {
-    showMessage('Comment cannot be empty', 'error');
-    return;
-  }
-  
-  try {
-    const response = await fetch(`http://localhost:5502/posts/${postId}/comments`, {
-      method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ content })
-    });
+        if (!response.ok) {
+          throw new Error('Failed to load comments');
+        }
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to submit comment');
+        const data = await response.json();
+        renderComments(postId, data.comments);
+        
+        // Add comment form
+        commentsContainer.innerHTML += `
+          <div class="add-comment-form">
+            <input type="text" class="comment-input" placeholder="Write a comment..." id="comment-input-${postId}">
+            <button class="comment-submit" data-post-id="${postId}">Post</button>
+          </div>
+        `;
+        
+        // Setup comment submission
+        document.querySelector(`.comment-submit[data-post-id="${postId}"]`).addEventListener('click', async () => {
+          await submitComment(postId);
+        });
+        
+      } catch (error) {
+        commentsContainer.innerHTML = `<div class="error-message">Error loading comments: ${error.message}</div>`;
+      }
     }
-
-    const comment = await response.json();
-    
-    // Clear input
-    commentInput.value = '';
-    
-    // Reload comments to ensure we have the latest data
-    await loadAndRenderComments(postId);
-    
-    // Update comments count in post
-    const postElement = document.querySelector(`.post[data-id="${postId}"]`);
-    const commentsCountElement = postElement.querySelector('.post-stats span:last-child');
-    const currentComments = parseInt(commentsCountElement.textContent.split(' ')[0]);
-    commentsCountElement.textContent = `${currentComments + 1} comments`;
-    
-  } catch (error) {
-    console.error('Error submitting comment:', error);
-    showMessage(`Error: ${error.message}`, 'error');
-  }
-}
-
-async function loadAndRenderComments(postId) {
-  const commentsContainer = document.getElementById(`comments-${postId}`);
-  commentsContainer.innerHTML = '<div class="loading">Loading comments...</div>';
-  
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:5502/posts/${postId}/comments`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to load comments');
-    }
-
-    const data = await response.json();
-    renderComments(postId, data.comments);
-    
-    // Add comment form
-    commentsContainer.innerHTML += `
-      <div class="add-comment-form">
-        <input type="text" class="comment-input" placeholder="Write a comment..." id="comment-input-${postId}">
-        <button class="comment-submit" data-post-id="${postId}">Post</button>
-      </div>
-    `;
-    
-    // Setup comment submission
-    document.querySelector(`.comment-submit[data-post-id="${postId}"]`).addEventListener('click', async () => {
-      await submitComment(postId);
-    });
-    
-  } catch (error) {
-    commentsContainer.innerHTML = `<div class="error-message">Error loading comments: ${error.message}</div>`;
-  }
-}
 
     function renderComments(postId, comments) {
-        const commentsContainer = document.getElementById(`comments-${postId}`);
-        
-        if (comments.length === 0) {
-            commentsContainer.innerHTML = '<div>No comments yet</div>';
-            return;
-        }
-        
-        commentsContainer.innerHTML = comments.map(comment => {
-            const date = new Date(comment.created_at);
-            const formattedDate = date.toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-            });
-
-            // Get first letter of author's name for avatar
-            const avatarLetter = comment.nome ? comment.nome.charAt(0).toUpperCase() : 'U';
-            const authorType = comment.user_type === 'doctor' ? 'Doctor' : 'Patient';
-
-            return `
-            <div class="comment">
-                <div class="comment-avatar">${avatarLetter}</div>
-                <div class="comment-content">
-                <div class="comment-header">
-                    <span class="comment-author">${comment.nome} ${comment.cognome}</span>
-                    <span class="comment-author-type">${authorType}</span>
-                    <span class="comment-date">${formattedDate}</span>
-                </div>
-                <div class="comment-text">${comment.content}</div>
-                <div class="comment-actions">
-                    <button class="comment-action ${comment.user_liked ? 'liked' : ''}" data-comment-id="${comment.id}">
-                    <span>${comment.user_liked ? '❤️' : '🤍'}</span>
-                    <span class="likes-count">${comment.likes_count}</span>
-                    </button>
-                </div>
-                </div>
-            </div>
-            `;
-        }).join('');
-        
-        // Setup event listeners for comment likes
-        document.querySelectorAll(`#comments-${postId} .comment-action`).forEach(btn => {
-            btn.addEventListener('click', async () => {
-            const commentId = btn.dataset.commentId;
-            await toggleCommentLike(commentId, btn);
-            });
+      const commentsContainer = document.getElementById(`comments-${postId}`);
+      
+      if (comments.length === 0) {
+        commentsContainer.innerHTML = '<div>No comments yet</div>';
+        return;
+      }
+      
+      commentsContainer.innerHTML = comments.map(comment => {
+        const date = new Date(comment.created_at);
+        const formattedDate = date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
         });
-        }
+
+        // Get first letter of author's name for avatar
+        const avatarLetter = comment.nome ? comment.nome.charAt(0).toUpperCase() : 'U';
+        const authorType = comment.user_type === 'doctor' ? 'Doctor' : 'Patient';
+
+        return `
+          <div class="comment">
+            <div class="comment-avatar">${avatarLetter}</div>
+            <div class="comment-content">
+              <div class="comment-header">
+                <span class="comment-author">${comment.nome} ${comment.cognome}</span>
+                <span class="comment-author-type">${authorType}</span>
+                <span class="comment-date">${formattedDate}</span>
+              </div>
+              <div class="comment-text">${comment.content}</div>
+              <div class="comment-actions">
+                <button class="comment-action ${comment.user_liked ? 'liked' : ''}" data-comment-id="${comment.id}">
+                  <span>${comment.user_liked ? '❤️' : '🤍'}</span>
+                  <span class="likes-count">${comment.likes_count}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      // Setup event listeners for comment likes
+      document.querySelectorAll(`#comments-${postId} .comment-action`).forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const commentId = btn.dataset.commentId;
+          await toggleCommentLike(commentId, btn);
+        });
+      });
+    }
 
     async function toggleCommentLike(commentId, likeButton) {
       const token = localStorage.getItem('token');
@@ -791,8 +792,13 @@ async function loadAndRenderComments(postId) {
         likeButton.classList.toggle('liked', isLiked);
         
         // Update likes count
-        const currentLikes = parseInt(likeButton.textContent.trim());
-        likeButton.innerHTML = `<span>${isLiked ? '❤️' : '🤍'}</span> ${isLiked ? currentLikes + 1 : currentLikes - 1}`;
+        const likesCountSpan = likeButton.querySelector('.likes-count');
+        const currentLikes = parseInt(likesCountSpan.textContent);
+        likesCountSpan.textContent = isLiked ? currentLikes + 1 : currentLikes - 1;
+        
+        // Update heart icon
+        const heartIcon = likeButton.querySelector('span:first-child');
+        heartIcon.textContent = isLiked ? '❤️' : '🤍';
         
       } catch (error) {
         console.error('Error toggling comment like:', error);
@@ -817,8 +823,10 @@ async function loadAndRenderComments(postId) {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ content })
+          body: JSON.stringify({ content }),
+          credentials: 'include' // Add this line
         });
+
 
         if (!response.ok) {
           throw new Error('Failed to submit comment');
@@ -829,39 +837,8 @@ async function loadAndRenderComments(postId) {
         // Clear input
         commentInput.value = '';
         
-        // Reload comments
-        const commentsContainer = document.getElementById(`comments-${postId}`);
-        const loadingDiv = commentsContainer.querySelector('.loading');
-        if (loadingDiv) loadingDiv.remove();
-        
-        // Add new comment at the top
-        const commentDiv = document.createElement('div');
-        commentDiv.className = 'comment';
-        commentDiv.innerHTML = `
-          <div class="comment-avatar">${comment.nome.charAt(0).toUpperCase()}</div>
-          <div class="comment-content">
-            <div class="comment-header">
-              <span class="comment-author">${comment.nome} ${comment.cognome}</span>
-              <span class="comment-author-type">${comment.user_type === 'doctor' ? 'Doctor' : 'Patient'}</span>
-              <span class="comment-date">Just now</span>
-            </div>
-            <div class="comment-text">${comment.content}</div>
-            <div class="comment-actions">
-              <button class="comment-action" data-comment-id="${comment.id}">
-                <span>🤍</span> 0
-              </button>
-            </div>
-          </div>
-        `;
-        
-        // Insert at the top (before the comment form)
-        const commentForm = commentsContainer.querySelector('.add-comment-form');
-        commentsContainer.insertBefore(commentDiv, commentForm);
-        
-        // Setup like button for new comment
-        commentDiv.querySelector('.comment-action').addEventListener('click', async (e) => {
-          await toggleCommentLike(comment.id, e.target.closest('button'));
-        });
+        // Reload comments to ensure we have the latest data
+        await loadAndRenderComments(postId);
         
         // Update comments count in post
         const postElement = document.querySelector(`.post[data-id="${postId}"]`);
@@ -903,49 +880,12 @@ async function loadAndRenderComments(postId) {
         // Clear form
         postContent.value = '';
         
-        // Add new post at the top
-        const postsContainer = document.getElementById('posts-container');
-        const postDiv = document.createElement('div');
-        postDiv.className = 'post';
-        postDiv.dataset.id = post.id;
-        postDiv.innerHTML = `
-          <div class="post-header">
-            <div class="post-avatar">${post.nome.charAt(0).toUpperCase()}</div>
-            <div class="post-author">
-              ${post.nome} ${post.cognome}
-              <span class="post-author-type">${post.user_type === 'doctor' ? 'Doctor' : 'Patient'}</span>
-            </div>
-            <div class="post-date">Just now</div>
-          </div>
-          <div class="post-content">${post.content}</div>
-          <div class="post-stats">
-            <span>0 likes</span>
-            <span>0 comments</span>
-          </div>
-          <div class="post-actions">
-            <button class="post-action" data-action="like">
-              <span>🤍</span> Like
-            </button>
-            <button class="post-action" data-action="comment">
-              <span>💬</span> Comment
-            </button>
-          </div>
-          <div class="comments-container hidden" id="comments-${post.id}">
-            <!-- Comments will be loaded here -->
-          </div>
-        `;
-        
-        // Insert at the top
-        postsContainer.insertBefore(postDiv, postsContainer.firstChild);
-        
-        // Setup event listeners for new post
-        postDiv.querySelector('.post-action[data-action="like"]').addEventListener('click', async () => {
-          await toggleLike(post.id, postDiv.querySelector('.post-action[data-action="like"]'));
+        // Reload posts to show the new one
+        const verifyResponse = await fetch('http://localhost:5501/user-data', {
+          headers: { 'Authorization': `Bearer ${token}` }
         });
-        
-        postDiv.querySelector('.post-action[data-action="comment"]').addEventListener('click', async () => {
-          await toggleComments(post.id, postDiv.querySelector('.post-action[data-action="comment"]'));
-        });
+        const userData = await verifyResponse.json();
+        await loadPosts(token, userData.id);
         
         // Scroll to top
         window.scrollTo(0, 0);
@@ -971,7 +911,7 @@ async function loadAndRenderComments(postId) {
     function showLoginPrompt() {
       document.getElementById('posts-container').style.display = 'none';
       document.getElementById('post-form').style.display = 'none';
-      document.getElementById('login-message').style.display = 'block';
+      document.getElementById('login-message').classList.remove('hidden');
     }
 
     function handleError(error) {

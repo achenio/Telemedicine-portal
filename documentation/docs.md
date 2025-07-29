@@ -14,8 +14,8 @@ Telemedicine Portal is a modern web application designed to provide remote healt
 ## Technologies Used
 
 - **Frontend:** HTML5, CSS3, JavaScript  
-- **Backend:** Node.js with Express and WebSocket for real-time chat  
-- **Database:** SQLite for user registration and authentication  
+- **Backend:** Node.js with Express and WebSocket for real-time chat, FLASK CORS to allow real-time payments on the platform 
+- **Database:** SQLite to manage user profiles, payment registration, and secure chat history
 - **Security:** WebSocket encryption for chat, password hashing, input validation  
 
 ---

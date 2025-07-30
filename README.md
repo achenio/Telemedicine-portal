@@ -1,5 +1,5 @@
 # Telemedicine Portal 
-*By [Achenio Sonio](https://github.com/achenio), [Michele Portulano](https://github.com/MichyPortu08), and [Davide Albanese](https://github.com/DocCiaoBimbi)*
+*By [Achenio Sogno](https://github.com/achenio), [Michele Portulano](https://github.com/MichyPortu08), and [Davide Albanese](https://github.com/DocCiaoBimbi)*
 [![GitHub](https://img.shields.io/badge/GitHub-Repo-black?logo=github&logoColor=white)](https://github.com/achenio/telemedicine-portal)
 [![Docs](https://img.shields.io/badge/Docs-API-green?logo=read-the-docs&logoColor=white)](/documentation/docs.md)
 
@@ -27,8 +27,8 @@ The platform ensures easy access to healthcare services from anywhere, with priv
 
 ---
 
-## Live Demo & Links
-WIP
+## Live Demo
+[View live Demo](https://telemedicine-portal-36gj.vercel.app/)
 
 ---
 

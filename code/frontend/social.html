@@ -221,9 +221,19 @@
     }
 
     .comments-container {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      padding: 0;
+      margin: 0;
+      border: none;
+    }
+
+    .comments-container.show {
+      max-height: 1000px;
+      padding-top: 1rem;
       margin-top: 1rem;
       border-top: 1px solid var(--border);
-      padding-top: 1rem;
     }
 
     .comment {
@@ -568,11 +578,11 @@
               <button class="post-action ${post.user_liked ? 'liked' : ''}" data-action="like">
                 <span>${post.user_liked ? '❤️' : '🤍'}</span> Like
               </button>
-              <button class="post-action" data-action="comment">
+              <button class="post-action" data-action="comment" data-post-id="${post.id}">
                 <span>💬</span> Comment
               </button>
             </div>
-            <div class="comments-container hidden" id="comments-${post.id}">
+            <div class="comments-container" id="comments-${post.id}">
               <!-- Comments will be loaded here -->
             </div>
           </div>
@@ -589,7 +599,7 @@
 
       document.querySelectorAll('.post-action[data-action="comment"]').forEach(btn => {
         btn.addEventListener('click', async () => {
-          const postId = btn.closest('.post').dataset.id;
+          const postId = btn.dataset.postId;
           await toggleComments(postId, btn);
         });
       });
@@ -641,7 +651,7 @@
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
-          credentials: 'include' // Add this line
+          credentials: 'include'
         });
 
         if (!response.ok) {
@@ -668,24 +678,38 @@
     }
 
     async function toggleComments(postId, commentButton) {
-      const commentsContainer = document.getElementById(`comments-${postId}`);
-      
-      if (commentsContainer.classList.contains('hidden')) {
-        // Load comments if not already loaded
-        if (commentsContainer.innerHTML === '') {
-          await loadAndRenderComments(postId);
+      try {
+        const commentsContainer = document.getElementById(`comments-${postId}`);
+        
+        if (!commentsContainer) {
+          console.error('Comments container not found');
+          return;
         }
-        commentsContainer.classList.remove('hidden');
-        commentButton.innerHTML = '<span>💬</span> Hide Comments';
-      } else {
-        commentsContainer.classList.add('hidden');
-        commentButton.innerHTML = '<span>💬</span> Comment';
+        
+        // Toggle visibility
+        const isShowing = commentsContainer.classList.contains('show');
+        
+        if (!isShowing) {
+          // Show comments
+          if (commentsContainer.innerHTML.trim() === '') {
+            commentsContainer.innerHTML = '<div class="loading">Loading comments...</div>';
+            await loadAndRenderComments(postId);
+          }
+          commentsContainer.classList.add('show');
+          commentButton.innerHTML = '<span>💬</span> Hide Comments';
+        } else {
+          // Hide comments
+          commentsContainer.classList.remove('show');
+          commentButton.innerHTML = '<span>💬</span> Comment';
+        }
+      } catch (error) {
+        console.error('Error toggling comments:', error);
+        showMessage('Error loading comments', 'error');
       }
     }
 
     async function loadAndRenderComments(postId) {
       const commentsContainer = document.getElementById(`comments-${postId}`);
-      commentsContainer.innerHTML = '<div class="loading">Loading comments...</div>';
       
       try {
         const token = localStorage.getItem('token');
@@ -698,15 +722,27 @@
         }
 
         const data = await response.json();
-        renderComments(postId, data.comments);
+        
+        // Clear loading message
+        commentsContainer.innerHTML = '';
+        
+        // Render comments if there are any
+        if (data.comments && data.comments.length > 0) {
+          renderComments(postId, data.comments);
+        } else {
+          commentsContainer.innerHTML = '<div>No comments yet</div>';
+        }
         
         // Add comment form
-        commentsContainer.innerHTML += `
+        const commentForm = `
           <div class="add-comment-form">
             <input type="text" class="comment-input" placeholder="Write a comment..." id="comment-input-${postId}">
             <button class="comment-submit" data-post-id="${postId}">Post</button>
           </div>
         `;
+        
+        // Insert the form
+        commentsContainer.insertAdjacentHTML('beforeend', commentForm);
         
         // Setup comment submission
         document.querySelector(`.comment-submit[data-post-id="${postId}"]`).addEventListener('click', async () => {
@@ -721,12 +757,7 @@
     function renderComments(postId, comments) {
       const commentsContainer = document.getElementById(`comments-${postId}`);
       
-      if (comments.length === 0) {
-        commentsContainer.innerHTML = '<div>No comments yet</div>';
-        return;
-      }
-      
-      commentsContainer.innerHTML = comments.map(comment => {
+      comments.forEach(comment => {
         const date = new Date(comment.created_at);
         const formattedDate = date.toLocaleDateString('en-US', {
           month: 'short',
@@ -739,32 +770,33 @@
         const avatarLetter = comment.nome ? comment.nome.charAt(0).toUpperCase() : 'U';
         const authorType = comment.user_type === 'doctor' ? 'Doctor' : 'Patient';
 
-        return `
-          <div class="comment">
-            <div class="comment-avatar">${avatarLetter}</div>
-            <div class="comment-content">
-              <div class="comment-header">
-                <span class="comment-author">${comment.nome} ${comment.cognome}</span>
-                <span class="comment-author-type">${authorType}</span>
-                <span class="comment-date">${formattedDate}</span>
-              </div>
-              <div class="comment-text">${comment.content}</div>
-              <div class="comment-actions">
-                <button class="comment-action ${comment.user_liked ? 'liked' : ''}" data-comment-id="${comment.id}">
-                  <span>${comment.user_liked ? '❤️' : '🤍'}</span>
-                  <span class="likes-count">${comment.likes_count}</span>
-                </button>
-              </div>
+        const commentElement = document.createElement('div');
+        commentElement.className = 'comment';
+        commentElement.innerHTML = `
+          <div class="comment-avatar">${avatarLetter}</div>
+          <div class="comment-content">
+            <div class="comment-header">
+              <span class="comment-author">${comment.nome} ${comment.cognome}</span>
+              <span class="comment-author-type">${authorType}</span>
+              <span class="comment-date">${formattedDate}</span>
+            </div>
+            <div class="comment-text">${comment.content}</div>
+            <div class="comment-actions">
+              <button class="comment-action ${comment.user_liked ? 'liked' : ''}" data-comment-id="${comment.id}">
+                <span>${comment.user_liked ? '❤️' : '🤍'}</span>
+                <span class="likes-count">${comment.likes_count}</span>
+              </button>
             </div>
           </div>
         `;
-      }).join('');
-      
-      // Setup event listeners for comment likes
-      document.querySelectorAll(`#comments-${postId} .comment-action`).forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const commentId = btn.dataset.commentId;
-          await toggleCommentLike(commentId, btn);
+        
+        // Add to container
+        commentsContainer.appendChild(commentElement);
+        
+        // Setup event listener for comment like
+        commentElement.querySelector('.comment-action').addEventListener('click', async (e) => {
+          const commentId = e.currentTarget.dataset.commentId;
+          await toggleCommentLike(commentId, e.currentTarget);
         });
       });
     }
@@ -824,9 +856,8 @@
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({ content }),
-          credentials: 'include' // Add this line
+          credentials: 'include'
         });
-
 
         if (!response.ok) {
           throw new Error('Failed to submit comment');

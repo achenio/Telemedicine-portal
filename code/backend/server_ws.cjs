@@ -19,20 +19,29 @@ const HEARTBEAT_INTERVAL = 30000; // 30 secondi
 
 function encrypt(text) {
   const iv = crypto.randomBytes(IV_LENGTH);
-  const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
-  let encrypted = cipher.update(text, 'utf8', 'hex');
-  encrypted += cipher.final('hex');
-  return iv.toString('hex') + ':' + encrypted;
+  const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY, 'utf8'), iv);
+  const encrypted = Buffer.concat([
+    cipher.update(text, 'utf8'),
+    cipher.final()
+  ]);
+  return iv.toString('hex') + ':' + encrypted.toString('hex');
 }
 
 function decrypt(text) {
   const parts = text.split(':');
-  const iv = Buffer.from(parts.shift(), 'hex');
-  const encryptedText = parts.join(':');
-  const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
-  let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
-  return decrypted;
+  if (parts.length !== 2) {
+    throw new Error('Invalid encrypted format');
+  }
+
+  const iv = Buffer.from(parts[0], 'hex');
+  const encryptedText = Buffer.from(parts[1], 'hex');
+
+  const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY, 'utf8'), iv);
+  const decrypted = Buffer.concat([
+    decipher.update(encryptedText),
+    decipher.final()
+  ]);
+  return decrypted.toString('utf8');
 }
 
 wss.on('connection', (ws, req) => {
@@ -175,7 +184,7 @@ app.get('/messages', (req, res) => {
     res.json(messages);
   });
 });
-
+// richiesta all'API
 app.get('/messages/conversation/:patientId', (req, res) => {
   const patientId = req.params.patientId;
   db.all(
@@ -183,23 +192,29 @@ app.get('/messages/conversation/:patientId', (req, res) => {
     [patientId, patientId],
     (err, rows) => {
       if (err) return res.status(500).json({ error: 'DB error' });
+
       const messages = rows.map(row => {
-        let decrypted = '';
+        let decryptedContent;
         try {
-          decrypted = decrypt(row.content);
+          decryptedContent = decrypt(row.content);
         } catch (e) {
-          decrypted = '[ERRORE DECRIPT]';
+          console.error('Errore durante decriptazione:', e.message);
+          decryptedContent = '[Errore decriptazione]';
         }
-        console.log(`Criptato: ${row.content} | Decriptato: ${decrypted}`);
+
+        console.log(`DB Criptato: ${row.content} | DB Decriptato: ${decryptedContent}`);
+
         return {
           ...row,
-          content: decrypted
+          content: decryptedContent
         };
       });
+
       res.json(messages);
     }
   );
 });
+
 
 app.listen(3001, () => {
   console.log('Express API listening on http://localhost:3001');

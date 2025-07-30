@@ -2,16 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Bookings</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Bookings - Telemedicine Portal</title>
   <style>
     :root {
       --bg: #fefefe;
       --text: #1c1c1e;
       --subtext: #555;
       --primary: #007aff;
+      --doctor-color: #34c759;
+      --patient-color: #007aff;
       --card: #ffffff;
       --error: #ff3b30;
+      --warning: #ff9500;
+      --success: #34c759;
+      --border: #e5e5ea;
     }
 
     * {
@@ -25,14 +30,25 @@
       background-color: var(--bg);
       color: var(--text);
       line-height: 1.6;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
     }
 
     header {
+      position: relative;
       background-color: var(--card);
-      padding: 2rem 1rem;
+      padding: 1.5rem;
       text-align: center;
-      border-bottom: 1px solid #ddd;
-      animation: fadeIn 1s ease-out;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      z-index: 1;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+      color: var(--primary);
     }
 
     nav ul {
@@ -51,31 +67,74 @@
       font-weight: 600;
       padding: 0.5rem 1rem;
       border-radius: 20px;
-      transition: background-color 0.3s ease;
+      transition: all 0.3s ease;
+      cursor: pointer;
     }
 
     nav ul li a:hover {
       background-color: rgba(0, 122, 255, 0.1);
     }
 
+    #profile-area {
+      position: absolute;
+      top: 1.2rem;
+      right: 1.5rem;
+      font-weight: 600;
+      color: var(--primary);
+      font-size: 1rem;
+      cursor: default;
+      user-select: none;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .user-badge {
+      background-color: rgba(0, 122, 255, 0.1);
+      color: var(--primary);
+      border-radius: 10px;
+      padding: 2px 8px;
+      font-size: 0.8rem;
+    }
+
+    .doctor-badge {
+      background-color: rgba(52, 199, 89, 0.1);
+      color: var(--doctor-color);
+    }
+
     main {
+      flex: 1;
+      padding: 2rem 1rem;
       max-width: 800px;
-      margin: 4rem auto;
-      padding: 1rem;
-      animation: fadeInUp 1s ease-out;
+      margin: 0 auto;
+      width: 100%;
+      animation: fadeInUp 0.5s ease-out;
     }
 
     h2 {
+      margin-bottom: 1.5rem;
+      color: var(--primary);
       text-align: center;
-      font-size: 2rem;
-      margin-bottom: 2rem;
     }
 
-    #login-message {
+    .login-message {
       text-align: center;
+      padding: 2rem;
+      background-color: #f0f7ff;
+      border-radius: 8px;
+      border: 1px solid #d0e3ff;
       margin: 2rem 0;
+    }
+
+    .login-message a {
+      color: var(--primary);
       font-weight: 600;
-      color: var(--error);
+      text-decoration: none;
+    }
+
+    .login-message a:hover {
+      text-decoration: underline;
     }
 
     ul#appointments-list {
@@ -90,11 +149,12 @@
       background-color: var(--card);
       padding: 1.5rem;
       border-radius: 16px;
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
       display: flex;
       justify-content: space-between;
       align-items: center;
       transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border: 1px solid rgba(0,0,0,0.05);
     }
 
     ul#appointments-list li:hover {
@@ -107,6 +167,44 @@
       color: var(--text);
     }
 
+    .appointment-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .appointment-meta {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .appointment-meta span {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .status-confirmed {
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    .status-booked {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .status-cancelled {
+      color: var(--error);
+      font-weight: 600;
+    }
+
+    .status-completed {
+      color: var(--subtext);
+      font-weight: 600;
+    }
+
     .cancel-btn {
       background-color: var(--error);
       color: white;
@@ -115,20 +213,65 @@
       border-radius: 20px;
       cursor: pointer;
       transition: opacity 0.3s ease;
+      font-weight: 600;
     }
 
     .cancel-btn:hover {
       opacity: 0.8;
     }
 
-    footer {
+    .no-appointments {
       text-align: center;
-      padding: 2rem 1rem;
-      font-size: 0.9rem;
+      padding: 2rem;
+      background-color: var(--card);
+      border-radius: 8px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .no-appointments a {
+      color: var(--primary);
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .no-appointments a:hover {
+      text-decoration: underline;
+    }
+
+    footer {
+      padding: 1.5rem;
+      text-align: center;
       color: #999;
       border-top: 1px solid #eee;
-      margin-top: 4rem;
-      animation: fadeIn 1s ease-out;
+      margin-top: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      header {
+        padding: 1rem;
+      }
+      
+      header h1 {
+        font-size: 1.5rem;
+      }
+      
+      #profile-area {
+        position: static;
+        justify-content: center;
+        margin-top: 1rem;
+      }
+      
+      ul#appointments-list li {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+      
+      .appointment-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
     }
 
     @keyframes fadeIn {
@@ -139,25 +282,18 @@
     @keyframes fadeInUp {
       from {
         opacity: 0;
-        transform: translateY(30px);
+        transform: translateY(20px);
       }
       to {
         opacity: 1;
         transform: translateY(0);
       }
     }
-
-    @media (max-width: 600px) {
-      ul#appointments-list li {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-      }
-    }
   </style>
 </head>
 <body>
   <header>
+    <h1>Telemedicine Portal <span class="user-badge">DEMO</span></h1>
     <nav>
       <ul>
         <li><a href="index.html">Home</a></li>
@@ -166,104 +302,82 @@
         <li><a href="ai-chat.html">AI Chat</a></li>
       </ul>
     </nav>
+    <div id="profile-area">
+      <span id="welcome-message">Welcome, </span>
+      <strong id="username">John Doe</strong>
+      <span id="user-badge" class="user-badge">Patient</span>
+    </div>
   </header>
 
   <main>
     <h2>My Booked Appointments</h2>
     
-    <div id="login-message" style="display: none;">
+    <div class="login-message" id="login-message" style="display: none;">
       Please <a href="login.html">login</a> to view your appointments.
     </div>
 
-    <ul id="appointments-list" style="display: none;">
+    <ul id="appointments-list">
       <!-- Appointments will be loaded here -->
+      <li>
+        <div class="appointment-info">
+          <span>👨‍⚕️ Dr. Sarah Smith (Cardiology)</span>
+          <div class="appointment-meta">
+            <span>📅 Wed, Jul 10, 2025</span>
+            <span>🕒 10:00 AM</span>
+            <span class="status-confirmed">Confirmed</span>
+          </div>
+        </div>
+        <button class="cancel-btn">Cancel</button>
+      </li>
+      <li>
+        <div class="appointment-info">
+          <span>👨‍⚕️ Dr. Michael Johnson (Pediatrics)</span>
+          <div class="appointment-meta">
+            <span>📅 Mon, Jul 15, 2025</span>
+            <span>🕒 2:30 PM</span>
+            <span class="status-booked">Booked</span>
+          </div>
+        </div>
+        <button class="cancel-btn">Cancel</button>
+      </li>
     </ul>
+
+    <div class="no-appointments" id="no-appointments" style="display: none;">
+      You have no upcoming appointments.<br>
+      <a href="appointments.html">Book one now</a>
+    </div>
   </main>
 
   <footer>
-    <p>&copy; 2025 Telemedicine Portal</p>
+    <p>&copy; 2025 Telemedicine Portal Demo | Pure Frontend Experience</p>
   </footer>
 
-
-<!-- Sostituisci lo script esistente con questo: -->
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    // Nascondi il messaggio di login
-    document.getElementById('login-message').style.display = 'none';
-    
-    // Appuntamenti fittizi
-    const fakeAppointments = [
-      {
-        id: "app1",
-        date: "2025-07-10",
-        time: "10:00",
-        doctor_name: "Dr. Smith (Cardiology)",
-        status: "confirmed"
-      },
-      {
-        id: "app2",
-        date: "2025-07-15",
-        time: "14:30",
-        doctor_name: "Dr. Johnson (Pediatrics)",
-        status: "booked"
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // In this demo, we're always "logged in"
+      document.getElementById('login-message').style.display = 'none';
+      document.getElementById('appointments-list').style.display = 'flex';
+      
+      // Set up cancel buttons
+      document.querySelectorAll('.cancel-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (confirm('Are you sure you want to cancel this appointment?')) {
+            alert('Appointment cancelled successfully');
+            // In a real app, you would update the UI or reload from server
+            location.reload(); // Just for demo purposes
+          }
+        });
+      });
+      
+      // Demo function to show no appointments
+      function showNoAppointments() {
+        document.getElementById('appointments-list').style.display = 'none';
+        document.getElementById('no-appointments').style.display = 'block';
       }
-    ];
-
-    // Mostra gli appuntamenti
-    renderAppointments(fakeAppointments);
-    document.getElementById('appointments-list').style.display = 'flex';
-    
-    // Setup dei pulsanti di cancellazione
-    document.querySelectorAll('.cancel-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (confirm('Are you sure you want to cancel this appointment?')) {
-          alert('Appointment cancelled successfully');
-          // Ricarica la pagina per aggiornare la lista
-          location.reload();
-        }
-      });
+      
+      // Uncomment to test the "no appointments" state:
+      // showNoAppointments();
     });
-  });
-
-  function renderAppointments(appointments) {
-    const appointmentsList = document.getElementById('appointments-list');
-    
-    if (appointments.length === 0) {
-      showNoAppointments();
-      return;
-    }
-    
-    appointmentsList.innerHTML = appointments.map(appt => {
-      const date = new Date(appt.date);
-      const formattedDate = date.toLocaleDateString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric'
-      });
-
-      return `
-        <li>
-          <span>📅 ${formattedDate}</span>
-          <span>🕒 ${appt.time}</span>
-          <span>👨‍⚕️ ${appt.doctor_name}</span>
-          <span class="status-${appt.status.toLowerCase()}">${appt.status}</span>
-          ${appt.status !== 'cancelled' && appt.status !== 'completed' ? `
-            <button class="cancel-btn" data-id="${appt.id}">Cancel</button>
-          ` : ''}
-        </li>
-      `;
-    }).join('');
-  }
-
-  function showNoAppointments() {
-    const appointmentsList = document.getElementById('appointments-list');
-    appointmentsList.innerHTML = `
-      <li style="text-align: center; padding: 2rem;">
-        You have no upcoming appointments.<br>
-        <a href="appointments.html" style="color: var(--primary);">Book one now</a>
-      </li>
-    `;
-  }
-</script>
+  </script>
 </body>
 </html>

@@ -1,5 +1,6 @@
 # Telemedicine Portal 
 *By [Achenio Sogno](https://github.com/achenio), [Michele Portulano](https://github.com/MichyPortu08), and [Davide Albanese](https://github.com/DocCiaoBimbi)*
+
 [![GitHub](https://img.shields.io/badge/GitHub-Repo-black?logo=github&logoColor=white)](https://github.com/achenio/telemedicine-portal)
 [![Docs](https://img.shields.io/badge/Docs-API-green?logo=read-the-docs&logoColor=white)](/documentation/docs.md)
 

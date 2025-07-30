@@ -2,17 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Secure Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Doctor Chat - Telemedicine Portal</title>
   <style>
     :root {
       --bg: #fefefe;
       --text: #1c1c1e;
       --subtext: #555;
       --primary: #007aff;
+      --doctor-color: #34c759;
+      --patient-color: #007aff;
       --card: #ffffff;
-      --input-bg: #f7f7f8;
-      --input-border: #ccc;
+      --error: #ff3b30;
+      --warning: #ff9500;
+      --success: #34c759;
+      --border: #e5e5ea;
     }
 
     * {
@@ -26,17 +30,25 @@
       background-color: var(--bg);
       color: var(--text);
       line-height: 1.6;
-      min-height: 100vh;
+      overflow-x: hidden;
       display: flex;
       flex-direction: column;
+      min-height: 100vh;
     }
 
     header {
+      position: relative;
       background-color: var(--card);
-      padding: 2.5rem 1rem;
+      padding: 1.5rem;
       text-align: center;
-      border-bottom: 1px solid #ddd;
-      animation: fadeIn 1s ease-out;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      z-index: 1;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+      color: var(--primary);
     }
 
     nav ul {
@@ -55,173 +67,546 @@
       font-weight: 600;
       padding: 0.5rem 1rem;
       border-radius: 20px;
-      transition: background-color 0.3s ease;
+      transition: all 0.3s ease;
+      cursor: pointer;
     }
 
     nav ul li a:hover {
       background-color: rgba(0, 122, 255, 0.1);
     }
 
-    main {
-      flex-grow: 1;
-      max-width: 700px;
-      margin: 3rem auto 2rem auto;
-      padding: 1rem;
-      animation: fadeInUp 1s ease-out;
+    #profile-area {
+      position: absolute;
+      top: 1.2rem;
+      right: 1.5rem;
+      font-weight: 600;
+      color: var(--primary);
+      font-size: 1rem;
+      cursor: default;
+      user-select: none;
+      white-space: nowrap;
       display: flex;
-      flex-direction: column;
-      height: 70vh;
-      border-radius: 16px;
-      background-color: var(--card);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+      align-items: center;
+      gap: 0.5rem;
     }
 
-    main h2 {
-      text-align: center;
-      margin-bottom: 1.5rem;
-      font-size: 2rem;
+    .user-badge {
+      background-color: rgba(0, 122, 255, 0.1);
       color: var(--primary);
-      font-weight: 700;
+      border-radius: 10px;
+      padding: 2px 8px;
+      font-size: 0.8rem;
+    }
+
+    .doctor-badge {
+      background-color: rgba(52, 199, 89, 0.1);
+      color: var(--doctor-color);
+    }
+
+    main {
+      flex: 1;
+      padding: 2rem 1rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      animation: fadeInUp 0.5s ease-out;
+      display: flex;
+      gap: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      main {
+        flex-direction: column;
+      }
+    }
+
+    h2 {
+      margin-bottom: 1.5rem;
+      color: var(--primary);
+      text-align: center;
+    }
+
+    .doctors-sidebar {
+      width: 300px;
+      background-color: var(--card);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--border);
+    }
+
+    @media (max-width: 768px) {
+      .doctors-sidebar {
+        width: 100%;
+      }
+    }
+
+    .search-container {
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+
+    #search-doctors {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      outline: none;
+      transition: border-color 0.3s ease;
+      padding-right: 2.5rem;
+    }
+
+    #search-doctors:focus {
+      border-color: var(--primary);
+    }
+
+    .search-icon {
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--subtext);
+    }
+
+    .doctors-list {
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .doctor-item {
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+      border-radius: 12px;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .doctor-item:hover {
+      background-color: rgba(0, 122, 255, 0.05);
+    }
+
+    .doctor-item.active {
+      background-color: rgba(0, 122, 255, 0.1);
+      border-left: 3px solid var(--primary);
+    }
+
+    .doctor-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 1rem;
+      flex-shrink: 0;
+    }
+
+    .doctor-info {
+      flex-grow: 1;
+    }
+
+    .doctor-info h3 {
+      margin: 0;
+      font-size: 1rem;
+      color: var(--text);
+    }
+
+    .doctor-info p {
+      margin: 0.2rem 0 0;
+      font-size: 0.8rem;
+      color: var(--subtext);
+    }
+
+    .chat-container {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--card);
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .chat-header {
+      padding: 1.5rem;
+      background-color: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+    }
+
+    .chat-header .doctor-avatar {
+      margin-right: 1rem;
+      background-color: white;
+      color: var(--primary);
+    }
+
+    .chat-header-info h2 {
+      margin: 0;
+      font-size: 1.2rem;
+      color: white;
+      text-align: left;
+    }
+
+    .chat-header-info p {
+      margin: 0.2rem 0 0;
+      font-size: 0.9rem;
+      opacity: 0.9;
+      color: white;
+    }
+
+    .no-doctor-selected {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      padding: 2rem;
+      text-align: center;
+      color: var(--subtext);
+    }
+
+    .no-doctor-selected svg {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 1rem;
+      opacity: 0.5;
     }
 
     #chat-window {
       display: flex;
       flex-direction: column;
-      height: 100%;
-      border-radius: 12px;
-      background-color: var(--input-bg);
-      padding: 1rem;
-      box-sizing: border-box;
-      box-shadow: inset 0 0 5px #ccc;
+      height: 500px;
+      background-color: #f8f9fa;
     }
 
     #messages {
       flex-grow: 1;
       overflow-y: auto;
-      padding-right: 1rem;
-      margin-bottom: 1rem;
-      font-size: 1rem;
-      color: var(--text);
-      scroll-behavior: smooth;
-    }
-
-    #messages .message {
+      padding: 1rem;
       background-color: white;
-      border-radius: 15px;
-      padding: 0.6rem 1rem;
-      margin-bottom: 0.6rem;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      max-width: 80%;
-      word-wrap: break-word;
     }
 
-    #messages .message.user {
+    .message {
+      max-width: 70%;
+      padding: 0.8rem 1rem;
+      margin-bottom: 0.8rem;
+      border-radius: 18px;
+      word-wrap: break-word;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .message.patient {
       background-color: var(--primary);
       color: white;
-      align-self: flex-end;
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
     }
 
-    #messages .message.bot {
+    .message.doctor {
       background-color: var(--card);
       color: var(--text);
-      align-self: flex-start;
+      margin-right: auto;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .message-time {
+      font-size: 0.7rem;
+      opacity: 0.7;
+      margin-top: 0.3rem;
+      text-align: right;
+    }
+
+    .chat-input-container {
+      display: flex;
+      padding: 0.75rem;
+      background-color: var(--card);
+      border-top: 1px solid var(--border);
     }
 
     #chat-input {
-      padding: 0.8rem 1rem;
+      flex-grow: 1;
+      padding: 0.75rem 1rem;
       font-size: 1rem;
-      border: 1px solid var(--input-border);
-      border-radius: 25px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
       outline: none;
-      width: 100%;
-      box-sizing: border-box;
-      transition: border-color 0.3s ease;
+      margin-right: 0.75rem;
     }
 
     #chat-input:focus {
       border-color: var(--primary);
-      box-shadow: 0 0 5px var(--primary);
     }
 
     #send-message {
-      margin-top: 1rem;
-      padding: 0.9rem 0;
+      padding: 0 1.5rem;
       background-color: var(--primary);
       color: white;
-      font-size: 1.1rem;
-      font-weight: 700;
       border: none;
-      border-radius: 25px;
+      border-radius: 20px;
       cursor: pointer;
       transition: background-color 0.3s ease;
-      width: 100%;
+      font-weight: 600;
     }
 
     #send-message:hover {
-      background-color: #005fcc;
+      background-color: #0062cc;
+    }
+
+    .unread-badge {
+      background-color: var(--error);
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      margin-left: 0.5rem;
     }
 
     footer {
-      padding: 2rem 1rem;
+      padding: 1.5rem;
       text-align: center;
       color: #999;
       border-top: 1px solid #eee;
-      animation: fadeIn 1s ease-out;
+      margin-top: 2rem;
     }
 
     @keyframes fadeIn {
-      from {opacity: 0;}
-      to {opacity: 1;}
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
     @keyframes fadeInUp {
       from {
         opacity: 0;
-        transform: translateY(30px);
+        transform: translateY(20px);
       }
       to {
         opacity: 1;
         transform: translateY(0);
       }
     }
-
-    @media (max-width: 600px) {
-      main {
-        height: 60vh;
-        margin: 2rem 1rem;
-      }
-
-      #send-message {
-        font-size: 1rem;
-      }
-    }
   </style>
 </head>
 <body>
   <header>
+    <h1>Telemedicine Portal <span class="user-badge">DEMO</span></h1>
     <nav>
       <ul>
         <li><a href="index.html">Home</a></li>
         <li><a href="appointments.html">Book Appointment</a></li>
-        <li><a href="bookings.html">My Bookings</a></li>
+        <li><a href="chat.html">Secure Chat</a></li>
         <li><a href="ai-chat.html">AI Chat</a></li>
       </ul>
     </nav>
+    <div id="profile-area">
+      <span id="welcome-message">Welcome, </span>
+      <strong id="username">John Doe</strong>
+      <span id="user-badge" class="user-badge">Patient</span>
+    </div>
   </header>
 
   <main>
-    <h2>Secure Chat</h2>
-    <div id="chat-window" role="region" aria-live="polite" aria-label="Chat messages">
-      <div id="messages" aria-atomic="false"></div>
-      <input type="text" id="chat-input" placeholder="Type a message..." aria-label="Chat input" autocomplete="off" />
-      <button id="send-message" aria-label="Send message">Send</button>
+    <div class="doctors-sidebar">
+      <h2>My Doctors</h2>
+      <div class="search-container">
+        <input type="text" id="search-doctors" placeholder="Search doctors...">
+        <span class="search-icon">🔍</span>
+      </div>
+      <div class="doctors-list" id="doctors-list">
+        <div class="doctor-item" data-doctor-id="1">
+          <div class="doctor-avatar">SS</div>
+          <div class="doctor-info">
+            <h3>Dr. Sarah Smith</h3>
+            <p>Cardiology</p>
+          </div>
+          <span class="unread-badge">2</span>
+        </div>
+        <div class="doctor-item" data-doctor-id="2">
+          <div class="doctor-avatar">MJ</div>
+          <div class="doctor-info">
+            <h3>Dr. Michael Johnson</h3>
+            <p>Pediatrics</p>
+          </div>
+        </div>
+        <div class="doctor-item" data-doctor-id="3">
+          <div class="doctor-avatar">AB</div>
+          <div class="doctor-info">
+            <h3>Dr. Amanda Brown</h3>
+            <p>Dermatology</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-container" id="chat-container">
+      <div id="no-doctor-selected" class="no-doctor-selected">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+        <h3>Select a doctor to start chatting</h3>
+        <p>Choose a doctor from your list to view your conversation history</p>
+      </div>
+
+      <div id="chat-interface" style="display: none;">
+        <div class="chat-header">
+          <div class="doctor-avatar" id="current-doctor-avatar">SS</div>
+          <div class="chat-header-info">
+            <h2 id="current-doctor-name">Dr. Sarah Smith</h2>
+            <p id="current-doctor-info">Cardiology</p>
+          </div>
+        </div>
+        <div id="chat-window">
+          <div id="messages">
+            <div class="message doctor">
+              Hello John, how can I help you today?
+              <div class="message-time">10:30 AM</div>
+            </div>
+            <div class="message patient">
+              I've been having chest pains occasionally. Should I be concerned?
+              <div class="message-time">10:32 AM</div>
+            </div>
+            <div class="message doctor">
+              Any chest pain should be evaluated. Can you describe the pain?
+              <div class="message-time">10:33 AM</div>
+            </div>
+          </div>
+          <div class="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Type your message...">
+            <button id="send-message">Send</button>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
 
   <footer>
-    <p>&copy; 2025 Telemedicine Portal</p>
+    <p>&copy; 2025 Telemedicine Portal Demo | Pure Frontend Experience</p>
   </footer>
 
-  <script src="scripts/chat.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Demo functionality
+      const doctorItems = document.querySelectorAll('.doctor-item');
+      const chatInterface = document.getElementById('chat-interface');
+      const noDoctorSelected = document.getElementById('no-doctor-selected');
+      
+      // Select doctor handler
+      doctorItems.forEach(item => {
+        item.addEventListener('click', function() {
+          // Update active state
+          doctorItems.forEach(i => i.classList.remove('active'));
+          this.classList.add('active');
+          
+          // Remove unread badge if present
+          const badge = this.querySelector('.unread-badge');
+          if (badge) badge.remove();
+          
+          // Update chat header
+          const doctorName = this.querySelector('h3').textContent;
+          const doctorSpecialty = this.querySelector('p').textContent;
+          const doctorInitials = this.querySelector('.doctor-avatar').textContent;
+          
+          document.getElementById('current-doctor-name').textContent = doctorName;
+          document.getElementById('current-doctor-info').textContent = doctorSpecialty;
+          document.getElementById('current-doctor-avatar').textContent = doctorInitials;
+          
+          // Show chat interface
+          noDoctorSelected.style.display = 'none';
+          chatInterface.style.display = 'block';
+          
+          // In a real app, you would load the conversation history here
+        });
+      });
+      
+      // Auto-select first doctor with unread messages or first doctor
+      const firstUnread = document.querySelector('.unread-badge');
+      if (firstUnread) {
+        firstUnread.parentElement.click();
+      } else if (doctorItems.length > 0) {
+        doctorItems[0].click();
+      }
+      
+      // Send message handler
+      document.getElementById('send-message').addEventListener('click', sendMessage);
+      document.getElementById('chat-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') sendMessage();
+      });
+      
+      function sendMessage() {
+        const input = document.getElementById('chat-input');
+        const messageText = input.value.trim();
+        if (messageText === '') return;
+        
+        const messagesContainer = document.getElementById('messages');
+        const now = new Date();
+        const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        // Create new message
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message patient';
+        messageDiv.innerHTML = `
+          ${messageText}
+          <div class="message-time">${timeString}</div>
+        `;
+        
+        messagesContainer.appendChild(messageDiv);
+        input.value = '';
+        
+        // Scroll to bottom
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        
+        // Simulate doctor reply after 1-3 seconds
+        setTimeout(() => {
+          const replies = [
+            "I understand your concern. Let me check your records.",
+            "That's a common symptom. We should monitor it.",
+            "I recommend scheduling an appointment to discuss this further.",
+            "Have you experienced any other symptoms?",
+            "Thanks for letting me know. I'll make a note in your file."
+          ];
+          const randomReply = replies[Math.floor(Math.random() * replies.length)];
+          
+          const replyDiv = document.createElement('div');
+          replyDiv.className = 'message doctor';
+          const replyTime = new Date();
+          const replyTimeString = replyTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          
+          replyDiv.innerHTML = `
+            ${randomReply}
+            <div class="message-time">${replyTimeString}</div>
+          `;
+          
+          messagesContainer.appendChild(replyDiv);
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }, 1000 + Math.random() * 2000);
+      }
+      
+      // Search functionality
+      document.getElementById('search-doctors').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        doctorItems.forEach(item => {
+          const name = item.querySelector('h3').textContent.toLowerCase();
+          const specialty = item.querySelector('p').textContent.toLowerCase();
+          if (name.includes(searchTerm) || specialty.includes(searchTerm)) {
+            item.style.display = 'flex';
+          } else {
+            item.style.display = 'none';
+          }
+        });
+      });
+    });
+  </script>
 </body>
 </html>

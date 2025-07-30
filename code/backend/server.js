@@ -1448,13 +1448,14 @@ app.get('/appointments', authenticateToken, (req, res) => {
 
   const where = whereClauses.length ? 'WHERE ' + whereClauses.join(' AND ') : '';
 
+// Modifica la query per includere le note
   db.all(
     `SELECT a.*, d.nome as doctor_nome, d.cognome as doctor_cognome, d.specialization
-     FROM appointments a
-     JOIN utenti d ON a.doctor_id = d.id
-     ${where}
-     ORDER BY a.date ${order.toUpperCase()}, a.time ${order.toUpperCase()}
-     LIMIT ? OFFSET ?`,
+    FROM appointments a
+    JOIN utenti d ON a.doctor_id = d.id
+    ${where}
+    ORDER BY a.date ${order.toUpperCase()}, a.time ${order.toUpperCase()}
+    LIMIT ? OFFSET ?`,
     [...params, parseInt(limit), offset],
     (err, appointments) => {
       if (err) {

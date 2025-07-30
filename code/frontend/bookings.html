@@ -237,46 +237,108 @@
       return data.appointments;
     }
 
-    function renderAppointments(appointments, userId, userType) {
-      const appointmentsList = document.getElementById('appointments-list');
+function renderAppointments(appointments, userId, userType) {
+  const appointmentsList = document.getElementById('appointments-list');
 
-      appointmentsList.innerHTML = appointments.map(appt => {
-        const doctorName = appt.doctor_name || `${appt.doctor_nome} ${appt.doctor_cognome}` || 'Doctor';
-        const date = new Date(appt.date);
-        const formattedDate = date.toLocaleDateString('en-US', {
-          weekday: 'short',
-          month: 'short',
-          day: 'numeric'
-        });
+  appointmentsList.innerHTML = appointments.map(appt => {
+    const doctorName = appt.doctor_name || `${appt.doctor_nome} ${appt.doctor_cognome}` || 'Doctor';
+    const date = new Date(appt.date);
+    const formattedDate = date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
+    });
 
-        // Modificato il percorso del report
-        let reportLink = '';
-        if (appt.medical_report_url) {
-          const reportUrl = `http://localhost:5500/backend/${appt.medical_report_url}`;
-          reportLink = `
-            <span>
-              <a href="${reportUrl}" target="_blank" style="color: var(--primary); text-decoration: underline;">
-                📄 View Medical Report
-              </a>
-            </span>
-          `;
-        }
+    // Aggiungi la visualizzazione delle note
+    const notesButton = appt.notes ? `
+      <button class="view-notes-btn" data-notes="${escapeHtml(appt.notes)}" 
+        style="background: var(--primary); color: white; border: none; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer;">
+        View Notes
+      </button>
+    ` : 'No notes';
 
-        return `
-          <li>
-            <span>📅 ${formattedDate}</span>
-            <span>🕒 ${appt.time}</span>
-            <span>👨‍⚕️ ${doctorName}</span>
-            <span class="status-${appt.status.toLowerCase()}">${appt.status}</span>
-            ${reportLink}
-            ${appt.status !== 'cancelled' && appt.status !== 'completed' ? `
-              <button class="cancel-btn" data-id="${appt.id}">Cancel</button>
-            ` : ''}
-          </li>
-        `;
-      }).join('');
+    // Modificato il percorso del report
+    let reportLink = '';
+    if (appt.medical_report_url) {
+      const reportUrl = `http://localhost:5500/backend/${appt.medical_report_url}`;
+      reportLink = `
+        <span>
+          <a href="${reportUrl}" target="_blank" style="color: var(--primary); text-decoration: underline;">
+            📄 View Medical Report
+          </a>
+        </span>
+      `;
     }
 
+    return `
+      <li>
+        <span>📅 ${formattedDate}</span>
+        <span>🕒 ${appt.time}</span>
+        <span>👨‍⚕️ ${doctorName}</span>
+        <span class="status-${appt.status.toLowerCase()}">${appt.status}</span>
+        ${reportLink}
+        <span>${notesButton}</span>
+        ${appt.status !== 'cancelled' && appt.status !== 'completed' ? `
+          <button class="cancel-btn" data-id="${appt.id}">Cancel</button>
+        ` : ''}
+      </li>
+    `;
+  }).join('');
+
+  // Aggiungi l'handler per i pulsanti delle note
+  setupNotesButtons();
+}
+
+// Aggiungi questa funzione per gestire la visualizzazione delle note
+function setupNotesButtons() {
+  document.querySelectorAll('.view-notes-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const notes = btn.getAttribute('data-notes');
+      showNotesPopup(notes);
+    });
+  });
+}
+
+// Aggiungi questa funzione per mostrare il popup delle note
+function showNotesPopup(notes) {
+  const popup = document.createElement('div');
+  popup.style.position = 'fixed';
+  popup.style.top = '0';
+  popup.style.left = '0';
+  popup.style.right = '0';
+  popup.style.bottom = '0';
+  popup.style.backgroundColor = 'rgba(0,0,0,0.8)';
+  popup.style.display = 'flex';
+  popup.style.justifyContent = 'center';
+  popup.style.alignItems = 'center';
+  popup.style.zIndex = '1000';
+
+  popup.innerHTML = `
+    <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 500px; width: 90%;">
+      <h3 style="color: var(--primary); margin-bottom: 1rem;">Patient Notes</h3>
+      <div style="padding: 1rem; background: #f8f8f8; border-radius: 8px; white-space: pre-wrap;">
+        ${notes}
+      </div>
+      <button style="margin-top: 1.5rem; padding: 0.75rem 1.5rem; background: var(--error); 
+        color: white; border: none; border-radius: 20px; cursor: pointer; width: 100%;"
+        onclick="this.parentElement.parentElement.remove()">
+        Close
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+}
+
+// Funzione per escape HTML (aggiungila in cima allo script)
+function escapeHtml(unsafe) {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
     function setupCancelButtons(token) {
       document.querySelectorAll('.cancel-btn').forEach(btn => {
         btn.addEventListener('click', async () => {

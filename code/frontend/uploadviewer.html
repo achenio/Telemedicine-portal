@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Medical Reports - Telemedicine Portal</title>
+  <style>
+    :root {
+      --bg: #fefefe;
+      --text: #1c1c1e;
+      --subtext: #555;
+      --primary: #007aff;
+      --card: #ffffff;
+      --error: #ff3b30;
+      --success: #34c759;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    header {
+      background-color: var(--card);
+      padding: 1.5rem 1rem;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+      animation: fadeIn 1s ease-out;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding: 0;
+      margin-top: 1rem;
+    }
+
+    nav ul li a {
+      text-decoration: none;
+      color: var(--primary);
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      transition: background-color 0.3s ease;
+    }
+
+    nav ul li a:hover {
+      background-color: rgba(0, 122, 255, 0.1);
+    }
+
+    main {
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 1rem;
+      animation: fadeInUp 1s ease-out;
+    }
+
+    h2 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    #login-message {
+      text-align: center;
+      margin: 2rem 0;
+      font-weight: 600;
+      color: var(--error);
+    }
+
+    .reports-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .report-card {
+      background-color: var(--card);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      padding: 1.5rem;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .report-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .report-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid #eee;
+    }
+
+    .report-title {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: var(--text);
+    }
+
+    .report-date {
+      font-size: 0.85rem;
+      color: var(--subtext);
+    }
+
+    .report-doctor {
+      font-size: 0.9rem;
+      color: var(--subtext);
+      margin-bottom: 1rem;
+    }
+
+    .report-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: auto;
+    }
+
+    .btn {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-weight: 500;
+      text-decoration: none;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: opacity 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+    }
+
+    .btn-secondary {
+      background-color: transparent;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      grid-column: 1 / -1;
+    }
+
+    .empty-state p {
+      color: var(--subtext);
+      margin-bottom: 1rem;
+    }
+
+    .pdf-preview {
+      width: 100%;
+      height: 200px;
+      background-color: #f5f5f5;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .pdf-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .pdf-icon {
+      font-size: 3rem;
+      color: var(--error);
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      font-size: 0.9rem;
+      color: #999;
+      border-top: 1px solid #eee;
+      margin-top: 4rem;
+      animation: fadeIn 1s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .reports-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background-color: white;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 900px;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-header {
+      padding: 1rem;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-weight: 600;
+      font-size: 1.2rem;
+    }
+
+    .close-modal {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--subtext);
+    }
+
+    .modal-body {
+      flex: 1;
+      overflow: auto;
+      padding: 1rem;
+    }
+
+    .pdf-viewer {
+      width: 100%;
+      height: 70vh;
+      border: none;
+    }
+
+    /* Status badges */
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .status-completed {
+      background-color: rgba(52, 199, 89, 0.1);
+      color: var(--success);
+    }
+
+    .status-pending {
+      background-color: rgba(255, 204, 0, 0.1);
+      color: #ffcc00;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="appointments.html">Book Appointment</a></li>
+        <li><a href="chat.html">Secure Chat</a></li>
+        <li><a href="bookings.html">My Appointments</a></li>
+        <li><a href="reports.html" style="background-color: rgba(0, 122, 255, 0.1);">My Reports</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <h2>My Medical Reports</h2>
+    
+    <div id="login-message" style="display: none;">
+      Please <a href="login.html">login</a> to view your medical reports.
+    </div>
+
+    <div id="reports-container" class="reports-container" style="display: none;">
+      <!-- Reports will be loaded here -->
+    </div>
+
+    <!-- PDF Viewer Modal -->
+    <div id="pdf-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="modal-title" id="modal-title">Medical Report</div>
+          <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <iframe id="pdf-viewer" class="pdf-viewer" frameborder="0"></iframe>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Telemedicine Portal</p>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const token = localStorage.getItem('token');
+      const reportsContainer = document.getElementById('reports-container');
+      const loginMessage = document.getElementById('login-message');
+      const pdfModal = document.getElementById('pdf-modal');
+      const pdfViewer = document.getElementById('pdf-viewer');
+      const modalTitle = document.getElementById('modal-title');
+      const closeModal = document.querySelector('.close-modal');
+
+      if (!token) {
+        showLoginPrompt();
+        return;
+      }
+
+      try {
+        const verifyResponse = await fetch('http://localhost:5501/user-data', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!verifyResponse.ok) {
+          throw new Error('Session expired');
+        }
+
+        const userData = await verifyResponse.json();
+        
+        if (userData.user_type !== 'patient') {
+          window.location.href = 'dashboard.html';
+          return;
+        }
+
+        const reports = await loadReports(token);
+
+        if (reports.length > 0) {
+          renderReports(reports);
+        } else {
+          showNoReports();
+        }
+
+        reportsContainer.style.display = 'grid';
+        loginMessage.style.display = 'none';
+      } catch (error) {
+        console.error('Error:', error);
+        handleError(error);
+      }
+
+      // Modal close handler
+      closeModal.addEventListener('click', () => {
+        pdfModal.style.display = 'none';
+      });
+
+      // Close modal when clicking outside
+      pdfModal.addEventListener('click', (e) => {
+        if (e.target === pdfModal) {
+          pdfModal.style.display = 'none';
+        }
+      });
+    });
+
+    async function loadReports(token) {
+      try {
+        // First get all appointments that might have reports
+        const response = await fetch('http://localhost:5501/appointments', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to load reports');
+        }
+
+        const data = await response.json();
+        
+        // Filter appointments that have medical reports
+        const reports = data.appointments.filter(appt => 
+          appt.medical_report_url && appt.status === 'completed'
+        );
+
+        return reports;
+      } catch (error) {
+        console.error('Error loading reports:', error);
+        throw error;
+      }
+    }
+
+    function renderReports(reports) {
+      const reportsContainer = document.getElementById('reports-container');
+      
+      reportsContainer.innerHTML = reports.map(report => {
+        const date = new Date(report.date);
+        const formattedDate = date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+        
+        const doctorName = report.doctor_name || `${report.doctor_nome} ${report.doctor_cognome}` || 'Doctor';
+        const reportUrl = `http://localhost:5501${report.medical_report_url}`;
+        const reportId = report.id;
+        const reportTitle = `Report from ${formattedDate}`;
+
+        return `
+          <div class="report-card">
+            <div class="report-header">
+              <div class="report-title">${reportTitle}</div>
+              <span class="status-badge status-completed">Completed</span>
+            </div>
+            
+            <div class="report-doctor">
+              <strong>Doctor:</strong> ${doctorName}
+            </div>
+            
+            <div class="pdf-preview">
+              <div class="pdf-icon">📄</div>
+            </div>
+            
+            <div class="report-actions">
+              <button class="btn btn-primary" onclick="viewReport('${reportUrl}', '${reportTitle}')">
+                <span>View Report</span>
+              </button>
+              <a href="${reportUrl}" download class="btn btn-secondary">
+                <span>Download</span>
+              </a>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function viewReport(url, title) {
+      const pdfModal = document.getElementById('pdf-modal');
+      const pdfViewer = document.getElementById('pdf-viewer');
+      const modalTitle = document.getElementById('modal-title');
+      
+      modalTitle.textContent = title;
+      pdfViewer.src = url;
+      pdfModal.style.display = 'flex';
+    }
+
+    function showLoginPrompt() {
+      document.getElementById('reports-container').style.display = 'none';
+      document.getElementById('login-message').style.display = 'block';
+    }
+
+    function showNoReports() {
+      const reportsContainer = document.getElementById('reports-container');
+      reportsContainer.innerHTML = `
+        <div class="empty-state">
+          <h3>No Medical Reports Found</h3>
+          <p>You don't have any medical reports yet. Reports will appear here after completed appointments.</p>
+          <a href="appointments.html" class="btn btn-primary">Book an Appointment</a>
+        </div>
+      `;
+    }
+
+    function handleError(error) {
+      if (error.message.includes('Session')) {
+        localStorage.clear();
+        window.location.href = 'login.html';
+        return;
+      }
+
+      const reportsContainer = document.getElementById('reports-container');
+      reportsContainer.innerHTML = `
+        <div class="empty-state" style="color: var(--error);">
+          <h3>Error Loading Reports</h3>
+          <p>${error.message}</p>
+          <button onclick="location.reload()" class="btn btn-primary">Try Again</button>
+        </div>
+      `;
+      reportsContainer.style.display = 'grid';
+      document.getElementById('login-message').style.display = 'none';
+    }
+
+    // Make viewReport function available globally
+    window.viewReport = viewReport;
+  </script>
+</body>
+</html>

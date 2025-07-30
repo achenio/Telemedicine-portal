@@ -1,4 +1,6 @@
-# Telemedicine Portal
+# Telemedicine Portal 
+*By [Achenio Sogno](https://github.com/achenio), [Michele Portulano](https://github.com/MichyPortu08), and [Davide Albanese](https://github.com/DocCiaoBimbi)*
+
 [![GitHub](https://img.shields.io/badge/GitHub-Repo-black?logo=github&logoColor=white)](https://github.com/achenio/telemedicine-portal)
 [![Docs](https://img.shields.io/badge/Docs-API-green?logo=read-the-docs&logoColor=white)](/documentation/docs.md)
 
@@ -26,8 +28,8 @@ The platform ensures easy access to healthcare services from anywhere, with priv
 
 ---
 
-## Live Demo & Links
-WIP
+## Live Demo
+[View live Demo](https://telemedicine-portal-36gj.vercel.app/)
 
 ---
 
@@ -35,7 +37,7 @@ WIP
 
 | Home Page              | Secure Chat (Patient)           | Secure Chat (Doctor)          | Appointments          |
 | ---------------------- | ---------------------- | ---------------------- | ---------------------- |
-| ![Home Screenshot](./screenshots/screenshot_home.png) | ![Chat Screenshot](./screenshots/patientview-securechat.png) | ![Chat Screenshot](./screenshots/doctorview-securechat.png) | ![Appointment Booking](./screenshots/screenshot_appointmentbooking.png) |
+| ![Home Screenshot](./screenshots/screenshot_home.png) | ![Chat Screenshot](./screenshots/patientview_securechat.png) | ![Chat Screenshot](./screenshots/doctorview_securechat.png) | ![Appointment Booking](./screenshots/screenshot_appointmentbooking.png) |
 
 ---
 

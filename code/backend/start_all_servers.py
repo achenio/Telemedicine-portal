@@ -20,6 +20,10 @@ servers = [
         "cmd": ["node", "serverbot.cjs"]
     },
     {
+        "name": "server-post.cjs",
+        "cmd": ["node", "server-post.cjs"]
+    },
+    {
         "name": "payments.py",
         "cmd": [sys.executable, "payments.py"]
     }

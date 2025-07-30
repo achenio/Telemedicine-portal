@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://www.paypal.com/sdk/js?client-id=Addsl8iI8tBYlJu5RQE9sK7Ap9v2V1hSOrj9YsDPQAttyuaR-CC6NkPed15aITKZS-7i_B8SHf7QppB9&currency=EUR"></script>
-  
   <title>Payments - Telemedicine Portal</title>
   <style>
     :root {
@@ -15,8 +14,7 @@
       --card: #ffffff;
       --error: #ff3b30;
       --success: #34c759;
-      --input-bg: #f1f3f5;
-      --input-border: #ced4da;
+      --warning: #ff9500;
     }
 
     * {
@@ -24,6 +22,7 @@
       margin: 0;
       padding: 0;
     }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background-color: var(--bg);
@@ -88,6 +87,12 @@
       border-radius: 16px;
       box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
       margin-bottom: 2rem;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
     }
 
     .form-group {
@@ -103,12 +108,13 @@
 
     input, select {
       width: 100%;
-      padding: 0.75rem 1rem;
+      padding: 1rem;
       font-size: 1rem;
-      border: 1px solid var(--input-border);
-      border-radius: 8px;
-      background-color: var(--input-bg);
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      background-color: #f8f8f8;
       transition: border-color 0.3s ease;
+      font-family: inherit;
     }
 
     input:focus, select:focus {
@@ -118,46 +124,51 @@
     }
 
     .btn {
-      padding: 0.75rem 1.5rem;
+      padding: 1rem;
       background-color: var(--primary);
       color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: 12px;
       font-weight: 600;
       font-size: 1rem;
       cursor: pointer;
-      transition: background-color 0.3s ease;
+      transition: opacity 0.3s ease;
       width: 100%;
     }
 
     .btn:hover {
-      background-color: #0062cc;
+      opacity: 0.9;
     }
 
     .payment-section {
       display: none;
       margin-top: 1.5rem;
       padding: 1.5rem;
-      background-color: var(--input-bg);
-      border-radius: 8px;
+      background-color: #f8f8f8;
+      border-radius: 12px;
+      border: 1px solid #eee;
+      animation: fadeIn 0.4s ease-out;
     }
 
     .message {
       text-align: center;
       margin-top: 1.5rem;
       padding: 1rem;
-      border-radius: 8px;
+      border-radius: 12px;
       font-weight: 500;
+      animation: fadeIn 0.4s ease-out;
     }
 
     .success {
       background-color: rgba(52, 199, 89, 0.1);
       color: var(--success);
+      border: 1px solid rgba(52, 199, 89, 0.3);
     }
 
     .error {
       background-color: rgba(255, 59, 48, 0.1);
       color: var(--error);
+      border: 1px solid rgba(255, 59, 48, 0.3);
     }
 
     footer {
@@ -170,6 +181,55 @@
       animation: fadeIn 1s ease-out;
     }
 
+    /* Checkbox styling */
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      cursor: pointer;
+    }
+
+    .checkbox-container input {
+      width: auto;
+      margin-right: 0.75rem;
+      accent-color: var(--primary);
+    }
+
+    /* File input styling */
+    input[type="file"] {
+      padding: 0.75rem;
+      border: 1px dashed #ddd;
+      background-color: white;
+    }
+
+    /* Readonly input styling */
+    input[readonly] {
+      background-color: #f0f0f0;
+      color: var(--subtext);
+      cursor: not-allowed;
+    }
+
+    /* Credit card input grouping */
+    .card-input-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    /* Status indicators */
+    .status-pending {
+      color: var(--warning);
+    }
+    
+    .status-confirmed {
+      color: var(--success);
+    }
+    
+    .status-cancelled {
+      color: var(--error);
+    }
+
+    /* Animations */
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
@@ -186,33 +246,37 @@
       }
     }
 
-    @media (max-width: 600px) {
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
       .card {
         padding: 1.5rem;
       }
+      
+      .card-input-group {
+        grid-template-columns: 1fr;
+      }
     }
 
-    /* Stili aggiuntivi per esenzione e amount */
-    input[type="file"] {
-      width: 100%;
-      padding: 0.5rem;
-      border: 1px solid var(--input-border);
-      border-radius: 8px;
-      background-color: var(--input-bg);
+    @media (max-width: 480px) {
+      main {
+        padding: 0 1rem;
+      }
+      
+      .card {
+        padding: 1.25rem;
+      }
+      
+      h2 {
+        font-size: 1.75rem;
+      }
     }
 
-    input[readonly] {
-      background-color: #e9ecef;
-      cursor: not-allowed;
-    }
-
-    #exemption-upload-section {
-      transition: all 0.3s ease;
-    }
-
-    #amount {
-      background-color: #e9ecef;
-      cursor: not-allowed;
+    /* PayPal button container */
+    #paypal-button-container {
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
   </style>
 </head>
@@ -232,7 +296,7 @@
     <h2>Complete Payment</h2>
     
     <div id="login-message" style="display: none;">
-      Please <a href="login.html">login</a> to view payment options.
+      Please <a href="login.html" style="color: var(--primary);">login</a> to view payment options.
     </div>
 
     <div class="card" style="display: none;" id="payment-card">
@@ -251,9 +315,10 @@
         </div>
 
         <div class="form-group">
-          <label>
-            <input type="checkbox" id="exemption-checkbox" name="exemption"> Esenzione Pagamento
-          </label>
+          <div class="checkbox-container">
+            <input type="checkbox" id="exemption-checkbox" name="exemption">
+            <label for="exemption-checkbox">Esenzione Pagamento</label>
+          </div>
           <div id="exemption-upload-section" style="display: none; margin-top: 1rem;">
             <label for="exemption-file">Carica documento di esenzione (PDF):</label>
             <input type="file" id="exemption-file" name="exemption-file" accept=".pdf" style="margin-top: 0.5rem;">
@@ -293,13 +358,15 @@
             <label for="credit-card-number">Credit Card Number:</label>
             <input type="text" id="credit-card-number" name="credit-card-number" maxlength="19" placeholder="Card number" pattern="\d{16,19}">
           </div>
-          <div class="form-group">
-            <label for="credit-card-expiry">Expiry Date:</label>
-            <input type="text" id="credit-card-expiry" name="credit-card-expiry" maxlength="5" placeholder="MM/YY" pattern="\d{2}/\d{2}">
-          </div>
-          <div class="form-group">
-            <label for="credit-card-cvc">CVC:</label>
-            <input type="text" id="credit-card-cvc" name="credit-card-cvc" maxlength="4" placeholder="CVC" pattern="\d{3,4}">
+          <div class="card-input-group">
+            <div class="form-group">
+              <label for="credit-card-expiry">Expiry Date:</label>
+              <input type="text" id="credit-card-expiry" name="credit-card-expiry" maxlength="5" placeholder="MM/YY" pattern="\d{2}/\d{2}">
+            </div>
+            <div class="form-group">
+              <label for="credit-card-cvc">CVC:</label>
+              <input type="text" id="credit-card-cvc" name="credit-card-cvc" maxlength="4" placeholder="CVC" pattern="\d{3,4}">
+            </div>
           </div>
           <div class="form-group">
             <label for="credit-card-holder">Card Holder Name:</label>
@@ -370,7 +437,7 @@
             case 'paypal':
               document.getElementById('paypal-button-container').style.display = 'block';
 
-              // Carica i bottoni PayPal solo se non già caricati
+              // Load PayPal buttons only if not already loaded
               if (!document.getElementById('paypal-button-container').hasChildNodes()) {
                 paypal.Buttons({
                   style: {
@@ -391,7 +458,7 @@
                   },
                   onApprove: function(data, actions) {
                     return actions.order.capture().then(function(details) {
-                      // Chiama il backend per registrare il pagamento
+                      // Call backend to register payment
                       registerPayment(details);
                     });
                   },
@@ -419,7 +486,7 @@
           }
         });
 
-        // Gestione checkbox esenzione
+        // Handle exemption checkbox
         document.getElementById('exemption-checkbox').addEventListener('change', function() {
           const uploadSection = document.getElementById('exemption-upload-section');
           const amountField = document.getElementById('amount');
@@ -451,7 +518,7 @@
           const exemptionFile = document.getElementById('exemption-file').files[0];
           const message = document.getElementById('payment-message');
           
-          // Validazione per esenzione
+          // Validate exemption
           if (isExempt && !exemptionFile) {
             message.textContent = "Per favore carica il documento di esenzione";
             message.className = "message error";
@@ -466,7 +533,7 @@
             is_exempt: isExempt
           };
 
-          // Se è un'esenzione, usa FormData per l'upload del file
+          // If exemption, use FormData for file upload
           if (isExempt) {
             const formData = new FormData();
             formData.append('exemption_file', exemptionFile);
@@ -495,7 +562,7 @@
               message.className = "message error";
             }
           } else {
-            // Pagamento normale
+            // Normal payment
             // Add payment method specific fields
             if (method === 'credit_card') {
               payload.card_number = document.getElementById('credit-card-number').value.trim();
@@ -584,7 +651,7 @@
       paymentCard.innerHTML = `
         <div style="color: var(--error); text-align: center;">
           ${error.message}<br>
-          <button onclick="location.reload()">Retry</button>
+          <button class="btn" onclick="location.reload()">Retry</button>
         </div>
       `;
       paymentCard.style.display = 'block';

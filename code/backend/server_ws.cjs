@@ -1,6 +1,5 @@
 const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database('utenti.db');
-module.exports = db;
 
 const WebSocket = require('ws');
 const jwt = require('jsonwebtoken');
@@ -9,7 +8,7 @@ const express = require('express');
 const app = express();
 
 const JWT_SECRET = 'your-secret-key-here';
-const ENCRYPTION_KEY = '12345678901234567890123456789012'; // 32 caratteri
+const ENCRYPTION_KEY = 'abcdefghilmnopqrstuv123456789012'; // 32 caratteri
 const IV_LENGTH = 16;
 
 const wss = new WebSocket.Server({ port: 8080 });
@@ -32,10 +31,8 @@ function decrypt(text) {
   if (parts.length !== 2) {
     throw new Error('Invalid encrypted format');
   }
-
   const iv = Buffer.from(parts[0], 'hex');
   const encryptedText = Buffer.from(parts[1], 'hex');
-
   const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY, 'utf8'), iv);
   const decrypted = Buffer.concat([
     decipher.update(encryptedText),
@@ -46,12 +43,10 @@ function decrypt(text) {
 
 wss.on('connection', (ws, req) => {
   const token = new URL(`http://localhost${req.url}`).searchParams.get('token');
-
   if (!token) {
     ws.close(1008, 'Authentication required');
     return;
   }
-
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     const userId = decoded.id;
@@ -76,7 +71,6 @@ wss.on('connection', (ws, req) => {
           console.warn(`Invalid message format from user ${userId}`);
           return;
         }
-
         if (msg.receiver_id === userId) {
           console.warn(`User ${userId} attempted to send message to self`);
           return;
@@ -84,12 +78,18 @@ wss.on('connection', (ws, req) => {
 
         try {
           const encryptedContent = encrypt(msg.content);
+          const decryptedContent = decrypt(encryptedContent);
+          console.log(`Messaggio originale: ${msg.content}`);
+          console.log(`Messaggio criptato: ${encryptedContent}`);
+          console.log(`Messaggio decriptato: ${decryptedContent}`);
+
           db.run(
             `INSERT INTO messages (sender_id, receiver_id, content, timestamp, is_read, sender_type)
              VALUES (?, ?, ?, ?, ?, ?)`,
             [userId, msg.receiver_id, encryptedContent, new Date().toISOString(), 0, userType],
             (err) => {
               if (err) console.error('Error saving message to DB:', err);
+              else console.log(`Salvato: ${msg.content} -> ${encryptedContent}`);
             }
           );
         } catch (dbError) {
@@ -100,10 +100,9 @@ wss.on('connection', (ws, req) => {
           const receiverWs = clients.get(msg.receiver_id);
           const messageData = {
             sender_id: userId,
-            content: msg.content,
+            content: msg.content, // testo in chiaro
             timestamp: new Date().toISOString(),
           };
-
           if (receiverWs.readyState === WebSocket.OPEN) {
             receiverWs.send(JSON.stringify(messageData));
           } else {
@@ -135,7 +134,6 @@ wss.on('connection', (ws, req) => {
 // Heartbeat check
 const interval = setInterval(() => {
   const now = Date.now();
-
   heartbeat.forEach((lastPing, ws) => {
     if (now - lastPing > HEARTBEAT_INTERVAL) {
       ws.isAlive = false;
@@ -143,7 +141,6 @@ const interval = setInterval(() => {
       heartbeat.delete(ws);
     }
   });
-
   wss.clients.forEach((ws) => {
     if (ws.isAlive === false) {
       const userId = [...clients.entries()].find(([_, client]) => client === ws)?.[0];
@@ -152,19 +149,16 @@ const interval = setInterval(() => {
       heartbeat.delete(ws);
       return ws.terminate();
     }
-
     ws.isAlive = false;
     ws.ping(() => {});
   });
 }, HEARTBEAT_INTERVAL);
 
-// PONG listener
 wss.on('pong', (ws) => {
   heartbeat.set(ws, Date.now());
   ws.isAlive = true;
 });
 
-// Cleanup on server close
 wss.on('close', () => {
   clearInterval(interval);
   clients.clear();
@@ -177,14 +171,23 @@ console.log('WebSocket server running on ws://localhost:8080');
 app.get('/messages', (req, res) => {
   db.all('SELECT * FROM messages', [], (err, rows) => {
     if (err) return res.status(500).json({ error: 'DB error' });
-    const messages = rows.map(row => ({
-      ...row,
-      content: decrypt(row.content)
-    }));
+    const messages = rows.map(row => {
+      let decryptedContent;
+      try {
+        decryptedContent = decrypt(row.content);
+      } catch (e) {
+        decryptedContent = '[Errore decriptazione]';
+      }
+      console.log(`DB Criptato: ${row.content} | DB Decriptato: ${decryptedContent}`);
+      return {
+        ...row,
+        content: decryptedContent
+      };
+    });
     res.json(messages);
   });
 });
-// richiesta all'API
+
 app.get('/messages/conversation/:patientId', (req, res) => {
   const patientId = req.params.patientId;
   db.all(
@@ -192,29 +195,30 @@ app.get('/messages/conversation/:patientId', (req, res) => {
     [patientId, patientId],
     (err, rows) => {
       if (err) return res.status(500).json({ error: 'DB error' });
-
       const messages = rows.map(row => {
         let decryptedContent;
         try {
           decryptedContent = decrypt(row.content);
         } catch (e) {
-          console.error('Errore durante decriptazione:', e.message);
           decryptedContent = '[Errore decriptazione]';
         }
-
         console.log(`DB Criptato: ${row.content} | DB Decriptato: ${decryptedContent}`);
-
         return {
           ...row,
           content: decryptedContent
         };
       });
-
       res.json(messages);
     }
   );
 });
 
+app.get('/all-users', (req, res) => {
+  db.all('SELECT id, nome, cognome, codice_fiscale, user_type FROM users WHERE user_type = "patient" OR user_type = "doctor"', [], (err, rows) => {
+    if (err) return res.status(500).json({ error: 'DB error' });
+    res.json(rows);
+  });
+});
 
 app.listen(3001, () => {
   console.log('Express API listening on http://localhost:3001');

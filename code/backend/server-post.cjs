@@ -6,7 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 const sqlite3 = require('sqlite3').verbose();
 
 const app = express();
-const PORT = 5502; // Da cambiare per evitare conflitto con payments.py
+const PORT = 5520; // Da cambiare per evitare conflitto con payments.py
 
 // Middleware
 app.use(cors({

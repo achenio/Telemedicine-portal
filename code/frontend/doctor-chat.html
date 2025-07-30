@@ -618,46 +618,38 @@ header {
       function connectWebSocket() {
         const token = localStorage.getItem('token');
         if (!token) return;
-        
+
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.close();
+        }
+
         socket = new WebSocket(`ws://localhost:8080?token=${token}`);
-        
+
         socket.onopen = () => {
           isSocketConnected = true;
           console.log('WebSocket connected');
         };
-        
-        socket.onmessage = (event) => {
+
+        socket.onmessage = async (event) => {
           const message = JSON.parse(event.data);
-          
-          // Add message to the correct conversation
-          if (!conversations[message.sender_id]) {
-            conversations[message.sender_id] = [];
-          }
-          
-          const newMessage = {
-            sender: 'patient',
-            sender_id: message.sender_id,
-            content: message.content,
-            timestamp: message.timestamp || new Date().toISOString(),
-            isRead: currentPatient && currentPatient.id === message.sender_id
-          };
-          
-          conversations[message.sender_id].push(newMessage);
-          
-          // Update UI if viewing this conversation
+
+          // Dopo aver ricevuto un nuovo messaggio, ricarica la cronologia dal backend
           if (currentPatient && currentPatient.id === message.sender_id) {
-            addMessageToChat(newMessage);
+            conversations[message.sender_id] = await loadPatientMessages(message.sender_id);
+            renderMessages(conversations[message.sender_id]);
           } else {
+            // Aggiorna solo la conversazione in memoria per badge
+            conversations[message.sender_id] = await loadPatientMessages(message.sender_id);
             updateUnreadBadge(message.sender_id);
           }
         };
-        
+
         socket.onclose = () => {
           isSocketConnected = false;
           console.log('WebSocket disconnected');
           setTimeout(connectWebSocket, 5000);
         };
-        
+
         socket.onerror = (error) => {
           console.error('WebSocket error:', error);
         };
@@ -690,15 +682,15 @@ header {
         const messageDiv = document.createElement('div');
         const isDoctor = message.sender === 'doctor';
         messageDiv.className = `message ${isDoctor ? 'doctor' : 'patient'}`;
-        
-        const timestamp = new Date(message.timestamp);
+
+        const timestamp = message.timestamp ? new Date(message.timestamp) : new Date();
         const timeString = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
+
         messageDiv.innerHTML = `
           ${message.content}
           <div class="message-time">${timeString}</div>
         `;
-        
+
         messagesContainer.appendChild(messageDiv);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
       }
@@ -738,9 +730,7 @@ header {
         try {
           const token = localStorage.getItem('token');
           const response = await fetch('http://localhost:5501/doctor/patients', {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
+            headers: { 'Authorization': `Bearer ${token}` }
           });
           if (!response.ok) throw new Error('Failed to load patients');
           return await response.json();
@@ -753,18 +743,13 @@ header {
       // Load conversation messages
       async function loadPatientMessages(patientId) {
         try {
-          const token = localStorage.getItem('token');
-          const response = await fetch(`http://localhost:5501/messages/conversation/${patientId}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
+          const response = await fetch(`http://localhost:5005/api/decrypted-messages/${patientId}`);
           if (!response.ok) throw new Error('Failed to load messages');
           const messages = await response.json();
           return messages.map(msg => ({
             ...msg,
             isRead: true,
-            sender: msg.sender_type === 'doctor' ? 'doctor' : 'patient'
+            sender: String(msg.sender_id) === String(currentUser.id) ? 'doctor' : 'patient'
           }));
         } catch (error) {
           console.error('Error loading messages:', error);
@@ -776,27 +761,9 @@ header {
       async function sendMessage() {
         const messageText = chatInput.value.trim();
         if (messageText === '' || !currentPatient || !currentUser) return;
-        
-        const newMessage = {
-          sender: 'doctor',
-          sender_id: currentUser.id,
-          receiver_id: currentPatient.id,
-          content: messageText,
-          timestamp: new Date().toISOString(),
-          isRead: true
-        };
-        
-        // Add to current conversation
-        if (!conversations[currentPatient.id]) {
-          conversations[currentPatient.id] = [];
-        }
-        conversations[currentPatient.id].push(newMessage);
-        
-        // Update UI
-        addMessageToChat(newMessage);
-        chatInput.value = '';
-        
-        // Send to server
+
+        sendButton.disabled = true;
+
         try {
           if (isSocketConnected) {
             socket.send(JSON.stringify({
@@ -817,52 +784,43 @@ header {
               })
             });
           }
+
+          chatInput.value = '';
+
+          // Ricarica la cronologia dopo l'invio
+          conversations[currentPatient.id] = await loadPatientMessages(currentPatient.id);
+          renderMessages(conversations[currentPatient.id]);
+
+          sendButton.disabled = false;
         } catch (error) {
           console.error('Error sending message:', error);
           const errorDiv = document.createElement('div');
           errorDiv.className = 'message error';
           errorDiv.textContent = 'Failed to send message. Please try again.';
           messagesContainer.appendChild(errorDiv);
+          sendButton.disabled = false;
         }
       }
       
       // Select patient and load conversation
       async function selectPatient(patient) {
         currentPatient = patient;
-        
-        // Update UI
+
         document.getElementById('no-patient-selected').style.display = 'none';
         document.getElementById('chat-interface').style.display = 'block';
-        
+
         const initials = (patient.nome ? patient.nome[0] : '') + (patient.cognome ? patient.cognome[0] : '');
         document.getElementById('current-patient-avatar').textContent = initials;
         document.getElementById('current-patient-name').textContent = `${patient.nome} ${patient.cognome}`;
         document.getElementById('current-patient-info').textContent = `ID: ${patient.id} | ${patient.codice_fiscale || ''}`;
-        
-        // Load messages if not already in memory
-        if (!conversations[patient.id]) {
-          conversations[patient.id] = await loadPatientMessages(patient.id);
-        } else {
-          // Mark messages as read
-          conversations[patient.id].forEach(msg => {
-            if (msg.sender === 'patient') {
-              msg.isRead = true;
-            }
-          });
-          
-          // Update read status on server (optional)
-          markMessagesAsRead(patient.id);
-        }
-        
-        // Show existing messages
+
+        conversations[patient.id] = await loadPatientMessages(patient.id);
         renderMessages(conversations[patient.id]);
-        
-        // Update active state in patient list
+
         document.querySelectorAll('.patient-item').forEach(item => {
           item.classList.remove('active');
           if (item.dataset.patientId === patient.id.toString()) {
             item.classList.add('active');
-            // Remove unread badge when selecting patient
             const badge = item.querySelector('.unread-badge');
             if (badge) badge.remove();
           }
@@ -887,7 +845,7 @@ header {
       // Render messages in chat
       function renderMessages(messages) {
         messagesContainer.innerHTML = '';
-        
+
         if (!messages || messages.length === 0) {
           messagesContainer.innerHTML = `
             <div style="text-align: center; color: var(--subtext); padding: 2rem;">
@@ -896,7 +854,7 @@ header {
           `;
           return;
         }
-        
+
         messages.forEach(msg => {
           addMessageToChat(msg);
         });
@@ -911,9 +869,9 @@ header {
           const patientItem = document.createElement('div');
           patientItem.className = 'patient-item';
           patientItem.dataset.patientId = patient.id;
-          
+
           const initials = (patient.nome ? patient.nome[0] : '') + (patient.cognome ? patient.cognome[0] : '');
-          
+
           patientItem.innerHTML = `
             <div class="patient-avatar">${initials}</div>
             <div class="patient-info">
@@ -922,9 +880,9 @@ header {
             </div>
           `;
 
-          // Add unread badge if there are unread messages
-          if (conversations[patient.id]?.some(m => !m.isRead)) {
-            const unreadCount = conversations[patient.id].filter(m => !m.isRead).length;
+          // Badge solo se ci sono messaggi non letti
+          const unreadCount = conversations[patient.id]?.filter(m => !m.isRead).length || 0;
+          if (unreadCount > 0) {
             const badge = document.createElement('span');
             badge.className = 'unread-badge';
             badge.textContent = unreadCount;

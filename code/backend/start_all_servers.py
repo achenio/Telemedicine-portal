@@ -26,6 +26,10 @@ servers = [
     {
         "name": "payments.py",
         "cmd": [sys.executable, "payments.py"]
+    },
+    {
+        "name": "decrypt.py",
+        "cmd": [sys.executable, "decrypt.py"]
     }
 ]
 

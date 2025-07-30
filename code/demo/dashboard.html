@@ -10,7 +10,13 @@
       --text: #1c1c1e;
       --subtext: #555;
       --primary: #007aff;
+      --primary-hover: #0062cc;
       --card: #ffffff;
+      --input-bg: #f1f3f5;
+      --input-border: #e5e5ea;
+      --error: #ff3b30;
+      --success: #34c759;
+      --warning: #ff9500;
     }
 
     * {
@@ -112,134 +118,6 @@
       color: var(--primary);
     }
 
-    /* Profile card */
-    .profile-card {
-      background-color: var(--card);
-      border-radius: 16px;
-      padding: 2rem;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-      margin-bottom: 2rem;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .profile-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
-    }
-
-    .profile-info {
-      display: flex;
-      align-items: center;
-      gap: 2rem;
-      margin-bottom: 2rem;
-    }
-
-    .profile-avatar {
-      position: relative;
-    }
-
-    .profile-avatar img {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 3px solid var(--primary);
-    }
-
-    .avatar-upload {
-      position: absolute;
-      bottom: 10px;
-      right: 10px;
-      background-color: var(--primary);
-      color: white;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-
-    .avatar-upload input {
-      display: none;
-    }
-
-    .profile-details {
-      flex: 1;
-    }
-
-    .profile-name {
-      font-size: 1.5rem;
-      margin-bottom: 0.5rem;
-      color: var(--primary);
-    }
-
-    .profile-email {
-      color: var(--subtext);
-      margin-bottom: 1rem;
-    }
-
-    /* Form styles */
-    .form-group {
-      margin-bottom: 1.5rem;
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 500;
-    }
-
-    .form-control {
-      width: 100%;
-      padding: 0.75rem 1rem;
-      font-size: 1rem;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      transition: border-color 0.3s ease;
-    }
-
-    .form-control:focus {
-      border-color: var(--primary);
-      outline: none;
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-    }
-
-    .btn {
-      padding: 0.75rem 1.5rem;
-      font-size: 1rem;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      border: none;
-      font-weight: 600;
-    }
-
-    .btn-primary {
-      background-color: var(--primary);
-      color: white;
-    }
-
-    .btn-primary:hover {
-      background-color: #005fcc;
-    }
-
-    .btn-outline {
-      background-color: transparent;
-      border: 1px solid var(--primary);
-      color: var(--primary);
-    }
-
-    .btn-outline:hover {
-      background-color: rgba(0, 122, 255, 0.1);
-    }
-
     /* Stats cards */
     .stats-grid {
       display: grid;
@@ -271,6 +149,36 @@
       font-size: 1.5rem;
       font-weight: 700;
       color: var(--primary);
+    }
+
+    .stat-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+
+    .stat-icon.blue {
+      background-color: rgba(0, 122, 255, 0.1);
+      color: var(--primary);
+    }
+
+    .stat-icon.green {
+      background-color: rgba(52, 199, 89, 0.1);
+      color: var(--success);
+    }
+
+    .stat-icon.orange {
+      background-color: rgba(255, 149, 0, 0.1);
+      color: var(--warning);
+    }
+
+    .stat-icon.red {
+      background-color: rgba(255, 59, 48, 0.1);
+      color: var(--error);
     }
 
     /* Appointments table */
@@ -323,13 +231,113 @@
       color: white;
     }
 
-    /* Book appointment form */
-    .book-appointment-form {
+    /* Health metrics */
+    .health-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .metric-card {
       background-color: var(--card);
-      border-radius: 16px;
-      padding: 2rem;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-      margin-bottom: 2rem;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      text-align: center;
+    }
+
+    .metric-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .metric-label {
+      font-size: 0.9rem;
+      color: var(--subtext);
+    }
+
+    /* Recent activity */
+    .activity-list {
+      margin-top: 2rem;
+    }
+
+    .activity-item {
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+      border-bottom: 1px solid #eee;
+    }
+
+    .activity-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 1rem;
+      font-weight: 500;
+    }
+
+    .activity-details {
+      flex: 1;
+    }
+
+    .activity-title {
+      font-weight: 500;
+    }
+
+    .activity-time {
+      font-size: 0.8rem;
+      color: var(--subtext);
+      margin-top: 0.25rem;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: none;
+      font-weight: 600;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-outline:hover {
+      background-color: rgba(0, 122, 255, 0.1);
+    }
+
+    /* Loading skeleton */
+    .loading-skeleton {
+      background-color: #e0e0e0;
+      border-radius: 4px;
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 0.3; }
     }
 
     /* Responsive */
@@ -345,18 +353,19 @@
         align-items: center;
       }
       
-      .profile-info {
-        flex-direction: column;
-        text-align: center;
-      }
-
-      .form-row {
-        grid-template-columns: 1fr;
+      .stats-grid, .health-metrics {
+        grid-template-columns: 1fr 1fr;
       }
 
       .appointments-table {
         display: block;
         overflow-x: auto;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid, .health-metrics {
+        grid-template-columns: 1fr;
       }
     }
 
@@ -386,7 +395,7 @@
     
     <nav>
       <ul>
-        <li><a href="#" class="active" id="nav-profile"><i class="fas fa-user"></i> Profile</a></li>
+        <li><a href="#" class="active" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
         <li><a href="#" id="nav-appointments"><i class="fas fa-calendar-check"></i> Appointments</a></li>
         <li><a href="#" id="nav-patients" style="display:none;"><i class="fas fa-user-friends"></i> Patients</a></li>
         <li><a href="#" id="nav-messages"><i class="fas fa-comments"></i> Messages</a></li>
@@ -401,157 +410,121 @@
   </header>
 
   <main class="dashboard-main">
-    <!-- Profile Section -->
-    <section class="section" id="profile-section">
-      <h2>My Profile</h2>
+    <!-- Dashboard Overview Section -->
+    <section class="section" id="dashboard-section">
+      <h2>Dashboard Overview</h2>
       
-      <div class="profile-card">
-        <div class="profile-info">
-          <div class="profile-avatar">
-            <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Profile Photo" id="profile-avatar">
-            <label class="avatar-upload" for="avatar-input">
-              <i class="fas fa-camera"></i>
-              <input type="file" id="avatar-input" accept="image/*">
-            </label>
+      <!-- Stats Cards -->
+      <div class="stats-grid">
+        <div class="stat-card fade-in" style="animation-delay: 0.1s">
+          <div class="stat-icon blue">
+            <i class="fas fa-calendar-alt"></i>
           </div>
-          <div class="profile-details">
-            <h3 class="profile-name" id="profile-name-display">Loading...</h3>
-            <p class="profile-email" id="profile-email">Loading...</p>
-            <p id="profile-since">Member since: Loading...</p>
-          </div>
+          <h3>Upcoming Appointments</h3>
+          <p id="upcoming-count">0</p>
+          <p class="card-description" id="next-appointment-text">Loading...</p>
         </div>
-
-        <form id="profile-form">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="first-name">First Name</label>
-              <input type="text" id="first-name" class="form-control">
-            </div>
-            <div class="form-group">
-              <label for="last-name">Last Name</label>
-              <input type="text" id="last-name" class="form-control">
-            </div>
+        
+        <div class="stat-card fade-in" style="animation-delay: 0.2s">
+          <div class="stat-icon green">
+            <i class="fas fa-comment-dots"></i>
           </div>
-
-          <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" id="email" class="form-control">
+          <h3>Unread Messages</h3>
+          <p id="unread-messages">0</p>
+          <p class="card-description">From your care team</p>
+        </div>
+        
+        <div class="stat-card fade-in" style="animation-delay: 0.3s">
+          <div class="stat-icon orange">
+            <i class="fas fa-prescription-bottle-alt"></i>
           </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="codice-fiscale">Codice Fiscale</label>
-              <input type="text" id="codice-fiscale" class="form-control" readonly>
-            </div>
-            <div class="form-group">
-              <label for="phone">Phone</label>
-              <input type="tel" id="phone" class="form-control">
-            </div>
+          <h3>Pending Prescriptions</h3>
+          <p id="pending-rx">0</p>
+          <p class="card-description">Ready for review</p>
+        </div>
+        
+        <div class="stat-card fade-in" style="animation-delay: 0.4s">
+          <div class="stat-icon red">
+            <i class="fas fa-file-invoice-dollar"></i>
           </div>
-
-          <div class="form-group" id="specialization-group" style="display:none;">
-            <label for="specialization">Specialization</label>
-            <input type="text" id="specialization" class="form-control">
-          </div>
-
-          <div class="form-group">
-            <label for="address">Address</label>
-            <input type="text" id="address" class="form-control">
-          </div>
-
-          <div class="btn-group" style="display: flex; gap: 1rem; justify-content: flex-end;">
-            <button type="button" class="btn btn-outline" id="cancel-changes">Cancel</button>
-            <button type="button" class="btn btn-primary" id="save-profile">Save Changes</button>
-          </div>
-        </form>
-      </div>
-
-      <div class="stats-grid" id="stats-grid">
-        <!-- Stats will be populated by JavaScript -->
-      </div>
-    </section>
-
-    <!-- Appointments Section -->
-    <section class="section" id="appointments-section" style="display:none;">
-      <h2>My Appointments</h2>
-      
-      <div class="profile-card">
-        <div id="appointments-container">
-          <table class="appointments-table" id="appointments-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Doctor</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="appointments-body">
-              <!-- Appointments will be populated by JavaScript -->
-            </tbody>
-          </table>
+          <h3>Outstanding Balance</h3>
+          <p id="balance">$0.00</p>
+          <p class="card-description" id="balance-due-text">Loading...</p>
         </div>
       </div>
-    </section>
-
-    <!-- Doctor Appointments Section -->
-    <section class="section" id="doctor-appointments-section" style="display:none;">
-      <h2>Patient Appointments</h2>
       
-      <div class="profile-card">
-        <div id="doctor-appointments-container">
-          <table class="appointments-table" id="doctor-appointments-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Patient</th>
-                <th>Codice Fiscale</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="doctor-appointments-body">
-              <!-- Appointments will be populated by JavaScript -->
-            </tbody>
-          </table>
+      <!-- Upcoming Appointments -->
+      <h2 style="margin-top: 3rem;">Upcoming Appointments</h2>
+      <div class="profile-card" style="margin-top: 1rem;">
+        <table class="appointments-table" id="appointments-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Doctor</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="appointments-body">
+            <tr>
+              <td><div class="loading-skeleton" style="width: 80px; height: 20px;"></div></td>
+              <td><div class="loading-skeleton" style="width: 60px; height: 20px;"></div></td>
+              <td><div class="loading-skeleton" style="width: 120px; height: 20px;"></div></td>
+              <td><div class="loading-skeleton" style="width: 80px; height: 24px;"></div></td>
+              <td><div class="loading-skeleton" style="width: 80px; height: 32px;"></div></td>
+            </tr>
+            <tr>
+              <td><div class="loading-skeleton" style="width: 80px; height: 20px;"></div></td>
+              <td><div class="loading-skeleton" style="width: 60px; height: 20px;"></div></td>
+              <td><div class="loading-skeleton" style="width: 120px; height: 20px;"></div></td>
+              <td><div class="loading-skeleton" style="width: 80px; height: 24px;"></div></td>
+              <td><div class="loading-skeleton" style="width: 80px; height: 32px;"></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Health Metrics -->
+      <h2 style="margin-top: 3rem;">Health Metrics</h2>
+      <div class="health-metrics">
+        <div class="metric-card fade-in" style="animation-delay: 0.1s">
+          <div class="metric-value" id="heart-rate">--</div>
+          <div class="metric-label">Heart Rate (bpm)</div>
+        </div>
+        <div class="metric-card fade-in" style="animation-delay: 0.2s">
+          <div class="metric-value" id="blood-pressure">--</div>
+          <div class="metric-label">Blood Pressure</div>
+        </div>
+        <div class="metric-card fade-in" style="animation-delay: 0.3s">
+          <div class="metric-value" id="weight">--</div>
+          <div class="metric-label">Weight (kg)</div>
+        </div>
+        <div class="metric-card fade-in" style="animation-delay: 0.4s">
+          <div class="metric-value" id="steps">--</div>
+          <div class="metric-label">Steps Today</div>
         </div>
       </div>
-    </section>
-
-    <!-- Book Appointment Section -->
-    <section class="section" id="book-appointment-section" style="display:none;">
-      <h2>Book New Appointment</h2>
       
-      <div class="book-appointment-form">
-        <form id="book-appointment-form">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="appointment-doctor">Doctor</label>
-              <select id="appointment-doctor" class="form-control" required>
-                <option value="">Select a doctor</option>
-                <!-- Doctors will be populated by JavaScript -->
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="appointment-date">Date</label>
-              <input type="date" id="appointment-date" class="form-control" required>
+      <!-- Recent Activity -->
+      <h2 style="margin-top: 3rem;">Recent Activity</h2>
+      <div class="profile-card" style="margin-top: 1rem;">
+        <div class="activity-list" id="recent-activity">
+          <div class="activity-item">
+            <div class="activity-avatar loading-skeleton" style="width: 40px; height: 40px;"></div>
+            <div class="activity-details">
+              <div class="activity-title loading-skeleton" style="width: 70%; height: 20px;"></div>
+              <div class="activity-time loading-skeleton" style="width: 50%; height: 16px; margin-top: 6px;"></div>
             </div>
           </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label for="appointment-time">Time</label>
-              <input type="time" id="appointment-time" class="form-control" required>
+          <div class="activity-item">
+            <div class="activity-avatar loading-skeleton" style="width: 40px; height: 40px;"></div>
+            <div class="activity-details">
+              <div class="activity-title loading-skeleton" style="width: 60%; height: 20px;"></div>
+              <div class="activity-time loading-skeleton" style="width: 40%; height: 16px; margin-top: 6px;"></div>
             </div>
           </div>
-          
-          <div class="btn-group" style="display: flex; gap: 1rem; justify-content: flex-end;">
-            <button type="button" class="btn btn-outline" id="cancel-booking">Cancel</button>
-            <button type="submit" class="btn btn-primary">Book Appointment</button>
-          </div>
-        </form>
+        </div>
       </div>
     </section>
   </main>
@@ -569,72 +542,80 @@ document.addEventListener('DOMContentLoaded', function() {
         user_type: "patient"
     };
 
-    // Popola il form del profilo
-    populateProfileForm(demoUser);
-    
-    // Mostra il nome utente
+    // Popola le informazioni dell'utente
     document.getElementById('username-display').textContent = `${demoUser.nome} ${demoUser.cognome}`;
-    document.getElementById('profile-name-display').textContent = `${demoUser.nome} ${demoUser.cognome}`;
-    document.getElementById('profile-email').textContent = demoUser.email;
-    document.getElementById('profile-since').textContent = "Member since: July 2025";
-
-    // Dati statistiche fittizie
-    const statsGrid = document.getElementById('stats-grid');
-    statsGrid.innerHTML = `
-        <div class="stat-card">
-            <h3>Upcoming Appointments</h3>
-            <p>2</p>
-        </div>
-        <div class="stat-card">
-            <h3>Completed Visits</h3>
-            <p>5</p>
-        </div>
-        <div class="stat-card">
-            <h3>Messages</h3>
-            <p>3</p>
-        </div>
-    `;
-
+    
+    // Popola le statistiche demo
+    document.getElementById('upcoming-count').textContent = "2";
+    document.getElementById('unread-messages').textContent = "3";
+    document.getElementById('pending-rx').textContent = "1";
+    document.getElementById('balance').textContent = "$45.00";
+    document.getElementById('next-appointment-text').textContent = "Next appointment in 3 days";
+    document.getElementById('balance-due-text').textContent = "Due by Aug 15, 2025";
+    
+    // Popola le metriche di salute
+    document.getElementById('heart-rate').textContent = "72";
+    document.getElementById('blood-pressure').textContent = "120/80";
+    document.getElementById('weight').textContent = "68";
+    document.getElementById('steps').textContent = "5,432";
+    
     // Appuntamenti fittizi
     const fakeAppointments = [
         {
             id: "app1",
-            date: "2025-07-10T10:00:00",
+            date: "2025-08-03T10:00:00",
             time: "10:00 AM",
             doctor_name: "Dr. Smith",
+            specialization: "Cardiology",
             status: "confirmed"
         },
         {
             id: "app2",
-            date: "2025-07-15T14:30:00",
+            date: "2025-08-10T14:30:00",
             time: "2:30 PM",
             doctor_name: "Dr. Johnson",
+            specialization: "General Practice",
             status: "booked"
         }
     ];
     
     renderPatientAppointments(fakeAppointments);
+    
+    // Attività recente fittizia
+    const fakeActivities = [
+        {
+            initials: "DS",
+            title: "Appointment confirmed with Dr. Smith",
+            date: "2025-07-28",
+            time: "10:30 AM"
+        },
+        {
+            initials: "TJ",
+            title: "New message from Dr. Johnson",
+            date: "2025-07-27",
+            time: "3:15 PM"
+        }
+    ];
+    
+    renderRecentActivity(fakeActivities);
 
     // Logout button
     document.getElementById('logout-btn').addEventListener('click', () => {
         localStorage.clear();
         window.location.href = 'index.html';
     });
-});
-
-function populateProfileForm(user) {
-    document.getElementById('first-name').value = user.nome || '';
-    document.getElementById('last-name').value = user.cognome || '';
-    document.getElementById('email').value = user.email || '';
-    document.getElementById('codice-fiscale').value = user.codice_fiscale || '';
-    document.getElementById('phone').value = user.telefono || '';
-    document.getElementById('address').value = user.luogo_nascita || '';
     
-    if (user.user_type === 'doctor') {
-        document.getElementById('specialization-group').style.display = 'block';
-        document.getElementById('specialization').value = user.specialization || '';
-    }
-}
+    // Navigation buttons
+    document.getElementById('nav-dashboard').addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('dashboard-section').style.display = 'block';
+    });
+    
+    document.getElementById('nav-appointments').addEventListener('click', (e) => {
+        e.preventDefault();
+        window.location.href = 'appointments.html';
+    });
+});
 
 function renderPatientAppointments(appointments) {
     const tbody = document.getElementById('appointments-body');
@@ -645,24 +626,57 @@ function renderPatientAppointments(appointments) {
         row.innerHTML = `
             <td>${new Date(appointment.date).toLocaleDateString()}</td>
             <td>${appointment.time}</td>
-            <td>${appointment.doctor_name}</td>
-            <td><span class="status-badge status-${appointment.status}">${appointment.status}</span></td>
+            <td>${appointment.doctor_name}<br><small>${appointment.specialization}</small></td>
+            <td><span class="status-badge status-${appointment.status}">${appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}</span></td>
             <td>
-                <button class="btn btn-outline cancel-appointment" data-id="${appointment.id}">Cancel</button>
+                <button class="btn btn-outline view-appointment" data-id="${appointment.id}" style="padding: 0.5rem 1rem;">Details</button>
             </td>
         `;
         tbody.appendChild(row);
     });
     
-    // Setup cancel buttons
-    document.querySelectorAll('.cancel-appointment').forEach(btn => {
+    // Setup view buttons
+    document.querySelectorAll('.view-appointment').forEach(btn => {
         btn.addEventListener('click', () => {
-            if (confirm('Cancel this appointment?')) {
-                alert('Appointment cancelled successfully');
-                location.reload();
-            }
+            const appointmentId = btn.getAttribute('data-id');
+            window.location.href = `appointment-details.html?id=${appointmentId}`;
         });
     });
+}
+
+function renderRecentActivity(activities) {
+    const container = document.getElementById('recent-activity');
+    container.innerHTML = '';
+    
+    activities.forEach(activity => {
+        const item = document.createElement('div');
+        item.className = 'activity-item';
+        item.innerHTML = `
+            <div class="activity-avatar">${activity.initials}</div>
+            <div class="activity-details">
+                <div class="activity-title">${activity.title}</div>
+                <div class="activity-time">${formatDate(activity.date)} at ${activity.time}</div>
+            </div>
+        `;
+        container.appendChild(item);
+    });
+}
+
+function formatDate(dateStr) {
+    const date = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (date.toDateString() === today.toDateString()) {
+        return 'Today';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+        return 'Yesterday';
+    } else {
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
 }
 </script>
 </body>

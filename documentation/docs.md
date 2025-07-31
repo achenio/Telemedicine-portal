@@ -19,6 +19,47 @@ Telemedicine Portal is a modern web application designed to provide remote healt
 - **Security:** WebSocket encryption for chat, password hashing, input validation  
 
 ---
+## 📡Server Launch
+## 🚦 Server Launch & Management
+
+To simplify development, all backend servers (Node.js and Python) can be managed together using the `start_all_servers.py` script.
+
+### How to Use
+
+1. **Start all servers:**  
+   Run the script and type `start`  
+   ```sh
+   python code/backend/start_all_servers.py
+   ```
+   Then, at the prompt:
+   ```
+   start
+   ```
+   This will open a terminal window for each server (Node.js and Python).
+
+2. **Stop all servers:**  
+   At the prompt, type:
+   ```
+   stop
+   ```
+   This will attempt to terminate all servers started by the script.
+
+3. **Restart all servers:**  
+   At the prompt, type:
+   ```
+   restart
+   ```
+   This will stop and then relaunch all servers.
+
+4. **Exit the launcher:**  
+   At the prompt, type:
+   ```
+   exit
+   ```
+   This will stop all servers and close the launcher.
+![Users Screenshot](/screenshots/users.png) 
+
+---
 ## 🗄️  Database Architecture
 The telemedicine portal database is structured into five main tables:
 

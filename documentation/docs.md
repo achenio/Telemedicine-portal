@@ -29,11 +29,11 @@ To simplify development, all backend servers (Node.js and Python) can be managed
 1. **Start all servers:**  
    Run the script and type `start`  
    ```sh
-   python code/backend/start_all_servers.py
+   python start_all_servers.py
    ```
    Then, at the prompt:
    ```
-   start
+   start 
    ```
    This will open a terminal window for each server (Node.js and Python).
 
@@ -57,7 +57,7 @@ To simplify development, all backend servers (Node.js and Python) can be managed
    exit
    ```
    This will stop all servers and close the launcher.
-![Users Screenshot](/screenshots/start_servers.jpg) 
+![servers Screenshot](/screenshots/start_all_servers.jpg) 
 
 ---
 ## 🗄️  Database Architecture

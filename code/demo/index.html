@@ -323,11 +323,11 @@
     <h1>Telemedicine Portal <span class="user-badge">DEMO</span></h1>
     <nav>
       <ul id="nav-list">
-        <li><a href="#appointments" id="nav-appointments">Appointments</a></li>
-        <li><a href="#chat" id="nav-chat">Secure Chat</a></li>
-        <li><a href="#team">Our Team</a></li>
-        <li><a href="#video">Video Calls</a></li>
-        <li><a href="#ai-chat">AI Assistant</a></li>
+        <li><a href="appointments.html" id="nav-appointments">Appointments</a></li>
+        <li><a href="chat.html" id="nav-chat">Secure Chat</a></li>
+        <li><a href="team.html">Our Team</a></li>
+        <li><a href="video.html">Video Calls</a></li>
+        <li><a href="social.html">Forum</a></li>
       </ul>
     </nav>
     <div id="profile-area">
@@ -352,39 +352,39 @@
     <section class="section">
       <h2 id="demo-role-heading">Patient Features</h2>
       <div class="features">
-        <div class="feature-card" id="feature-appointments">
+        <a href="appointments.html" class="feature-card" id="feature-appointments">
           <h3>Book Appointments</h3>
           <p>Schedule virtual consultations with healthcare providers at your convenience.</p>
           <p class="doctor-only">View and manage your patient appointments</p>
-        </div>
-        <div class="feature-card" id="feature-chat">
+        </a>
+        <a href="chat.html" class="feature-card" id="feature-chat">
           <h3>Secure Messaging</h3>
           <p>Private, encrypted communication with your healthcare team.</p>
           <p class="doctor-only">Communicate with patients securely</p>
-        </div>
-        <div class="feature-card">
+        </a>
+        <a href="team.html" class="feature-card">
           <h3>Our Medical Team</h3>
           <p>Meet our specialists across various medical disciplines.</p>
-        </div>
-        <div class="feature-card">
+        </a>
+        <a href="video.html" class="feature-card">
           <h3>Video Consultations</h3>
           <p>Face-to-face virtual visits with your doctor from anywhere.</p>
           <p class="doctor-only">Conduct video consultations</p>
-        </div>
-        <div class="feature-card">
+        </a>
+        <a href="ai-chat.html" class="feature-card">
           <h3>AI Health Assistant</h3>
           <p>Get instant answers to common health questions.</p>
-        </div>
-        <div class="feature-card">
+        </a>
+        <a href="records.html" class="feature-card">
           <h3>Health Records</h3>
           <p>Access your medical history and test results.</p>
           <p class="doctor-only">Review patient records</p>
-        </div>
+        </a>
       </div>
     </section>
 
     <section class="cta">
-      <a href="/appointments.html" id="main-cta">Book an Appointment</a>
+      <a href="appointments.html" id="main-cta">Book an Appointment</a>
     </section>
   </main>
 
@@ -407,7 +407,7 @@
         features: {
           heading: "Patient Features",
           cta: "Book an Appointment",
-          ctaLink: "#appointments"
+          ctaLink: "appointments.html"
         }
       },
       doctor: {
@@ -417,7 +417,7 @@
         features: {
           heading: "Doctor Dashboard",
           cta: "View Appointments",
-          ctaLink: "#doctor-appointments"
+          ctaLink: "doctor-appointments.html"
         }
       }
     };
@@ -473,10 +473,14 @@
       // Update nav links (demo purposes)
       if (currentView === 'doctor') {
         navAppointments.textContent = 'My Appointments';
+        navAppointments.href = "doctor-appointments.html";
         navChat.textContent = 'Patient Messages';
+        navChat.href = "doctor-chat.html";
       } else {
         navAppointments.textContent = 'Appointments';
+        navAppointments.href = "appointments.html";
         navChat.textContent = 'Secure Chat';
+        navChat.href = "chat.html";
       }
     }
 
@@ -495,23 +499,6 @@
     // Set up event listeners
     function setupEventListeners() {
       switchBtn.addEventListener('click', switchView);
-      
-      // Demo feature cards - show alert when clicked
-      document.querySelectorAll('.feature-card').forEach(card => {
-        card.addEventListener('click', function(e) {
-          e.preventDefault();
-          const featureName = this.querySelector('h3').textContent;
-          alert(`[DEMO] ${featureName} feature would open in a full implementation.\n\nCurrent view: ${currentView}`);
-        });
-      });
-      
-      // Demo nav links
-      document.querySelectorAll('nav a').forEach(link => {
-        link.addEventListener('click', function(e) {
-          e.preventDefault();
-          alert(`[DEMO] ${this.textContent} section would load in a full implementation.`);
-        });
-      });
     }
 
     // Initialize the demo when page loads

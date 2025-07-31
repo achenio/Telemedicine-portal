@@ -278,6 +278,119 @@
       align-items: center;
       justify-content: center;
     }
+
+    /* Credit Card Animation Styles */
+    .credit-card {
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto 2rem;
+      perspective: 1000px;
+    }
+
+    .credit-card__inner {
+      position: relative;
+      width: 100%;
+      height: 220px;
+      transition: transform 0.8s;
+      transform-style: preserve-3d;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .credit-card__front,
+    .credit-card__back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 15px;
+      padding: 20px;
+      box-sizing: border-box;
+      background: linear-gradient(135deg, #0072ff, #00c6ff);
+      color: white;
+    }
+
+    .credit-card__back {
+      transform: rotateY(180deg);
+      background: linear-gradient(135deg, #00c6ff, #0072ff);
+    }
+
+    .credit-card__number {
+      font-size: 22px;
+      letter-spacing: 2px;
+      margin-top: 40px;
+      text-align: center;
+      font-family: 'Courier New', monospace;
+    }
+
+    .credit-card__info {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+      font-size: 14px;
+    }
+
+    .credit-card__expiry {
+      text-align: left;
+    }
+
+    .credit-card__name {
+      text-align: left;
+      text-transform: uppercase;
+    }
+
+    .credit-card__cvc {
+      position: absolute;
+      top: 100px;
+      right: 30px;
+      background: white;
+      color: #333;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+    }
+
+    .credit-card__stripe {
+      position: absolute;
+      top: 20px;
+      left: 0;
+      width: 100%;
+      height: 40px;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .credit-card__signature {
+      position: absolute;
+      top: 80px;
+      left: 20px;
+      width: 60%;
+      height: 30px;
+      background: rgba(255, 255, 255, 0.3);
+      display: flex;
+      align-items: center;
+      padding-left: 10px;
+      font-size: 12px;
+      color: white;
+    }
+
+    .credit-card__logo {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 60px;
+    }
+
+    .credit-card__instructions {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 14px;
+      color: var(--subtext);
+    }
+
+    /* Flip animation when focusing on CVC field */
+    .flipped .credit-card__inner {
+      transform: rotateY(180deg);
+    }
   </style>
 </head>
 <body>
@@ -317,7 +430,7 @@
         <div class="form-group">
           <div class="checkbox-container">
             <input type="checkbox" id="exemption-checkbox" name="exemption">
-            <label for="exemption-checkbox">Esenzione Pagamento</label>
+            <label for="exemption-checkbox">Esenzione Pagamento (20€)</label>
           </div>
           <div id="exemption-upload-section" style="display: none; margin-top: 1rem;">
             <label for="exemption-file">Carica documento di esenzione (PDF):</label>
@@ -354,6 +467,27 @@
         
         <!-- Credit Card Section -->
         <div id="credit-card-section" class="payment-section">
+          <!-- Credit Card Animation -->
+          <div class="credit-card" id="credit-card-animation">
+            <div class="credit-card__inner">
+              <div class="credit-card__front">
+                <div class="credit-card__stripe"></div>
+                <div class="credit-card__logo">VISA</div>
+                <div class="credit-card__number">•••• •••• •••• ••••</div>
+                <div class="credit-card__info">
+                  <div class="credit-card__name">CARD HOLDER</div>
+                  <div class="credit-card__expiry">MM/YY</div>
+                </div>
+              </div>
+              <div class="credit-card__back">
+                <div class="credit-card__stripe"></div>
+                <div class="credit-card__cvc">•••</div>
+                <div class="credit-card__signature">Authorized Signature</div>
+              </div>
+            </div>
+            <div class="credit-card__instructions">Click on CVC field to flip card</div>
+          </div>
+
           <div class="form-group">
             <label for="credit-card-number">Credit Card Number:</label>
             <input type="text" id="credit-card-number" name="credit-card-number" maxlength="19" placeholder="Card number" pattern="\d{16,19}">
@@ -490,22 +624,69 @@
         document.getElementById('exemption-checkbox').addEventListener('change', function() {
           const uploadSection = document.getElementById('exemption-upload-section');
           const amountField = document.getElementById('amount');
-          const paymentMethod = document.getElementById('payment-method');
           
           if (this.checked) {
             uploadSection.style.display = 'block';
-            amountField.value = '0';
-            paymentMethod.disabled = true;
-            paymentMethod.value = '';
-            document.querySelectorAll('.payment-section').forEach(section => {
-              section.style.display = 'none';
-            });
+            amountField.value = '20';
+            amountField.min = '20';
+            amountField.max = '20';
           } else {
             uploadSection.style.display = 'none';
             amountField.value = '50';
-            paymentMethod.disabled = false;
+            amountField.min = '50';
+            amountField.max = '50';
           }
         });
+
+        // Credit Card Animation Logic
+        const creditCardAnimation = document.getElementById('credit-card-animation');
+        const creditCardCvcInput = document.getElementById('credit-card-cvc');
+        
+        if (creditCardCvcInput) {
+          creditCardCvcInput.addEventListener('focus', () => {
+            creditCardAnimation.classList.add('flipped');
+          });
+          
+          creditCardCvcInput.addEventListener('blur', () => {
+            creditCardAnimation.classList.remove('flipped');
+          });
+          
+          // Update card details as user types
+          document.getElementById('credit-card-number').addEventListener('input', function() {
+            const cardNumberDisplay = document.querySelector('.credit-card__number');
+            const value = this.value.replace(/\s/g, '').replace(/\D/g, '');
+            let formatted = '';
+            
+            for (let i = 0; i < value.length; i++) {
+              if (i > 0 && i % 4 === 0) formatted += ' ';
+              formatted += value[i];
+            }
+            
+            // Show only last 4 digits, mask the rest
+            if (formatted.length > 0) {
+              const visibleDigits = 4;
+              const masked = formatted.slice(0, -visibleDigits).replace(/\d/g, '•') + formatted.slice(-visibleDigits);
+              cardNumberDisplay.textContent = masked || '•••• •••• •••• ••••';
+            } else {
+              cardNumberDisplay.textContent = '•••• •••• •••• ••••';
+            }
+          });
+          
+          document.getElementById('credit-card-holder').addEventListener('input', function() {
+            const cardHolderDisplay = document.querySelector('.credit-card__name');
+            cardHolderDisplay.textContent = this.value.toUpperCase() || 'CARD HOLDER';
+          });
+          
+          document.getElementById('credit-card-expiry').addEventListener('input', function() {
+            const expiryDisplay = document.querySelector('.credit-card__expiry');
+            expiryDisplay.textContent = this.value || 'MM/YY';
+          });
+          
+          document.getElementById('credit-card-cvc').addEventListener('input', function() {
+            const cvcDisplay = document.querySelector('.credit-card__cvc');
+            cvcDisplay.textContent = this.value.replace(/\D/g, '').replace(/./g, '•') || '•••';
+          });
+        }
 
         // Handle payment submission
         document.getElementById('payment-form').addEventListener('submit', async function(e) {

@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Book an Appointment - Telemedicine Portal</title>
+  <title>Book Appointment</title>
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
-<style>
+  <style>
     :root {
-      --bg: #fefefe;
+      --bg: #f4f6f9;
       --text: #1c1c1e;
       --subtext: #555;
       --primary: #007aff;
@@ -18,132 +18,86 @@
       --border: #e5e5ea;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
     body { 
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-      background-color: var(--bg); 
+      background: var(--bg); 
       color: var(--text); 
-      margin: 0; 
-      padding: 0;
+      margin:0; 
+      padding:0;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
-      line-height: 1.6;
     }
-    
     header, footer { 
-      padding: 2rem 1rem; 
-      background-color: var(--card); 
+      padding: 1rem; 
+      background: var(--card); 
       border-bottom: 1px solid var(--border); 
-      text-align: center;
-      animation: fadeIn 1s ease-out;
+      text-align:center;
     }
-    
     footer {
       border-top: 1px solid var(--border);
       margin-top: auto;
-      color: var(--subtext);
-      font-size: 0.9rem;
     }
-    
     nav ul { 
-      list-style: none; 
-      display: flex; 
-      justify-content: center; 
-      flex-wrap: wrap;
-      gap: 1rem; 
-      padding: 0; 
-      margin: 1rem 0 0;
+      list-style:none; 
+      display:flex; 
+      justify-content:center; 
+      gap:1rem; 
+      padding:0; 
+      margin:0;
     }
-    
     nav ul li a { 
-      text-decoration: none; 
-      color: var(--primary); 
-      font-weight: 600; 
-      padding: 0.5rem 1rem; 
-      border-radius: 20px; 
-      transition: background-color 0.3s ease;
+      text-decoration:none; 
+      color:var(--primary); 
+      font-weight:600; 
+      padding:0.5rem 1rem; 
+      border-radius:20px; 
     }
-    
     nav ul li a:hover { 
-      background-color: rgba(0, 122, 255, 0.1);
+      background: rgba(0, 122, 255, 0.1);
     }
-    
     main { 
       max-width: 500px; 
-      margin: 4rem auto; 
+      margin: 3rem auto; 
       padding: 1rem;
-      animation: fadeInUp 1s ease-out;
     }
-    
-    h2 {
-      text-align: center;
-      font-size: 2rem;
-      margin-bottom: 2rem;
-      color: var(--text);
-    }
-    
     form { 
-      background-color: var(--card); 
-      padding: 2rem; 
-      border-radius: 16px; 
-      box-shadow: 0 6px 16px rgba(0,0,0,0.05); 
-      display: flex; 
-      flex-direction: column; 
-      gap: 1.5rem;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      background:var(--card); 
+      padding:2rem; 
+      border-radius:16px; 
+      box-shadow:0 8px 20px rgba(0,0,0,0.05); 
+      display:flex; 
+      flex-direction:column; 
+      gap:1.5rem;
     }
-    
-    form:hover {
-      box-shadow: 0 12px 24px rgba(0,0,0,0.08);
-    }
-    
     label { 
-      font-weight: 600;
-      color: var(--text);
+      font-weight:600;
     }
-    
     input, select { 
-      padding: 0.8rem; 
-      font-size: 1rem; 
-      border: 1px solid var(--border); 
-      border-radius: 12px; 
-      width: 100%; 
-      transition: border-color 0.3s ease;
-      background-color: var(--card);
+      padding:0.8rem; 
+      font-size:1rem; 
+      border:1px solid var(--border); 
+      border-radius:12px; 
+      width:100%; 
     }
-    
-    input:focus, select:focus {
-      outline: none;
-      border-color: var(--primary);
-    }
-    
     button { 
-      padding: 0.9rem; 
-      background-color: var(--primary); 
-      color: #fff; 
-      font-weight: 600; 
-      border: none; 
-      border-radius: 25px; 
-      cursor: pointer; 
-      transition: opacity 0.3s ease;
+      padding:0.9rem; 
+      background:var(--primary); 
+      color:#fff; 
+      font-weight:600; 
+      border:none; 
+      border-radius:25px; 
+      cursor:pointer; 
     }
-    
     button:hover { 
       opacity: 0.9;
     }
-    
     #login-message { 
-      color: var(--error); 
-      text-align: center; 
+      color:var(--error); 
+      text-align:center; 
       margin: 2rem 0; 
-      font-weight: 600; 
-      display: none; 
+      font-weight:600; 
+      display:none; 
     }
     
     /* Popup modale */
@@ -155,21 +109,31 @@
       justify-content: center;
       align-items: center;
       z-index: 1000;
-      animation: fadeIn 0.3s ease-out;
     }
-    
     #doctor-popup .popup-content {
-      background: var(--card);
+      background: white;
       padding: 2rem;
-      border-radius: 16px;
+      border-radius: 12px;
       max-width: 400px;
       text-align: center;
       box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
-    
     #doctor-popup .popup-content h3 {
       margin-bottom: 1rem;
       color: var(--error);
+    }
+    #doctor-popup button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.7rem 1.5rem;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    #doctor-popup button:hover {
+      opacity: 0.9;
     }
     
     .doctor-warning {
@@ -209,31 +173,26 @@
       justify-content: center;
       align-items: center;
       z-index: 1000;
-      animation: fadeIn 0.3s ease-out;
     }
-    
     .dialog-content {
       background: var(--card);
       padding: 2rem;
-      border-radius: 16px;
+      border-radius: 12px;
       max-width: 500px;
       width: 90%;
       max-height: 80vh;
       overflow-y: auto;
       box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
-    
     .file-item {
       padding: 0.8rem;
       border-bottom: 1px solid var(--border);
       cursor: pointer;
-      transition: background-color 0.2s;
+      transition: background 0.2s;
     }
-    
     .file-item:hover {
-      background-color: rgba(0, 122, 255, 0.05);
+      background: rgba(0, 122, 255, 0.05);
     }
-    
     .loading {
       display: inline-block;
       width: 20px;
@@ -245,20 +204,16 @@
       vertical-align: middle;
       margin-left: 8px;
     }
-    
     .hidden {
       display: none;
     }
-    
     #selected-file-info {
       margin-top: 0.5rem;
-      padding: 0.8rem;
+      padding: 0.5rem;
       background: rgba(0, 122, 255, 0.05);
-      border-radius: 12px;
+      border-radius: 8px;
       border: 1px dashed var(--primary);
-      color: var(--subtext);
     }
-    
     #onedrive-picker-btn {
       background: var(--primary);
       color: white;
@@ -268,13 +223,10 @@
       cursor: pointer;
       font-weight: 600;
       font-size: 0.9rem;
-      transition: opacity 0.3s ease;
     }
-    
     #onedrive-picker-btn:hover {
       opacity: 0.9;
     }
-    
     #cancel-picker {
       background: var(--error);
       color: white;
@@ -284,69 +236,11 @@
       cursor: pointer;
       font-weight: 600;
       font-size: 0.9rem;
-      transition: opacity 0.3s ease;
-      margin-top: 1rem;
-      width: 100%;
     }
-    
     #cancel-picker:hover {
       opacity: 0.9;
     }
-    
-    .error-message {
-      color: var(--error);
-      font-size: 0.9rem;
-      margin-top: 0.5rem;
-    }
-
-    /* Textarea styles */
-    textarea {
-      padding: 0.8rem;
-      font-size: 1rem;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      width: 100%;
-      min-height: 100px;
-      resize: vertical;
-      transition: border-color 0.3s ease;
-      background-color: var(--card);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-
-    textarea:focus {
-      outline: none;
-      border-color: var(--primary);
-    }
-
-    /* Animations */
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 600px) {
-      main {
-        margin: 2rem auto;
-        padding: 1rem;
-      }
-      
-      form {
-        padding: 1.5rem;
-      }
-    }
-</style>
+  </style>
 </head>
 <body>
   <header>
@@ -354,7 +248,8 @@
       <ul>
         <li><a href="index.html">Home</a></li>
         <li><a href="bookings.html">My Bookings</a></li>
-        <li><a href="payments.html">Payments</a></li>
+        <li><a href="chat.html">Secure Chat</a></li>
+        <li><a href="ai-chat.html">AI Chat</a></li>
       </ul>
     </nav>
   </header>
@@ -370,19 +265,16 @@
       <div>
         <label for="date">Date:</label><br />
         <input type="date" id="date" name="date" required min="" />
-        <div id="date-error" class="error-message"></div>
       </div>
       <div>
         <label for="time">Time:</label><br />
         <input type="time" id="time" name="time" required min="09:00" max="18:00" />
-        <div id="time-error" class="error-message"></div>
       </div>
       <div>
         <label for="doctor">Doctor:</label><br />
         <select id="doctor" name="doctor" required>
           <option value="">Loading doctors...</option>
         </select>
-        <div id="doctor-error" class="error-message"></div>
       </div>
       <div id="doctor-warning" class="doctor-warning" style="display: none;">
         Note: As a doctor, you can only book appointments with other doctors
@@ -398,38 +290,11 @@
         </div>
         <div style="margin: 0.5rem 0; text-align: center;">or</div>
         <input type="file" id="medical-report" name="medical-report" accept="application/pdf" />
-        <div id="file-error" class="error-message"></div>
-      </div>
-      <div>
-        <label for="notes">Notes for the doctor (optional):</label><br />
-        <textarea id="notes" name="notes" placeholder="Any symptoms, concerns or additional information you want to share with the doctor..."></textarea>
-      </div>
-      <div>
-        <label for="payment-method">Payment Method:</label><br />
-        <select id="payment-method" name="payment-method" required>
-          <option value="">Select payment method</option>
-          <option value="credit_card">Credit Card</option>
-          <option value="paypal">PayPal</option>
-          <option value="bank_transfer">Bank Transfer</option>
-          <option value="insurance">Insurance Package</option>
-        </select>
-        <div id="payment-error" class="error-message"></div>
-      </div>
-      <div id="insurance-options" style="display:none; margin-top:0.5rem;">
-        <label for="insurance-package">Choose Insurance Package:</label>
-        <select id="insurance-package" name="insurance-package">
-          <option value="">Select package</option>
-          <option value="basic">Basic</option>
-          <option value="premium">Premium</option>
-          <option value="family">Family</option>
-        </select>
-        <div id="insurance-error" class="error-message"></div>
       </div>
       <button type="submit" id="submit-btn">
         <span id="submit-btn-text">Book Appointment</span>
         <div class="loading-spinner" id="submit-spinner"></div>
       </button>
-      <div id="form-error" class="error-message" style="text-align: center;"></div>
     </form>
   </main>
 
@@ -449,359 +314,333 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
   <script src="https://alcdn.msauth.net/browser/2.28.0/js/msal-browser.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-  <script>
-  document.addEventListener('DOMContentLoaded', async () => {
-    // DOM Elements
-    const form = document.getElementById('appointment-form');
-    const loginMessage = document.getElementById('login-message');
-    const doctorWarning = document.getElementById('doctor-warning');
-    const submitBtn = document.getElementById('submit-btn');
-    const submitBtnText = document.getElementById('submit-btn-text');
-    const submitSpinner = document.getElementById('submit-spinner');
-    const filePickerDialog = document.getElementById('file-picker-dialog');
-    const fileListContainer = document.getElementById('file-list-container');
-    const selectedFileInfo = document.getElementById('selected-file-info');
-    const oneDrivePickerBtn = document.getElementById('onedrive-picker-btn');
-    const btnText = document.getElementById('btn-text');
-    const btnLoading = document.getElementById('btn-loading');
-    const cancelPickerBtn = document.getElementById('cancel-picker');
-    const fileInput = document.getElementById('medical-report');
-    const formError = document.getElementById('form-error');
-    const dateInput = document.getElementById('date');
-    const timeInput = document.getElementById('time');
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+  <script src="https://alcdn.msauth.net/browser/2.28.0/js/msal-browser.min.js"></script>
+
+<script>
+// MSAL Configuration
+const msalConfig = {
+  auth: {
+    clientId: "b4ebe754-d2ce-412a-bee5-c06f87a50cd2",
+    authority: "https://login.microsoftonline.com/common",
+    redirectUri: window.location.href,
+    knownAuthorities: ["login.microsoftonline.com"]
+  },
+  cache: {
+    cacheLocation: "sessionStorage",
+    storeAuthStateInCookie: true
+  }
+};
+
+const msalInstance = new msal.PublicClientApplication(msalConfig);
+let selectedFile = null;
+let currentFolderId = "root"; // Inizialmente mostriamo la root
+let folderStack = []; // Stack per la navigazione tra cartelle
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await msalInstance.initialize();
+
+  // DOM Elements
+  const form = document.getElementById('appointment-form');
+  const loginMessage = document.getElementById('login-message');
+  const doctorWarning = document.getElementById('doctor-warning');
+  const submitBtn = document.getElementById('submit-btn');
+  const submitBtnText = document.getElementById('submit-btn-text');
+  const submitSpinner = document.getElementById('submit-spinner');
+  const filePickerDialog = document.getElementById('file-picker-dialog');
+  const fileListContainer = document.getElementById('file-list-container');
+  const selectedFileInfo = document.getElementById('selected-file-info');
+  const oneDrivePickerBtn = document.getElementById('onedrive-picker-btn');
+  const btnText = document.getElementById('btn-text');
+  const btnLoading = document.getElementById('btn-loading');
+  const cancelPickerBtn = document.getElementById('cancel-picker');
+  const fileInput = document.getElementById('medical-report');
+
+  // Check authentication
+  const token = localStorage.getItem('token');
+  const userId = localStorage.getItem('user_id');
+  const userType = localStorage.getItem('user_type');
+  const username = localStorage.getItem('username');
+
+  if (!token || !userId || !username) {
+    form.style.display = 'none';
+    loginMessage.style.display = 'block';
+    return;
+  }
+
+  // Load doctors
+  try {
+    const response = await fetch('http://localhost:5501/doctors', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const doctors = await response.json();
     const doctorSelect = document.getElementById('doctor');
-    const paymentMethod = document.getElementById('payment-method');
-    const insuranceOptions = document.getElementById('insurance-options');
-    const insurancePackage = document.getElementById('insurance-package');
-    const notesInput = document.getElementById('notes');
+    doctorSelect.innerHTML = '<option value="">Select a doctor</option>';
 
-    // Set minimum date to today
-    const today = new Date().toISOString().split('T')[0];
-    dateInput.min = today;
+    const filteredDoctors = userType === 'doctor'
+      ? doctors.filter(doc => doc.id != userId)
+      : doctors;
 
-    // Check authentication
-    const token = localStorage.getItem('token');
-    const userId = localStorage.getItem('user_id');
-    const userType = localStorage.getItem('user_type');
-    const username = localStorage.getItem('username');
-
-    if (!token || !userId || !username) {
-      form.style.display = 'none';
-      loginMessage.style.display = 'block';
-      return;
-    }
-
-    // Initialize Select2 for doctor dropdown
-    $(doctorSelect).select2({
-      placeholder: "Select a doctor",
-      width: '100%'
+    filteredDoctors.forEach(doc => {
+      const option = document.createElement('option');
+      option.value = doc.id;
+      option.textContent = `${doc.nome} ${doc.cognome} (${doc.specialization})`;
+      doctorSelect.appendChild(option);
     });
 
-    // Load doctors
-    async function loadDoctors() {
-      try {
-        const response = await fetch('http://localhost:5501/doctors', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to load doctors');
-        }
-        
-        const doctors = await response.json();
-        doctorSelect.innerHTML = '<option value=""></option>'; // Clear loading message
+    if (userType === 'doctor') {
+      doctorWarning.style.display = 'block';
+    }
 
-        const filteredDoctors = userType === 'doctor'
-          ? doctors.filter(doc => doc.id != userId)
-          : doctors;
+    form.style.display = 'flex';
+    loginMessage.style.display = 'none';
 
-        filteredDoctors.forEach(doc => {
-          const option = document.createElement('option');
-          option.value = doc.id;
-          option.textContent = `${doc.nome} ${doc.cognome} (${doc.specialization})`;
-          doctorSelect.appendChild(option);
-        });
+  } catch (err) {
+    console.error('Doctors load error', err);
+  }
 
-        if (userType === 'doctor') {
-          doctorWarning.style.display = 'block';
-        }
+  // Utils
+  function formatFileSize(bytes) {
+    if (!bytes) return '0 Bytes';
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
+  }
 
-        form.style.display = 'flex';
-        loginMessage.style.display = 'none';
+  function showFileSelection(file) {
+    selectedFileInfo.innerHTML = `
+      <div><strong>Selected file:</strong> ${file.name}</div>
+      <div>Size: ${formatFileSize(file.size)}</div>
+    `;
+    selectedFileInfo.classList.remove('hidden');
+  }
 
-      } catch (err) {
-        console.error('Doctors load error:', err);
-        document.getElementById('doctor-error').textContent = 'Failed to load doctors. Please try again.';
+  async function handleAccount() {
+    const accounts = msalInstance.getAllAccounts();
+    if (accounts.length > 0) return accounts[0];
+
+    const loginResp = await msalInstance.loginPopup({
+      scopes: ["Files.Read.All", "Calendars.ReadWrite"],
+      prompt: "select_account"
+    });
+    return loginResp.account;
+  }
+
+  async function getGraphToken(scopes) {
+    const account = await handleAccount();
+    const request = { scopes, account };
+
+    try {
+      const resp = await msalInstance.acquireTokenSilent(request);
+      return resp.accessToken;
+    } catch {
+      const popupResp = await msalInstance.acquireTokenPopup(request);
+      return popupResp.accessToken;
+    }
+  }
+
+  async function getOneDriveContents(folderId = "root") {
+    const token = await getGraphToken(["Files.Read.All"]);
+    const endpoint = folderId === "root" 
+      ? "https://graph.microsoft.com/v1.0/me/drive/root/children" 
+      : `https://graph.microsoft.com/v1.0/me/drive/items/${folderId}/children`;
+    
+    const res = await fetch(endpoint, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    return data.value || [];
+  }
+
+  async function renderOneDriveContents(folderId) {
+    btnText.classList.add('hidden');
+    btnLoading.classList.remove('hidden');
+    oneDrivePickerBtn.disabled = true;
+
+    try {
+      const contents = await getOneDriveContents(folderId);
+      
+      fileListContainer.innerHTML = '';
+      
+      // Aggiungi breadcrumb per la navigazione
+      if (folderId !== "root") {
+        const backDiv = document.createElement('div');
+        backDiv.className = 'file-item';
+        backDiv.innerHTML = '<strong>← Back to parent folder</strong>';
+        backDiv.onclick = () => navigateToParentFolder();
+        fileListContainer.appendChild(backDiv);
       }
-    }
-
-    await loadDoctors();
-
-    // Utils
-    function formatFileSize(bytes) {
-      if (!bytes) return '0 Bytes';
-      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(1024));
-      return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
-    }
-
-    function showFileSelection(file) {
-      selectedFileInfo.innerHTML = `
-        <div><strong>Selected file:</strong> ${file.name}</div>
-        <div>Size: ${formatFileSize(file.size)}</div>
-      `;
-      selectedFileInfo.classList.remove('hidden');
-    }
-
-    function clearErrors() {
-      document.querySelectorAll('.error-message').forEach(el => {
-        el.textContent = '';
+      
+      // Filtra e mostra solo cartelle e PDF
+      contents.forEach(item => {
+        if (item.folder || (item.file && item.name.toLowerCase().endsWith('.pdf'))) {
+          const div = document.createElement('div');
+          div.className = 'file-item';
+          
+          if (item.folder) {
+            div.innerHTML = `<strong>📁 ${item.name}</strong>`;
+            div.onclick = () => navigateToFolder(item.id, item.name);
+          } else {
+            div.innerHTML = `📄 ${item.name} (${formatFileSize(item.size)})`;
+            div.onclick = () => downloadOneDriveFile(item.id, item.name);
+          }
+          
+          fileListContainer.appendChild(div);
+        }
       });
-      formError.textContent = '';
-    }
 
-    // OneDrive Integration
-    const msalConfig = {
-      auth: {
-        clientId: "b4ebe754-d2ce-412a-bee5-c06f87a50cd2",
-        authority: "https://login.microsoftonline.com/common",
-        redirectUri: window.location.href,
-        knownAuthorities: ["login.microsoftonline.com"]
-      },
-      cache: {
-        cacheLocation: "sessionStorage",
-        storeAuthStateInCookie: true
+      // Se non ci sono PDF o cartelle
+      if (fileListContainer.children.length === (folderId !== "root" ? 1 : 0)) {
+        const noItemsDiv = document.createElement('div');
+        noItemsDiv.className = 'file-item';
+        noItemsDiv.textContent = 'No PDF files or folders found in this directory';
+        fileListContainer.appendChild(noItemsDiv);
       }
+
+    } catch (error) {
+      console.error('Error loading OneDrive contents:', error);
+      fileListContainer.innerHTML = '<div class="file-item">Error loading contents. Please try again.</div>';
+    } finally {
+      btnText.classList.remove('hidden');
+      btnLoading.classList.add('hidden');
+      oneDrivePickerBtn.disabled = false;
+    }
+  }
+
+  function navigateToFolder(folderId, folderName) {
+    folderStack.push({ id: currentFolderId, name: folderName });
+    currentFolderId = folderId;
+    renderOneDriveContents(currentFolderId);
+  }
+
+  function navigateToParentFolder() {
+    if (folderStack.length > 0) {
+      const parent = folderStack.pop();
+      currentFolderId = parent.id;
+      renderOneDriveContents(currentFolderId);
+    }
+  }
+
+  async function downloadOneDriveFile(fileId, fileName) {
+    const token = await getGraphToken(["Files.Read.All"]);
+    const res = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/content`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    const blob = await res.blob();
+    selectedFile = new File([blob], fileName, { type: 'application/pdf' });
+    showFileSelection(selectedFile);
+    fileInput.value = '';
+    filePickerDialog.classList.add('hidden');
+  }
+
+  oneDrivePickerBtn.addEventListener('click', async () => {
+    // Resetta la navigazione
+    currentFolderId = "root";
+    folderStack = [];
+    
+    // Mostra il dialog
+    filePickerDialog.classList.remove('hidden');
+    
+    // Carica i contenuti della root
+    await renderOneDriveContents(currentFolderId);
+  });
+
+  cancelPickerBtn.addEventListener('click', () => {
+    filePickerDialog.classList.add('hidden');
+  });
+
+  fileInput.addEventListener('change', e => {
+    if (e.target.files.length > 0) {
+      const file = e.target.files[0];
+      if (file.type === 'application/pdf') {
+        selectedFile = file;
+        showFileSelection(selectedFile);
+      } else {
+        alert('Please select a PDF file only.');
+        e.target.value = '';
+      }
+    }
+  });
+
+  // Create Outlook Event
+  async function createOutlookEvent(date, time, doctorName) {
+    const token = await getGraphToken(["Calendars.ReadWrite"]);
+
+    const startDateTime = new Date(`${date}T${time}`).toISOString();
+    const endDateTime = new Date(new Date(`${date}T${time}`).getTime() + 30 * 60 * 1000).toISOString();
+
+    const event = {
+      subject: `Appointment with ${doctorName}`,
+      start: { dateTime: startDateTime, timeZone: "Europe/Rome" },
+      end: { dateTime: endDateTime, timeZone: "Europe/Rome" },
+      body: { contentType: "HTML", content: `Appointment booked with ${doctorName} via Telemedicine Portal.` }
     };
 
-    const msalInstance = new msal.PublicClientApplication(msalConfig);
-    let selectedFile = null;
+    const res = await fetch("https://graph.microsoft.com/v1.0/me/events", {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(event)
+    });
 
-    async function handleAccount() {
-      const accounts = msalInstance.getAllAccounts();
-      if (accounts.length > 0) return accounts[0];
+    if (!res.ok) {
+      const err = await res.json();
+      console.error('Outlook event error:', err);
+      alert('Failed to create Outlook event');
+    }
+  }
 
-      const loginResp = await msalInstance.loginPopup({
-        scopes: ["Files.Read.All"],
-        prompt: "select_account"
-      });
-      return loginResp.account;
+  // Form Submit
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    submitBtnText.style.display = 'none';
+    submitSpinner.style.display = 'block';
+    submitBtn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('date', form.date.value);
+    formData.append('time', form.time.value);
+    formData.append('doctor_id', form.doctor.value);
+
+    if (selectedFile) {
+      formData.append('medical_report', selectedFile);
     }
 
-    async function getGraphToken(scopes) {
-      const account = await handleAccount();
-      const request = { scopes, account };
-
-      try {
-        const resp = await msalInstance.acquireTokenSilent(request);
-        return resp.accessToken;
-      } catch {
-        const popupResp = await msalInstance.acquireTokenPopup(request);
-        return popupResp.accessToken;
-      }
-    }
-
-    async function listOneDrivePDFs() {
-      const token = await getGraphToken(["Files.Read.All"]);
-      const res = await fetch("https://graph.microsoft.com/v1.0/me/drive/root/search(q='.pdf')", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      if (!res.ok) {
-        throw new Error('Failed to fetch files from OneDrive');
-      }
-      
-      const data = await res.json();
-      return data.value || [];
-    }
-
-    async function downloadOneDriveFile(fileId, fileName) {
-      const token = await getGraphToken(["Files.Read.All"]);
-      const res = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/content`, {
-        headers: { Authorization: `Bearer ${token}` }
+    try {
+      const res = await fetch('http://localhost:5501/appointments', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
       });
 
-      if (!res.ok) {
-        throw new Error('Failed to download file from OneDrive');
-      }
+      if (res.ok) {
+        const doctorOption = form.doctor.selectedOptions[0];
+        const doctorName = doctorOption.textContent;
 
-      const blob = await res.blob();
-      return new File([blob], fileName, { type: 'application/pdf' });
-    }
+        await createOutlookEvent(form.date.value, form.time.value, doctorName);
 
-    oneDrivePickerBtn.addEventListener('click', async () => {
-      try {
-        btnText.classList.add('hidden');
-        btnLoading.classList.remove('hidden');
-        oneDrivePickerBtn.disabled = true;
-        document.getElementById('file-error').textContent = '';
-
-        const files = await listOneDrivePDFs();
-
-        if (files.length === 0) {
-          fileListContainer.innerHTML = '<div style="padding: 1rem; text-align: center;">No PDF files found in your OneDrive</div>';
-        } else {
-          fileListContainer.innerHTML = '';
-          files.forEach(file => {
-            const div = document.createElement('div');
-            div.className = 'file-item';
-            div.textContent = `${file.name} (${formatFileSize(file.size)})`;
-            div.onclick = async () => {
-              try {
-                const loading = document.createElement('div');
-                loading.className = 'loading';
-                div.appendChild(loading);
-                
-                const file = await downloadOneDriveFile(file.id, file.name);
-                selectedFile = file;
-                showFileSelection(file);
-                fileInput.value = '';
-                filePickerDialog.classList.add('hidden');
-              } catch (err) {
-                console.error('File download error:', err);
-                document.getElementById('file-error').textContent = 'Failed to download file. Please try again.';
-              }
-            };
-            fileListContainer.appendChild(div);
-          });
-        }
-
-        filePickerDialog.classList.remove('hidden');
-      } catch (err) {
-        console.error('OneDrive error:', err);
-        document.getElementById('file-error').textContent = 'Failed to connect to OneDrive. Please try again.';
-      } finally {
-        btnText.classList.remove('hidden');
-        btnLoading.classList.add('hidden');
-        oneDrivePickerBtn.disabled = false;
-      }
-    });
-
-    cancelPickerBtn.addEventListener('click', () => {
-      filePickerDialog.classList.add('hidden');
-    });
-
-    fileInput.addEventListener('change', e => {
-      if (e.target.files.length > 0) {
-        const file = e.target.files[0];
-        if (file.type !== 'application/pdf') {
-          document.getElementById('file-error').textContent = 'Please select a PDF file';
-          fileInput.value = '';
-          return;
-        }
-        selectedFile = file;
-        showFileSelection(file);
-        document.getElementById('file-error').textContent = '';
-      }
-    });
-
-    // Show/hide insurance options based on payment method
-    paymentMethod.addEventListener('change', function() {
-      if (this.value === 'insurance') {
-        insuranceOptions.style.display = 'block';
-      } else {
-        insuranceOptions.style.display = 'none';
-      }
-    });
-
-    // Form validation
-    function validateForm() {
-      let isValid = true;
-      clearErrors();
-
-      if (!dateInput.value) {
-        document.getElementById('date-error').textContent = 'Please select a date';
-        isValid = false;
-      }
-
-      if (!timeInput.value) {
-        document.getElementById('time-error').textContent = 'Please select a time';
-        isValid = false;
-      }
-
-      if (!doctorSelect.value) {
-        document.getElementById('doctor-error').textContent = 'Please select a doctor';
-        isValid = false;
-      }
-
-      if (!paymentMethod.value) {
-        document.getElementById('payment-error').textContent = 'Please select a payment method';
-        isValid = false;
-      } else if (paymentMethod.value === 'insurance' && !insurancePackage.value) {
-        document.getElementById('insurance-error').textContent = 'Please select an insurance package';
-        isValid = false;
-      }
-
-      return isValid;
-    }
-
-    // Form Submit
-    form.addEventListener('submit', async e => {
-      e.preventDefault();
-      
-      if (!validateForm()) {
-        return;
-      }
-
-      submitBtnText.style.display = 'none';
-      submitSpinner.style.display = 'block';
-      submitBtn.disabled = true;
-      formError.textContent = '';
-
-      // Create FormData object
-      const formData = new FormData();
-      formData.append('doctor_id', doctorSelect.value);
-      formData.append('date', dateInput.value);
-      formData.append('time', timeInput.value);
-      formData.append('payment_method', paymentMethod.value);
-      
-      if (paymentMethod.value === 'insurance') {
-        formData.append('insurance_package', insurancePackage.value);
-      }
-
-      // Add notes if provided
-      if (notesInput.value) {
-        formData.append('notes', notesInput.value);
-      }
-
-      // Add file if selected
-      if (selectedFile) {
-        formData.append('medical_report', selectedFile);
-      }
-
-      try {
-        const res = await fetch('http://localhost:5501/appointments', {
-          method: 'POST',
-          headers: { 
-            'Authorization': `Bearer ${token}`
-            // Don't set Content-Type header - let the browser set it with boundary
-          },
-          body: formData
-        });
-
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error || 'Failed to book appointment');
-        }
-
-        const data = await res.json();
-        
-        // Show success message and redirect
-        alert('Appointment booked successfully!');
+        alert('Appointment booked and calendar event created!');
         window.location.href = 'bookings.html';
-
-      } catch (err) {
-        console.error('Booking error:', err);
-        formError.textContent = err.message || 'An error occurred while booking the appointment. Please try again.';
-      } finally {
-        submitBtnText.style.display = 'block';
-        submitSpinner.style.display = 'none';
-        submitBtn.disabled = false;
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to book appointment');
       }
-    });
+    } catch (err) {
+      console.error(err);
+      alert('Server error');
+    } finally {
+      submitBtnText.style.display = 'block';
+      submitSpinner.style.display = 'none';
+      submitBtn.disabled = false;
+    }
   });
-  </script>
+});
+</script>
 </body>
 </html>

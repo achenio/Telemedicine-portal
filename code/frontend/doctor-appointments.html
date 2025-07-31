@@ -1,19 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Doctor Appointments</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Doctor Appointments - Telemedicine Portal</title>
   <style>
     :root {
       --bg: #fefefe;
       --text: #1c1c1e;
       --subtext: #555;
       --primary: #007aff;
+      --doctor-color: #34c759;
+      --patient-color: #007aff;
       --card: #ffffff;
       --error: #ff3b30;
-      --success: #34c759;
       --warning: #ff9500;
+      --success: #34c759;
+      --border: #e5e5ea;
     }
 
     * {
@@ -27,14 +30,25 @@
       background-color: var(--bg);
       color: var(--text);
       line-height: 1.6;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
     }
 
     header {
+      position: relative;
       background-color: var(--card);
-      padding: 2rem 1rem;
+      padding: 1.5rem;
       text-align: center;
-      border-bottom: 1px solid #ddd;
-      animation: fadeIn 1s ease-out;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      z-index: 1;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+      color: var(--primary);
     }
 
     nav ul {
@@ -53,18 +67,55 @@
       font-weight: 600;
       padding: 0.5rem 1rem;
       border-radius: 20px;
-      transition: background-color 0.3s ease;
+      transition: all 0.3s ease;
+      cursor: pointer;
     }
 
     nav ul li a:hover {
       background-color: rgba(0, 122, 255, 0.1);
     }
 
+    #profile-area {
+      position: absolute;
+      top: 1.2rem;
+      right: 1.5rem;
+      font-weight: 600;
+      color: var(--primary);
+      font-size: 1rem;
+      cursor: default;
+      user-select: none;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .user-badge {
+      background-color: rgba(0, 122, 255, 0.1);
+      color: var(--primary);
+      border-radius: 10px;
+      padding: 2px 8px;
+      font-size: 0.8rem;
+    }
+
+    .doctor-badge {
+      background-color: rgba(52, 199, 89, 0.1);
+      color: var(--doctor-color);
+    }
+
     main {
-      max-width: 900px;
-      margin: 4rem auto;
-      padding: 1rem;
-      animation: fadeInUp 1s ease-out;
+      flex: 1;
+      padding: 2rem 1rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      animation: fadeInUp 0.5s ease-out;
+    }
+
+    h2 {
+      margin-bottom: 1.5rem;
+      color: var(--primary);
+      text-align: center;
     }
 
     #user-info {
@@ -74,6 +125,7 @@
       background-color: var(--card);
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--border);
     }
 
     #user-info p {
@@ -85,12 +137,6 @@
       color: var(--primary);
     }
 
-    h2 {
-      text-align: center;
-      font-size: 2rem;
-      margin-bottom: 2rem;
-    }
-
     table {
       width: 100%;
       border-collapse: collapse;
@@ -99,12 +145,13 @@
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--border);
     }
 
     th, td {
       padding: 1rem;
       text-align: left;
-      border-bottom: 1px solid #eee;
+      border-bottom: 1px solid var(--border);
     }
 
     th {
@@ -184,30 +231,126 @@
       gap: 0.5rem;
     }
 
+    .view-report-btn {
+      padding: 0.5rem 1rem;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .view-report-btn:hover {
+      background-color: #005fcc;
+    }
+
+    .view-notes-btn {
+      padding: 0.5rem 1rem;
+      background-color: #5ac8fa;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .view-notes-btn:hover {
+      background-color: #4ab0e0;
+    }
+
     footer {
+      padding: 1.5rem;
       text-align: center;
-      padding: 2rem 1rem;
-      font-size: 0.9rem;
       color: #999;
       border-top: 1px solid #eee;
-      margin-top: 4rem;
-      animation: fadeIn 1s ease-out;
+      margin-top: 2rem;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+    /* Modal styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      backdrop-filter: blur(5px);
     }
-
-    @keyframes fadeInUp {
+    
+    .modal-content {
+      background-color: var(--card);
+      padding: 2rem;
+      border-radius: 12px;
+      max-width: 600px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      animation: popIn 0.3s ease-out;
+    }
+    
+    .modal-content h3 {
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+    }
+    
+    .modal-content p {
+      margin-bottom: 2rem;
+      color: var(--text);
+    }
+    
+    .modal-btn {
+      padding: 0.75rem 1.5rem;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 20px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      margin: 0 0.5rem;
+    }
+    
+    .modal-btn:hover {
+      background-color: #0062cc;
+    }
+    
+    .modal-btn.danger {
+      background-color: var(--error);
+    }
+    
+    .modal-btn.danger:hover {
+      background-color: #d62c1a;
+    }
+    
+    @keyframes popIn {
       from {
         opacity: 0;
-        transform: translateY(30px);
+        transform: scale(0.9);
       }
       to {
         opacity: 1;
-        transform: translateY(0);
+        transform: scale(1);
       }
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+
+    .notes-content {
+      padding: 1rem;
+      background-color: #f8f8f8;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      font-size: 1rem;
+      line-height: 1.6;
+      text-align: left;
+      margin: 1rem 0;
     }
 
     @media (max-width: 768px) {
@@ -224,201 +367,27 @@
         flex-direction: column;
       }
     }
-    
-    .popup-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: rgba(0, 0, 0, 0.7);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      backdrop-filter: blur(5px);
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
-    
-    .popup-content {
-      background-color: var(--card);
-      padding: 2rem;
-      border-radius: 12px;
-      max-width: 500px;
-      width: 90%;
-      text-align: center;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-      animation: popIn 0.3s ease-out;
-    }
-    
-    .popup-content h3 {
-      color: var(--error);
-      margin-bottom: 1rem;
-      font-size: 1.5rem;
-    }
-    
-    .popup-content p {
-      margin-bottom: 2rem;
-      color: var(--text);
-    }
-    
-    .popup-btn {
-      padding: 0.75rem 1.5rem;
-      background-color: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 20px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-    
-    .popup-btn:hover {
-      background-color: #0062cc;
-    }
-    
-    @keyframes popIn {
+
+    @keyframes fadeInUp {
       from {
         opacity: 0;
-        transform: scale(0.9);
+        transform: translateY(20px);
       }
       to {
         opacity: 1;
-        transform: scale(1);
+        transform: translateY(0);
       }
-    }
-    
-    body.popup-active main,
-    body.popup-active header,
-    body.popup-active footer {
-      filter: blur(5px);
-      pointer-events: none;
-      user-select: none;
-    }
-    
-    .view-report-btn {
-      padding: 0.5rem 1rem;
-      background-color: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 20px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-
-    .view-report-btn:hover {
-      background-color: #005fcc;
-    }
-
-    .pdf-viewer-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: rgba(0, 0, 0, 0.8);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 2rem;
-    }
-
-    .pdf-viewer-iframe {
-      width: 80%;
-      height: 80%;
-      border: none;
-      border-radius: 8px;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-    }
-
-    .pdf-viewer-toolbar {
-      display: flex;
-      gap: 1rem;
-      margin-top: 1rem;
-    }
-
-    .pdf-viewer-close {
-      padding: 0.75rem 1.5rem;
-      background-color: var(--error);
-      color: white;
-      border: none;
-      border-radius: 20px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    /* Notes Viewer Styles */
-    .notes-viewer-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: rgba(0, 0, 0, 0.8);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 2rem;
-    }
-
-    .notes-viewer-content {
-      background-color: var(--card);
-      padding: 2rem;
-      border-radius: 12px;
-      max-width: 600px;
-      width: 90%;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-    }
-
-    .notes-viewer-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid #eee;
-    }
-
-    .notes-viewer-title {
-      color: var(--primary);
-      font-size: 1.5rem;
-      font-weight: 600;
-      margin: 0;
-    }
-
-    .notes-viewer-body {
-      padding: 1rem;
-      background-color: #f8f8f8;
-      border-radius: 8px;
-      white-space: pre-wrap;
-      font-size: 1rem;
-      line-height: 1.6;
-    }
-
-    .notes-viewer-close {
-      padding: 0.75rem 1.5rem;
-      background-color: var(--error);
-      color: white;
-      border: none;
-      border-radius: 20px;
-      cursor: pointer;
-      font-weight: 600;
-      margin-top: 1.5rem;
-      width: 100%;
-    }
-
-    .hidden {
-      display: none !important;
     }
   </style>
 </head>
 <body>
   <header>
+    <h1>Telemedicine Portal <span class="user-badge">DEMO</span></h1>
     <nav>
       <ul>
         <li><a href="index.html">Home</a></li>
@@ -426,11 +395,16 @@
         <li><a href="login.html">Logout</a></li>
       </ul>
     </nav>
+    <div id="profile-area">
+      <span id="welcome-message">Welcome, </span>
+      <strong id="username">Dr. Sarah Smith</strong>
+      <span id="user-badge" class="user-badge doctor-badge">Cardiologist</span>
+    </div>
   </header>
 
   <main>
     <div id="user-info">
-      <p>Logged in as: <strong id="username-display"></strong> (Doctor)</p>
+      <p>Logged in as: <strong id="username-display">Dr. Sarah Smith</strong> (Doctor)</p>
     </div>
 
     <h2>Your Appointments</h2>
@@ -455,118 +429,131 @@
   </main>
 
   <footer>
-    <p>&copy; 2025 Telemedicine Portal</p>
+    <p>&copy; 2025 Telemedicine Portal Demo | Pure Frontend Experience</p>
   </footer>
 
-  <!-- Notes Viewer -->
-  <div id="notes-viewer" class="notes-viewer-container hidden">
-    <div class="notes-viewer-content">
-      <div class="notes-viewer-header">
-        <h3 class="notes-viewer-title">Patient Notes</h3>
-      </div>
-      <div id="notes-viewer-body" class="notes-viewer-body"></div>
-      <button class="notes-viewer-close" onclick="closeNotesViewer()">Close</button>
+  <!-- Notes Modal -->
+  <div id="notes-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h3>Patient Notes</h3>
+      <div id="notes-content" class="notes-content"></div>
+      <button class="modal-btn" onclick="closeModal('notes-modal')">Close</button>
     </div>
   </div>
 
-  <!-- PDF Viewer -->
-  <div id="pdf-viewer" class="pdf-viewer-container hidden">
-    <iframe id="pdf-iframe" class="pdf-viewer-iframe"></iframe>
-    <button class="pdf-viewer-close" onclick="closePdfViewer()">Close</button>
+  <!-- Confirmation Modal -->
+  <div id="confirm-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h3 id="confirm-title">Confirm Action</h3>
+      <p id="confirm-message">Are you sure you want to perform this action?</p>
+      <div>
+        <button class="modal-btn" id="confirm-action-btn">Confirm</button>
+        <button class="modal-btn danger" onclick="closeModal('confirm-modal')">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      // Verifica autenticazione
-      const token = localStorage.getItem('token');
-      const userId = localStorage.getItem('user_id');
-      const userType = localStorage.getItem('user_type');
-      const username = localStorage.getItem('username');
+    document.addEventListener('DOMContentLoaded', () => {
+      // Demo appointments data
+      const demoAppointments = [
+        {
+          id: 'appt-1',
+          date: '2025-08-15',
+          time: '09:30',
+          patient_nome: 'John',
+          patient_cognome: 'Doe',
+          patient_codice_fiscale: 'DOEJHN80A01H501R',
+          status: 'booked',
+          medical_report_url: null,
+          notes: 'Patient reports occasional chest pain during exercise.'
+        },
+        {
+          id: 'appt-2',
+          date: '2025-08-16',
+          time: '11:00',
+          patient_nome: 'Maria',
+          patient_cognome: 'Rossi',
+          patient_codice_fiscale: 'RSSMRA85B45H501X',
+          status: 'confirmed',
+          medical_report_url: 'reports/maria-rossi-2025-07.pdf',
+          notes: 'Follow-up after recent ECG. Bring previous test results.'
+        },
+        {
+          id: 'appt-3',
+          date: '2025-08-17',
+          time: '14:15',
+          patient_nome: 'Robert',
+          patient_cognome: 'Johnson',
+          patient_codice_fiscale: 'JHNBRT75C12H501Y',
+          status: 'completed',
+          medical_report_url: 'reports/robert-johnson-2025-06.pdf',
+          notes: 'Annual checkup. No significant changes from last year.'
+        },
+        {
+          id: 'appt-4',
+          date: '2025-08-18',
+          time: '10:45',
+          patient_nome: 'Sarah',
+          patient_cognome: 'Williams',
+          patient_codice_fiscale: 'WLLSRH88D65H501Z',
+          status: 'cancelled',
+          medical_report_url: null,
+          notes: 'Patient cancelled due to personal reasons.'
+        }
+      ];
 
-      if (!token || !userId || !userType) {
-        window.location.href = 'login.html';
+      // Load appointments into the table
+      const tbody = document.getElementById('appointments-body');
+      
+      if (demoAppointments.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem;">No appointments found</td></tr>`;
         return;
       }
 
-      if (userType !== 'doctor') {
-        showAccessDeniedPopup();
-        return;
-      }
-
-      document.getElementById('username-display').textContent = username || 'Doctor';
-
-      try {
-        // Carica gli appuntamenti
-        const response = await fetch(`http://localhost:5501/doctor/appointments`, {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const appointments = Array.isArray(data) ? data : (data.appointments || []);
-        const tbody = document.getElementById('appointments-body');
-
-        if (appointments.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem;">No appointments found</td></tr>`;
-          return;
-        }
-
-        // Popola la tabella
-        tbody.innerHTML = appointments.map(appt => {
-          const status = appt.status || 'unknown';
-          const statusClass = `status-${status.toLowerCase()}`;
-          const date = appt.date ? formatDate(appt.date) : 'N/A';
-          const time = appt.time || 'N/A';
+      // Populate the table with demo data
+      tbody.innerHTML = demoAppointments.map(appt => {
+        const status = appt.status || 'unknown';
+        const statusClass = `status-${status.toLowerCase()}`;
+        const date = appt.date ? formatDate(appt.date) : 'N/A';
+        const time = appt.time || 'N/A';
+        
+        const patientName = appt.patient_nome ? 
+          `${appt.patient_nome} ${appt.patient_cognome || ''}` : 'Unknown Patient';
           
-          const patientName = appt.patient_nome ? 
-            `${appt.patient_nome} ${appt.patient_cognome || ''}` : 
-            (appt.nome ? `${appt.nome} ${appt.cognome || ''}` : 'Unknown Patient');
-            
-          const taxCode = appt.patient_codice_fiscale || appt.codice_fiscale || 'N/A';
-          const reportUrl = appt.medical_report_url;
-          const reportButton = reportUrl ? 
-            `<button class="view-report-btn" data-url="${reportUrl}">View Report</button>` : 
-            'No report';
-          
-          // Handle patient notes
-          const notes = appt.notes || '';
-          const notesCell = notes ? 
-            `<button class="view-notes-btn" data-notes="${escapeHtml(notes)}">View Notes</button>` :
-            'No notes';
+        const taxCode = appt.patient_codice_fiscale || 'N/A';
+        const reportUrl = appt.medical_report_url;
+        const reportButton = reportUrl ? 
+          `<button class="view-report-btn" data-url="${reportUrl}">View Report</button>` : 
+          'No report';
+        
+        const notes = appt.notes || '';
+        const notesCell = notes ? 
+          `<button class="view-notes-btn" data-notes="${escapeHtml(notes)}">View Notes</button>` :
+          'No notes';
 
-          return `
-            <tr>
-              <td>${date}</td>
-              <td>${time}</td>
-              <td>${patientName}</td>
-              <td>${taxCode}</td>
-              <td class="${statusClass}">${status}</td>
-              <td>${reportButton}</td>
-              <td>${notesCell}</td>
-              <td>
-                <div class="action-buttons">
-                  ${getActionButtons(appt)}
-                </div>
-              </td>
-            </tr>
-          `;
-        }).join('');
+        return `
+          <tr>
+            <td>${date}</td>
+            <td>${time}</td>
+            <td>${patientName}</td>
+            <td>${taxCode}</td>
+            <td class="${statusClass}">${status}</td>
+            <td>${reportButton}</td>
+            <td>${notesCell}</td>
+            <td>
+              <div class="action-buttons">
+                ${getActionButtons(appt)}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
 
-        // Configura gli event listeners
-        setupActionButtons();
-        setupReportButtons();
-        setupNotesButtons();
-
-      } catch (error) {
-        console.error('Error loading appointments:', error);
-        showError(error.message || 'Failed to load appointments');
-      }
+      // Set up event listeners
+      setupActionButtons();
+      setupNotesButtons();
+      setupReportButtons();
     });
 
     // Helper function to escape HTML
@@ -579,120 +566,7 @@
         .replace(/'/g, "&#039;");
     }
 
-    // Setup notes buttons
-    function setupNotesButtons() {
-      document.querySelectorAll('.view-notes-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          const notes = btn.getAttribute('data-notes');
-          if (notes) {
-            showNotesViewer(notes);
-          }
-        });
-      });
-    }
-
-    // Show notes viewer
-    function showNotesViewer(notes) {
-      const viewer = document.getElementById('notes-viewer');
-      const viewerBody = document.getElementById('notes-viewer-body');
-      
-      viewerBody.textContent = notes;
-      viewer.classList.remove('hidden');
-      document.body.classList.add('popup-active');
-      
-      // Add listener to close when clicking outside
-      viewer.addEventListener('click', function(e) {
-        if (e.target === viewer) {
-          closeNotesViewer();
-        }
-      });
-      
-      // Also close with ESC key
-      const escHandler = function(e) {
-        if (e.key === 'Escape') {
-          closeNotesViewer();
-        }
-      };
-      document.addEventListener('keydown', escHandler);
-      
-      // Store reference to handler for later removal
-      viewer.dataset.escHandler = escHandler;
-    }
-
-    // Close notes viewer
-    function closeNotesViewer() {
-      const viewer = document.getElementById('notes-viewer');
-      viewer.classList.add('hidden');
-      document.body.classList.remove('popup-active');
-      
-      // Remove listeners
-      viewer.removeEventListener('click', closeNotesViewer);
-      if (viewer.dataset.escHandler) {
-        document.removeEventListener('keydown', viewer.dataset.escHandler);
-        delete viewer.dataset.escHandler;
-      }
-    }
-
-    // Setup report buttons
-    function setupReportButtons() {
-      document.querySelectorAll('.view-report-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          const reportUrl = btn.getAttribute('data-url');
-          if (reportUrl) {
-            showPdfViewer(reportUrl);
-          }
-        });
-      });
-    }
-
-    // Show PDF viewer
-    function showPdfViewer(pdfUrl) {
-      const viewer = document.getElementById('pdf-viewer');
-      const iframe = document.getElementById('pdf-iframe');
-      
-      iframe.src = `http://localhost:5500/backend/${pdfUrl}`;
-      viewer.classList.remove('hidden');
-      document.body.classList.add('popup-active');
-      
-      // Add listener to close when clicking outside
-      viewer.addEventListener('click', function(e) {
-        if (e.target === viewer) {
-          closePdfViewer();
-        }
-      });
-      
-      // Also close with ESC key
-      const escHandler = function(e) {
-        if (e.key === 'Escape') {
-          closePdfViewer();
-        }
-      };
-      document.addEventListener('keydown', escHandler);
-      
-      // Store reference to handler for later removal
-      viewer.dataset.escHandler = escHandler;
-    }
-
-    // Close PDF viewer
-    function closePdfViewer() {
-      const viewer = document.getElementById('pdf-viewer');
-      const iframe = document.getElementById('pdf-iframe');
-      
-      iframe.src = '';
-      viewer.classList.add('hidden');
-      document.body.classList.remove('popup-active');
-      
-      // Remove listeners
-      viewer.removeEventListener('click', closePdfViewer);
-      if (viewer.dataset.escHandler) {
-        document.removeEventListener('keydown', viewer.dataset.escHandler);
-        delete viewer.dataset.escHandler;
-      }
-    }
-
-    // Formatta la data
+    // Format date for display
     function formatDate(dateString) {
       if (!dateString) return 'N/A';
       try {
@@ -704,7 +578,7 @@
       }
     }
 
-    // Restituisce i pulsanti delle azioni
+    // Generate action buttons based on status
     function getActionButtons(appt) {
       const status = (appt.status || '').toLowerCase();
       const appointmentId = appt.id || '';
@@ -724,126 +598,119 @@
       }
     }
 
-    // Configura i pulsanti delle azioni
+    // Set up action buttons
     function setupActionButtons() {
-      // Pulsante Conferma
+      // Confirm buttons
       document.querySelectorAll('.confirm-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
+        btn.addEventListener('click', (e) => {
           e.preventDefault();
-          try {
-            await updateAppointmentStatus(btn.dataset.id, 'confirmed');
-          } catch (error) {
-            console.error('Error confirming appointment:', error);
-            showError('Failed to confirm appointment');
-          }
+          const apptId = btn.dataset.id;
+          showConfirmationModal(
+            'Confirm Appointment', 
+            'Are you sure you want to accept this appointment?',
+            () => updateAppointmentStatus(apptId, 'confirmed')
+          );
         });
       });
 
-      // Pulsante Rifiuta
+      // Reject buttons
       document.querySelectorAll('.reject-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
+        btn.addEventListener('click', (e) => {
           e.preventDefault();
-          try {
-            await updateAppointmentStatus(btn.dataset.id, 'cancelled');
-          } catch (error) {
-            console.error('Error rejecting appointment:', error);
-            showError('Failed to reject appointment');
-          }
+          const apptId = btn.dataset.id;
+          showConfirmationModal(
+            'Reject Appointment', 
+            'Are you sure you want to reject this appointment?',
+            () => updateAppointmentStatus(apptId, 'cancelled')
+          );
         });
       });
 
-      // Pulsante Completa
+      // Complete buttons
       document.querySelectorAll('.complete-btn:not(:disabled)').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
+        btn.addEventListener('click', (e) => {
           e.preventDefault();
-          try {
-            await updateAppointmentStatus(btn.dataset.id, 'completed');
-          } catch (error) {
-            console.error('Error completing appointment:', error);
-            showError('Failed to complete appointment');
+          const apptId = btn.dataset.id;
+          showConfirmationModal(
+            'Complete Appointment', 
+            'Mark this appointment as completed?',
+            () => updateAppointmentStatus(apptId, 'completed')
+          );
+        });
+      });
+    }
+
+    // Set up notes buttons
+    function setupNotesButtons() {
+      document.querySelectorAll('.view-notes-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const notes = btn.getAttribute('data-notes');
+          if (notes) {
+            document.getElementById('notes-content').textContent = notes;
+            showModal('notes-modal');
           }
         });
       });
     }
 
-    // Aggiorna lo stato dell'appuntamento
-    async function updateAppointmentStatus(appointmentId, newStatus) {
-      if (!appointmentId) {
-        throw new Error('Invalid appointment ID');
-      }
-
-      const actions = {
-        'confirmed': 'accept',
-        'cancelled': 'reject',
-        'completed': 'complete'
-      };
-
-      if (!confirm(`Are you sure you want to ${actions[newStatus]} this appointment?`)) {
-        return;
-      }
-
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5501/appointments/${appointmentId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ status: newStatus })
+    // Set up report buttons
+    function setupReportButtons() {
+      document.querySelectorAll('.view-report-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          alert('In a real application, this would open the PDF report.\n\nDemo report URL: ' + btn.getAttribute('data-url'));
+        });
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to update appointment');
-      }
-
-      window.location.reload();
     }
 
-    // Mostra errore
-    function showError(message) {
-      const tbody = document.getElementById('appointments-body');
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="8" style="text-align: center; color: var(--error); padding: 2rem;">
-            ${message}
-            <button onclick="window.location.reload()" style="
-              margin-top: 1rem;
-              padding: 0.5rem 1rem;
-              background: var(--primary);
-              color: white;
-              border: none;
-              border-radius: 8px;
-              cursor: pointer;
-            ">
-              Retry
-            </button>
-          </td>
-        </tr>
-      `;
+    // Show modal
+    function showModal(modalId) {
+      document.getElementById(modalId).classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
     }
 
-    // Mostra popup accesso negato
-    function showAccessDeniedPopup() {
-      const popup = document.createElement('div');
-      popup.className = 'popup-overlay';
-      popup.innerHTML = `
-        <div class="popup-content">
-          <h3>Access Denied</h3>
-          <p>This page is only accessible to doctors.</p>
-          <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
-            <button class="popup-btn" onclick="window.location.href='index.html'">
-              Return to Home
-            </button>
-            <button class="popup-btn" onclick="window.location.href='login.html'" 
-              style="background-color: var(--error)">
-              Login as Doctor
-            </button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(popup);
-      document.body.classList.add('popup-active');
+    // Close modal
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+
+    // Show confirmation modal
+    function showConfirmationModal(title, message, confirmCallback) {
+      document.getElementById('confirm-title').textContent = title;
+      document.getElementById('confirm-message').textContent = message;
+      
+      const confirmBtn = document.getElementById('confirm-action-btn');
+      // Remove previous listeners
+      confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+      
+      // Add new listener
+      document.getElementById('confirm-action-btn').addEventListener('click', () => {
+        confirmCallback();
+        closeModal('confirm-modal');
+      });
+      
+      showModal('confirm-modal');
+    }
+
+    // Update appointment status (demo version)
+    function updateAppointmentStatus(appointmentId, newStatus) {
+      // In a real app, this would make an API call
+      // For demo, we'll just show an alert and reload
+      
+      const actions = {
+        'confirmed': 'accepted',
+        'cancelled': 'rejected',
+        'completed': 'completed'
+      };
+      
+      alert(`Appointment ${actions[newStatus]} successfully!\n\nThis is a frontend demo - no data is actually saved.`);
+      
+      // Simulate status change by reloading
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     }
   </script>
 </body>

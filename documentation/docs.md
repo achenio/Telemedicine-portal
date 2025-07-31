@@ -29,9 +29,11 @@ The telemedicine portal database is structured into five main tables:
 - **sqlite_sequence** – Internal table used by SQLite to keep track of AUTOINCREMENT values.
 
 This relational model ensures secure, organized, and efficient handling of sensitive healthcare data.
-| users             | appointments          | messages           | payments          | sqlite_sequence |
-| ---------------------- | ---------------------- | ---------------------- | ---------------------- |
-| ![Home Screenshot](./screenshots/) | ![Chat Screenshot](./screenshots/patientview_securechat.png) | ![Chat Screenshot](./screenshots/doctorview_securechat.png) | ![Appointment Booking](./screenshots/screenshot_appointmentbooking.png) |
+| **Users**                                             | **Appointments**                                         | **Messages**                                               | **Payments**                                            | **sqlite_sequence**                                          |
+| ----------------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------ |
+| ![Users Screenshot](/screenshots/users.png)            | ![Appointments Screenshot](/screenshots/appointments.png)  | ![Messages Screenshot](screenshots/messages_encrypted.png) | ![Payments Screenshot](screenshots/payments.png)         | ![sqlite_sequence Screenshot](screenshots/sqlite_sequence.png) |
+
+
 
 
 ---

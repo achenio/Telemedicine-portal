@@ -753,18 +753,14 @@ header {
       // Load conversation messages
       async function loadDoctorMessages(doctorId) {
         try {
-          const token = localStorage.getItem('token');
-          const response = await fetch(`http://localhost:5501/messages/conversation/${doctorId}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
+          // Chiama l'API Python che restituisce i messaggi decriptati
+          const response = await fetch(`http://localhost:5005/api/decrypted-messages/${doctorId}`);
           if (!response.ok) throw new Error('Failed to load messages');
           const messages = await response.json();
           return messages.map(msg => ({
             ...msg,
             isRead: true,
-            sender: msg.sender_type === 'patient' ? 'patient' : 'doctor'
+            sender: String(msg.sender_id) === String(currentUser.id) ? 'patient' : 'doctor'
           }));
         } catch (error) {
           console.error('Error loading messages:', error);

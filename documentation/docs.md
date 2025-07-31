@@ -29,6 +29,45 @@ The telemedicine portal database is structured into five main tables:
 - **sqlite_sequence** – Internal table used by SQLite to keep track of AUTOINCREMENT values.
 
 This relational model ensures secure, organized, and efficient handling of sensitive healthcare data.
+### 🔒 Security: Encryption, Hashing, and Decryption
+
+Security is a core aspect of the telemedicine portal, ensuring all sensitive data is protected at rest and in transit.
+
+
+#### 🔐 Passwords and User Data
+
+- User passwords are securely stored using the **bcrypt** hashing algorithm.
+- During registration:
+  - Passwords are hashed with a **unique salt** before being saved.
+- During login:
+  - The provided password is hashed and **compared** to the stored hash.
+
+
+#### 💳 Banking Data Protection
+
+- Sensitive data such as **card numbers, CVCs, and IBANs** are also hashed with **bcrypt**.
+- 🔒 **Plain-text storage is never allowed.**
+- Hashing:
+  - Prevents data reconstruction.
+  - Enables validation of submitted values.
+
+
+#### 💬 End-to-End Encrypted Chat
+
+- Messages between users and healthcare professionals are encrypted using **AES-256-CBC**.
+- Encryption is handled on the **server side (Node.js)**:
+  - Each message is encrypted with a **32-character symmetric key** and a **random IV**.
+  - Stored format: `iv_hex:encrypted_hex`
+- 📁 Even with unauthorized database access, **chat content remains unreadable**.
+
+
+#### 🧠 Python-Based Decryption API
+
+- A separate **Flask microservice** handles decryption:
+
+  ```text
+  GET /api/decrypted-messages/<user_id>
+
 | **Users**                                             | **Appointments**                                         | **Messages**                                               | **Payments**                                            | **sqlite_sequence**                                          |
 | ----------------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------ |
 | ![Users Screenshot](/screenshots/users.png)            | ![Appointments Screenshot](/screenshots/appointments.png)  | ![Messages Screenshot](/screenshots/messanges_encrypted.png) | ![Payments Screenshot](/screenshots/payments.png)         | ![sqlite_sequence Screenshot](/screenshots/sqlite_sequence.png) |

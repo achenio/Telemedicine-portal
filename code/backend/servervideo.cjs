@@ -27,6 +27,15 @@ function getSocketById(socketId) {
   return io.sockets.sockets.get(socketId);
 }
 
+// Configurazione migliorata per più partecipanti
+const MAX_PARTICIPANTS = 10; // Aumentato da 2 a 10
+const ICE_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:global.stun.twilio.com:3478?transport=udp' },
+  // Aggiungi il tuo server TURN qui se disponibile
+  // { urls: 'turn:your-turn-server.com:3478', username: 'username', credential: 'password' }
+];
+
 io.on('connection', socket => {
   console.log('User connected:', socket.id);
   
@@ -64,7 +73,6 @@ io.on('connection', socket => {
     try {
       console.log(`Join request: ${userName} (${socket.id}) to ${room}`);
 
-      const MAX_PARTICIPANTS = 2;
       room = room.trim().toUpperCase();
       
       if (!room || !userName) {
@@ -79,7 +87,8 @@ io.on('connection', socket => {
         rooms[room] = {
           participants: {},
           count: 0,
-          createdAt: new Date()
+          createdAt: new Date(),
+          iceServers: ICE_SERVERS // Fornisce i server ICE a tutti i partecipanti
         };
       } 
 
@@ -90,7 +99,8 @@ io.on('connection', socket => {
       const response = {
         status: rooms[room].count === 1 ? "created" : "joined",
         room: room,
-        participants: rooms[room].participants
+        participants: rooms[room].participants,
+        iceServers: rooms[room].iceServers // Invia i server ICE al client
       };
 
       callback?.(response);
@@ -102,8 +112,8 @@ io.on('connection', socket => {
           participants: rooms[room].participants
         });
         
-        io.to(room).emit('ready', {
-          room: room,
+        // Invia a tutti i partecipanti la lista aggiornata
+        io.to(room).emit('participants_updated', {
           participants: rooms[room].participants
         });
       }
@@ -113,89 +123,60 @@ io.on('connection', socket => {
     }
   });
 
-  socket.on('offer', (data, callback) => {
-    try {
-      console.log(`Offer from ${socket.id} to ${data.target}`);
-      
-      const targetSocket = getSocketById(data.target);
-      if (!targetSocket) {
-        return callback?.({ error: "Participant not found" });
-      }
+  // Nuovo handler per la negoziazione semplificata
+  socket.on('relay_signal', ({ to, signal }) => {
+    const targetSocket = getSocketById(to);
+    if (targetSocket) {
+      targetSocket.emit('signal', { from: socket.id, signal });
+    }
+  });
 
+  // Gestione semplificata delle offerte/risposte/candidati
+  socket.on('offer', (data) => {
+    const targetSocket = getSocketById(data.target);
+    if (targetSocket) {
       targetSocket.emit('offer', {
         sender: socket.id,
         offer: data.offer,
         roomId: data.roomId
       });
-      
-      callback?.({ status: "offer forwarded" });
-    } catch (error) {
-      console.error('Error handling offer:', error);
-      callback?.({ error: "Internal server error" });
     }
   });
 
-  socket.on('answer', (data, callback) => {
-    try {
-      console.log(`Answer from ${socket.id} to ${data.target}`);
-      
-      const targetSocket = getSocketById(data.target);
-      if (!targetSocket) {
-        return callback?.({ error: "Participant not found" });
-      }
-
+  socket.on('answer', (data) => {
+    const targetSocket = getSocketById(data.target);
+    if (targetSocket) {
       targetSocket.emit('answer', {
         sender: socket.id,
         answer: data.answer,
         roomId: data.roomId
       });
-      
-      callback?.({ status: "answer forwarded" });
-    } catch (error) {
-      console.error('Error handling answer:', error);
-      callback?.({ error: "Internal server error" });
     }
   });
 
-  socket.on('candidate', (data, callback) => {
-    try {
-      console.log(`ICE candidate from ${socket.id} to ${data.target}`);
-      
-      const targetSocket = getSocketById(data.target);
-      if (!targetSocket) {
-        return callback?.({ error: "Participant not found" });
-      }
-
+  socket.on('candidate', (data) => {
+    const targetSocket = getSocketById(data.target);
+    if (targetSocket) {
       targetSocket.emit('candidate', {
         sender: socket.id,
         candidate: data.candidate,
         roomId: data.roomId
       });
-      
-      callback?.({ status: "candidate forwarded" });
-    } catch (error) {
-      console.error('Error handling candidate:', error);
-      callback?.({ error: "Internal server error" });
     }
   });
 
-  socket.on('chat', (data, callback) => {
-    try {
-      if (!data.roomId || !data.message) {
-        return callback?.({ error: "Invalid chat data" });
-      }
-
+  // Chat centralizzata via server invece che peer-to-peer
+  socket.on('chat', (data) => {
+    if (!data.roomId || !data.message) return;
+    
+    // Verifica che il mittente sia nella stanza
+    if (rooms[data.roomId]?.participants[socket.id]) {
       io.to(data.roomId).emit('chat_message', {
-        sender: data.sender || socket.id,
+        sender: socket.id,
+        senderName: rooms[data.roomId].participants[socket.id],
         message: data.message,
-        roomId: data.roomId,
         timestamp: new Date()
       });
-      
-      callback?.({ status: "message delivered" });
-    } catch (error) {
-      console.error('Error handling chat:', error);
-      callback?.({ error: "Internal server error" });
     }
   });
 
@@ -218,6 +199,13 @@ io.on('connection', socket => {
         socketId: socket.id,
         participants: rooms[room]?.participants || {}
       });
+      
+      // Invia a tutti i partecipanti la lista aggiornata
+      if (rooms[room]) {
+        io.to(room).emit('participants_updated', {
+          participants: rooms[room].participants
+        });
+      }
       
       callback?.({ status: "left room" });
     } catch (error) {

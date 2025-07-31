@@ -694,10 +694,9 @@
     <span class="material-icons" id="notificationIcon">info</span>
     <span id="notificationText">Notification message</span>
   </div>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // DOM Elements
+  // DOM Elements (rimane invariato)
   const preCallScreen = document.getElementById('preCallScreen');
   const inCallScreen = document.getElementById('inCallScreen');
   const localPreview = document.getElementById('localPreview');
@@ -724,7 +723,15 @@ document.addEventListener('DOMContentLoaded', function() {
   const notificationIcon = document.getElementById('notificationIcon');
   const notificationText = document.getElementById('notificationText');
 
-  // State variables
+  // State variables aggiornate
+  const MAX_PARTICIPANTS = 10; // Aumentato da 2 a 10
+  const ICE_SERVERS = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:global.stun.twilio.com:3478?transport=udp' },
+    // Aggiungi qui il tuo server TURN se disponibile
+    // { urls: 'turn:your-turn-server.com:3478', username: 'username', credential: 'password' }
+  ];
+  
   let localStream;
   let isMicOn = true;
   let isCamOn = true;
@@ -746,11 +753,12 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initialize the app
   async function init() {
     try {
+      // Configurazione media ottimizzata per più partecipanti
       localStream = await navigator.mediaDevices.getUserMedia({
         video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          frameRate: { ideal: 30 }
+          width: { ideal: 640 },  // Ridotto da 1280 per migliorare le prestazioni
+          height: { ideal: 480 }, // Ridotto da 720
+          frameRate: { ideal: 20 } // Ridotto da 30
         },
         audio: {
           echoCancellation: true,
@@ -762,12 +770,6 @@ document.addEventListener('DOMContentLoaded', function() {
       localVideoTrack = localStream.getVideoTracks()[0];
       localAudioTrack = localStream.getAudioTracks()[0];
       localPreview.srcObject = localStream;
-      
-      // Debug: mostra i track ottenuti
-      console.log('Local stream tracks:');
-      localStream.getTracks().forEach(track => {
-        console.log(`${track.kind} track:`, track.getSettings());
-      });
       
       showNotification('Camera and microphone ready', 'success');
     } catch (error) {
@@ -806,8 +808,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (e.key === 'Enter') joinMeeting();
     });
   }
-
-  // Initialize socket connection
+  // Initialize socket connection - versione migliorata
   function initSocket() {
     try {
       const serverUrl = 'http://localhost:3010';
@@ -815,8 +816,6 @@ document.addEventListener('DOMContentLoaded', function() {
         reconnection: true,
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-        timeout: 20000,
         transports: ['websocket'],
         auth: {
           userName: userName || 'Anonymous',
@@ -857,6 +856,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       });
 
+      // Nuovi eventi per gestione più partecipanti
       socket.on('created', (data) => {
         console.log(`Room ${data.room} created`);
         currentRoom = data.room;
@@ -881,43 +881,37 @@ document.addEventListener('DOMContentLoaded', function() {
           };
           addParticipant(null, data.name, false, data.socketId);
           updateParticipantsList();
+          
+          // Crea connessione solo con il nuovo partecipante
+          if (isInCall) {
+            createPeerConnection(data.socketId);
+          }
         }
       });
 
       socket.on('full', (room) => {
         console.log(`Room ${room} is full`);
-        showNotification('Room is full (max 2 participants)', 'error');
+        showNotification(`Room is full (max ${MAX_PARTICIPANTS} participants)`, 'error');
         resetAfterFailedJoin();
       });
 
-      socket.on('ready', (data) => {
-        console.log('Ready to start call');
+      socket.on('participants_updated', (data) => {
         updateParticipants(data.participants);
-        createPeerConnections();
       });
 
-      socket.on('offer', (data) => {
-        console.log(`Offer from ${data.sender}`);
-        handleOffer(data);
-      });
-
-      socket.on('answer', (data) => {
-        console.log(`Answer from ${data.sender}`);
-        handleAnswer(data);
-      });
-
-      socket.on('candidate', (data) => {
-        console.log(`ICE candidate from ${data.sender}`);
-        handleCandidate(data);
-      });
+      socket.on('offer', handleOffer);
+      socket.on('answer', handleAnswer);
+      socket.on('candidate', handleCandidate);
+      socket.on('signal', handleSignal);
 
       socket.on('participant_left', (data) => {
-        console.log(`Participant left: ${data.socketId}`);
         handleParticipantLeft(data.socketId);
       });
 
+      // Chat centralizzata via server
       socket.on('chat_message', (data) => {
-        addChatMessage(data.sender, data.message, false);
+        const senderName = participants[data.sender]?.name || 'Unknown';
+        addChatMessage(senderName, data.message, data.sender === socket.id);
       });
 
       socket.on('error', (error) => {
@@ -930,6 +924,225 @@ document.addEventListener('DOMContentLoaded', function() {
       console.error('Socket initialization failed:', error);
       showNotification('Failed to initialize connection', 'error');
       return false;
+    }
+  }
+
+  // Create peer connections - versione ottimizzata
+  function createPeerConnection(socketId) {
+    console.log(`Creating peer connection with ${socketId}`);
+    
+    const configuration = {
+      iceServers: ICE_SERVERS,
+      iceTransportPolicy: 'all',
+      bundlePolicy: 'max-bundle',
+      rtcpMuxPolicy: 'require'
+    };
+
+    const pc = new RTCPeerConnection(configuration);
+    peerConnections[socketId] = pc;
+    
+    // Aggiungi i track locali con configurazione ottimizzata
+    if (localStream) {
+      localStream.getTracks().forEach(track => {
+        const sender = pc.addTrack(track, localStream);
+        
+        // Configurazione simulcast per video (se supportato)
+        if (track.kind === 'video' && sender.setParameters) {
+          try {
+            const parameters = sender.getParameters();
+            if (!parameters.encodings) {
+              parameters.encodings = [{}];
+            }
+            
+            // Configurazione base per qualità media
+            parameters.encodings[0] = {
+              scaleResolutionDownBy: 1.5,
+              maxBitrate: 1500000
+            };
+            
+            sender.setParameters(parameters);
+          } catch (e) {
+            console.error('Error setting sender parameters:', e);
+          }
+        }
+      });
+    }
+
+    // Data channel per chat (opzionale, ora che usiamo chat via server)
+    const dc = pc.createDataChannel('chat-' + socketId, {
+      ordered: true,
+      maxPacketLifeTime: 3000
+    });
+    setupDataChannel(dc, socketId);
+    dataChannels[socketId] = dc;
+    
+    pc.ondatachannel = (event) => {
+      const dc = event.channel;
+      setupDataChannel(dc, socketId);
+      dataChannels[socketId] = dc;
+    };
+    
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket.emit('candidate', {
+          roomId: currentRoom,
+          candidate: event.candidate,
+          target: socketId
+        });
+      }
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      console.log(`ICE state for ${socketId}: ${pc.iceConnectionState}`);
+      if (pc.iceConnectionState === 'failed') {
+        pc.restartIce();
+      } else if (pc.iceConnectionState === 'disconnected') {
+        setTimeout(() => {
+          if (pc.iceConnectionState === 'disconnected') {
+            console.log(`Reconnecting to ${socketId}`);
+            createPeerConnection(socketId); // Tentativo di riconnessione
+          }
+        }, 2000);
+      }
+    };
+
+    pc.ontrack = (event) => {
+      console.log(`Received remote ${event.track.kind} track from ${socketId}`);
+      const remoteStream = new MediaStream([event.track]);
+      
+      if (participants[socketId]) {
+        participants[socketId].stream = remoteStream;
+        updateParticipantVideo(socketId);
+        
+        if (event.track.kind === 'audio') {
+          updateRemoteMicStatus(socketId, true);
+        }
+      }
+    };
+    
+    pc.onnegotiationneeded = async () => {
+      try {
+        const offer = await pc.createOffer({
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: true
+        });
+        await pc.setLocalDescription(offer);
+        
+        socket.emit('offer', {
+          roomId: currentRoom,
+          offer: pc.localDescription,
+          target: socketId
+        });
+      } catch (error) {
+        console.error('Error creating offer:', error);
+      }
+    };
+    
+    return pc;
+  }
+
+  // Handle incoming offer - versione semplificata
+  async function handleOffer(data) {
+    const pc = peerConnections[data.sender] || createPeerConnection(data.sender);
+    
+    try {
+      await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      
+      socket.emit('answer', {
+        target: data.sender,
+        answer: pc.localDescription,
+        roomId: currentRoom
+      });
+    } catch (error) {
+      console.error('Error handling offer:', error);
+    }
+  }
+
+  // Handle incoming answer - versione semplificata
+  async function handleAnswer(data) {
+    const pc = peerConnections[data.sender];
+    if (pc) {
+      try {
+        await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+      } catch (error) {
+        console.error('Error handling answer:', error);
+      }
+    }
+  }
+
+  // Handle incoming ICE candidate - versione semplificata
+  async function handleCandidate(data) {
+    const pc = peerConnections[data.sender];
+    if (pc && data.candidate) {
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+      } catch (error) {
+        console.error('Error adding ICE candidate:', error);
+      }
+    }
+  }
+
+  // Handle signal - nuovo metodo per gestione semplificata
+  function handleSignal(data) {
+    const pc = peerConnections[data.from] || createPeerConnection(data.from);
+    pc.signal(data.signal);
+  }
+
+  // Join meeting - versione migliorata
+  async function joinMeeting() {
+    const meetingCode = meetingCodeInput.value.trim().toUpperCase();
+    userName = userNameInput.value.trim();
+
+    if (!meetingCode || !userName) {
+      showNotification('Please enter room code and your name', 'error');
+      return;
+    }
+
+    joinButton.disabled = true;
+    joinButton.textContent = 'Connecting...';
+    showNotification('Connecting to room...', 'info');
+
+    try {
+      if (!socket) initSocket();
+      
+      const response = await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Connection timeout'));
+        }, 10000);
+        
+        socket.emit('create_or_join', meetingCode, userName, (response) => {
+          clearTimeout(timeout);
+          if (response.error) reject(new Error(response.error));
+          else resolve(response);
+        });
+      });
+
+      currentRoom = meetingCode;
+      isInCall = true;
+      
+      preCallScreen.style.display = 'none';
+      inCallScreen.style.display = 'block';
+      
+      // Aggiungi te stesso come partecipante
+      addParticipant(localStream, userName, true);
+      
+      // Connettiti agli altri partecipanti
+      Object.keys(response.participants).forEach(id => {
+        if (id !== socket.id && !peerConnections[id]) {
+          createPeerConnection(id);
+        }
+      });
+
+      showNotification(`Joined room ${meetingCode}`, 'success');
+    } catch (error) {
+      console.error('Join error:', error);
+      showNotification(error.message, 'error');
+      resetAfterFailedJoin();
+    } finally {
+      joinButton.disabled = false;
+      joinButton.textContent = 'Join now';
     }
   }
 
@@ -1599,37 +1812,13 @@ document.addEventListener('DOMContentLoaded', function() {
       addChatMessage('You', message, true);
       chatInput.value = '';
       
-      // Try data channels first
-      let sentViaDataChannel = false;
-      Object.keys(dataChannels).forEach(socketId => {
-        if (dataChannels[socketId] && dataChannels[socketId].readyState === 'open') {
-          try {
-            dataChannels[socketId].send(JSON.stringify({
-              type: 'chat',
-              sender: userName,
-              message: message
-            }));
-            sentViaDataChannel = true;
-          } catch (error) {
-            console.error("Data channel error:", error);
-          }
-        }
+      socket.emit('chat', {
+        roomId: currentRoom,
+        message: message
       });
-      
-      // Fallback to socket if data channel failed
-      if (!sentViaDataChannel) {
-        socket.emit('chat', {
-          roomId: currentRoom,
-          sender: userName,
-          message: message
-        }, (response) => {
-          if (response?.error) {
-            console.error("Chat error:", response.error);
-          }
-        });
-      }
     }
   }
+
 
   // Add chat message to the chat panel
   function addChatMessage(sender, text, isSent) {

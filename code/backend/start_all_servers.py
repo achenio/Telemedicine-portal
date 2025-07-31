@@ -1,6 +1,8 @@
 import subprocess
 import sys
 import os
+import signal
+import time
 
 servers = [
     {
@@ -34,7 +36,8 @@ servers = [
 ]
 
 processes = []
-try:
+
+def start_servers():
     for server in servers:
         print(f"Starting {server['name']}...")
         p = subprocess.Popen(
@@ -43,5 +46,29 @@ try:
         )
         processes.append(p)
     print("All servers started.")
-except Exception as e:
-    print(f"Error starting servers: {e}")
+
+def stop_servers():
+    print("Stopping all servers...")
+    for p in processes:
+        try:
+            p.terminate()
+        except Exception as e:
+            print(f"Error stopping process: {e}")
+    print("All servers stopped.")
+
+if __name__ == "__main__":
+    while True:
+        cmd = input("Type 'start' to launch servers, 'stop' to kill them, 'restart' to restart, or 'exit' to quit: ").strip().lower()
+        if cmd == "start":
+            start_servers()
+        elif cmd == "stop":
+            stop_servers()
+        elif cmd == "restart":
+            stop_servers()
+            time.sleep(2)
+            start_servers()
+        elif cmd == "exit":
+            stop_servers()
+            break
+        else:
+            print("Unknown command.")

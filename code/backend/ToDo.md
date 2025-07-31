@@ -15,10 +15,10 @@
 - Fixare l'integrazione con la 2FA
 ## Aggiunte
 - ~~Vedere la AI Chat + CSS di botchat.html~~ (Feature cancellata)
-- Fixare le note dei pazienti in My Bookings e Doctor Appointments
+- Aggiungere le note dei pazienti in My Bookings e Doctor Appointments
 - Follow up (popup) dopo la registrazione, che ti mostra ciò che puoi fare.
 - Nella dashboard i bottoni devono portare a repliche di pagine (popup)
 - Nella dashboard utente aggiungere collegamento a Microsoft
 ## Repo
-- Scrivere il README
+- Aggiornare il README
 - Aggiornare gli screenshots

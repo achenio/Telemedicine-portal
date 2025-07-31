@@ -514,7 +514,7 @@
       font-family: Arial, sans-serif;
     }
 
-        /* Settings Modal */
+    /* Settings Modal */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -687,7 +687,6 @@
         margin-top: 8px;
       }
     }
-
   </style>
 </head>
 <body>
@@ -711,7 +710,7 @@
         <li class="nav-item"><a href="uploadviewer.html" class="nav-link"><i class="icon">📋</i> Medical Records</a></li>
         <li class="nav-item"><a href="#" class="nav-link"><i class="icon">💊</i> Prescriptions</a></li>
         <li class="nav-item"><a href="payments.html" class="nav-link"><i class="icon">💰</i> Billing & Payments</a></li>
-        <li class="nav-item"><a href="#" class="nav-link"><i class="icon">⚙️</i> Settings</a></li>
+        <li class="nav-item"><a href="#" class="nav-link" id="settings-link"><i class="icon">⚙️</i> Settings</a></li>
         <li class="nav-item"><a href="login.html" class="nav-link" id="logout-btn"><i class="icon">🚪</i> Logout</a></li>
       </ul>
     </aside>
@@ -833,6 +832,8 @@
       </div>
     </main>
   </div>
+
+  <!-- Settings Modal -->
   <div class="modal-overlay" id="settings-modal">
     <div class="settings-modal">
       <div class="modal-header">
@@ -907,16 +908,6 @@
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="prescription-toggle" checked>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-          <div class="setting-item">
-            <div class="setting-info">
-              <div class="setting-title">Promotional Offers</div>
-              <div class="setting-description">Receive special offers and discounts</div>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="promotions-toggle">
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -1200,6 +1191,88 @@ async function loadHealthMetrics() {
   return metricsData;
 }
 
+// Funzioni per il modal delle impostazioni
+function openSettingsModal() {
+  loadSettings();
+  const modal = document.getElementById('settings-modal');
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSettingsModal() {
+  const modal = document.getElementById('settings-modal');
+  modal.classList.remove('active');
+  document.body.style.overflow = 'auto';
+}
+
+async function loadSettings() {
+  try {
+    const settings = await makeAuthenticatedRequest('http://localhost:5501/user/settings');
+    if (settings) {
+      document.getElementById('two-factor-toggle').checked = settings.twoFactorEnabled || false;
+      document.getElementById('login-notifications-toggle').checked = settings.loginNotifications || true;
+      document.getElementById('profile-visibility-toggle').checked = settings.profileVisible || true;
+      document.getElementById('data-sharing-toggle').checked = settings.dataSharing || false;
+      document.getElementById('reminders-toggle').checked = settings.appointmentReminders || true;
+      document.getElementById('prescription-toggle').checked = settings.prescriptionUpdates || true;
+      document.getElementById('promotions-toggle').checked = settings.promotionalOffers || false;
+    }
+  } catch (error) {
+    console.error('Error loading settings:', error);
+  }
+}
+
+async function saveSettings() {
+  const settings = {
+    twoFactorEnabled: document.getElementById('two-factor-toggle').checked,
+    loginNotifications: document.getElementById('login-notifications-toggle').checked,
+    profileVisible: document.getElementById('profile-visibility-toggle').checked,
+    dataSharing: document.getElementById('data-sharing-toggle').checked,
+    appointmentReminders: document.getElementById('reminders-toggle').checked,
+    prescriptionUpdates: document.getElementById('prescription-toggle').checked,
+    promotionalOffers: document.getElementById('promotions-toggle').checked
+  };
+  
+  try {
+    const response = await makeAuthenticatedRequest(
+      'http://localhost:5501/user/settings',
+      'POST',
+      settings
+    );
+    
+    if (response && response.success) {
+      showSuccessMessage('Settings saved successfully');
+      closeSettingsModal();
+    } else {
+      showError('Failed to save settings');
+    }
+  } catch (error) {
+    console.error('Error saving settings:', error);
+    showError('Failed to save settings');
+  }
+}
+
+function showSuccessMessage(message) {
+  const successDiv = document.createElement('div');
+  successDiv.style.position = 'fixed';
+  successDiv.style.top = '20px';
+  successDiv.style.right = '20px';
+  successDiv.style.backgroundColor = 'var(--success)';
+  successDiv.style.color = 'white';
+  successDiv.style.padding = '12px 16px';
+  successDiv.style.borderRadius = '12px';
+  successDiv.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+  successDiv.style.zIndex = '1000';
+  successDiv.textContent = message;
+  
+  document.body.appendChild(successDiv);
+  
+  setTimeout(() => {
+    successDiv.style.opacity = '0';
+    setTimeout(() => successDiv.remove(), 300);
+  }, 3000);
+}
+
 // Funzione per inizializzare la dashboard
 async function initDashboard() {
   // Carica i dati dell'utente
@@ -1295,99 +1368,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Carica i dati della dashboard
-  initDashboard();
-});
-</script>
-  <script>
-    // Aggiungi queste funzioni alla fine dello script esistente
-    
-    // Settings Modal Functions
-    function openSettingsModal() {
-      // Carica le impostazioni salvate
-      loadSettings();
-      
-      const modal = document.getElementById('settings-modal');
-      modal.classList.add('active');
-      document.body.style.overflow = 'hidden';
-    }
-    
-    function closeSettingsModal() {
-      const modal = document.getElementById('settings-modal');
-      modal.classList.remove('active');
-      document.body.style.overflow = 'auto';
-    }
-    
-    async function loadSettings() {
-      // Simula il caricamento delle impostazioni dal server
-      try {
-        const settings = await makeAuthenticatedRequest('http://localhost:5501/user/settings');
-        if (settings) {
-          document.getElementById('two-factor-toggle').checked = settings.twoFactorEnabled || false;
-          document.getElementById('login-notifications-toggle').checked = settings.loginNotifications || true;
-          document.getElementById('profile-visibility-toggle').checked = settings.profileVisible || true;
-          document.getElementById('data-sharing-toggle').checked = settings.dataSharing || false;
-          document.getElementById('reminders-toggle').checked = settings.appointmentReminders || true;
-          document.getElementById('prescription-toggle').checked = settings.prescriptionUpdates || true;
-          document.getElementById('promotions-toggle').checked = settings.promotionalOffers || false;
-        }
-      } catch (error) {
-        console.error('Error loading settings:', error);
-      }
-    }
-    
-    async function saveSettings() {
-      const settings = {
-        twoFactorEnabled: document.getElementById('two-factor-toggle').checked,
-        loginNotifications: document.getElementById('login-notifications-toggle').checked,
-        profileVisible: document.getElementById('profile-visibility-toggle').checked,
-        dataSharing: document.getElementById('data-sharing-toggle').checked,
-        appointmentReminders: document.getElementById('reminders-toggle').checked,
-        prescriptionUpdates: document.getElementById('prescription-toggle').checked,
-        promotionalOffers: document.getElementById('promotions-toggle').checked
-      };
-      
-      try {
-        const response = await makeAuthenticatedRequest(
-          'http://localhost:5501/user/settings',
-          'POST',
-          settings
-        );
-        
-        if (response && response.success) {
-          showSuccessMessage('Settings saved successfully');
-          closeSettingsModal();
-        } else {
-          showError('Failed to save settings');
-        }
-      } catch (error) {
-        console.error('Error saving settings:', error);
-        showError('Failed to save settings');
-      }
-    }
-    
-    function showSuccessMessage(message) {
-      const successDiv = document.createElement('div');
-      successDiv.style.position = 'fixed';
-      successDiv.style.top = '20px';
-      successDiv.style.right = '20px';
-      successDiv.style.backgroundColor = 'var(--success)';
-      successDiv.style.color = 'white';
-      successDiv.style.padding = '12px 16px';
-      successDiv.style.borderRadius = '12px';
-      successDiv.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
-      successDiv.style.zIndex = '1000';
-      successDiv.textContent = message;
-      
-      document.body.appendChild(successDiv);
-      
-      setTimeout(() => {
-        successDiv.style.opacity = '0';
-        setTimeout(() => successDiv.remove(), 300);
-      }, 3000);
-    }
-    
-    // Aggiungi questi event listener alla fine della funzione initDashboard()
-    document.querySelector('.nav-item a[href="#"]').addEventListener('click', (e) => {
+  initDashboard().then(() => {
+    // Aggiungi gli event listener dopo che la dashboard è inizializzata
+    document.getElementById('settings-link').addEventListener('click', (e) => {
       e.preventDefault();
       openSettingsModal();
     });
@@ -1409,7 +1392,8 @@ document.addEventListener('DOMContentLoaded', () => {
         closeSettingsModal();
       }
     });
-  </script>
-
+  });
+});
+</script>
 </body>
 </html>

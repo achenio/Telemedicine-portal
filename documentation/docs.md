@@ -57,7 +57,7 @@ To simplify development, all backend servers (Node.js and Python) can be managed
    exit
    ```
    This will stop all servers and close the launcher.
-![Users Screenshot](/screenshots/start_all_servers.jpg) 
+
 
 ---
 ## 🗄️  Database Architecture

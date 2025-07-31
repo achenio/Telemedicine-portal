@@ -40,10 +40,7 @@ processes = []
 def start_servers():
     for server in servers:
         print(f"Starting {server['name']}...")
-        p = subprocess.Popen(
-            ["start", "cmd", "/k"] + server["cmd"],
-            shell=True
-        )
+        p = subprocess.Popen(server["cmd"])
         processes.append(p)
     print("All servers started.")
 

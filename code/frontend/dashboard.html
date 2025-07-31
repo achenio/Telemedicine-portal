@@ -513,6 +513,181 @@
       font-style: normal;
       font-family: Arial, sans-serif;
     }
+
+        /* Settings Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .settings-modal {
+      background-color: var(--card);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      width: 90%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: translateY(20px);
+      transition: transform 0.3s ease;
+    }
+    
+    .modal-overlay.active .settings-modal {
+      transform: translateY(0);
+    }
+    
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--input-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    
+    .close-modal {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--subtext);
+      padding: 4px;
+    }
+    
+    .modal-body {
+      padding: 24px;
+    }
+    
+    .settings-section {
+      margin-bottom: 24px;
+    }
+    
+    .settings-section-title {
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+    
+    .setting-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--input-border);
+    }
+    
+    .setting-item:last-child {
+      border-bottom: none;
+    }
+    
+    .setting-info {
+      flex: 1;
+    }
+    
+    .setting-title {
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    
+    .setting-description {
+      font-size: 0.85rem;
+      color: var(--subtext);
+    }
+    
+    /* Toggle Switch */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+      margin-left: 12px;
+    }
+    
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--input-border);
+      transition: .4s;
+      border-radius: 24px;
+    }
+    
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    
+    input:checked + .toggle-slider {
+      background-color: var(--primary);
+    }
+    
+    input:checked + .toggle-slider:before {
+      transform: translateX(26px);
+    }
+    
+    /* Modal Footer */
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--input-border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+    
+    /* Responsive */
+    @media (max-width: 480px) {
+      .settings-modal {
+        width: 95%;
+      }
+      
+      .setting-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .toggle-switch {
+        margin-left: 0;
+        margin-top: 8px;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -657,6 +832,101 @@
         </div>
       </div>
     </main>
+  </div>
+  <div class="modal-overlay" id="settings-modal">
+    <div class="settings-modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Account Settings</h3>
+        <button class="close-modal" id="close-settings">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-section">
+          <h4 class="settings-section-title">Security</h4>
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-title">Two-Factor Authentication</div>
+              <div class="setting-description">Add an extra layer of security to your account</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="two-factor-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-title">Login Notifications</div>
+              <div class="setting-description">Get notified when someone logs into your account</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="login-notifications-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+        
+        <div class="settings-section">
+          <h4 class="settings-section-title">Privacy</h4>
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-title">Show Profile to Other Patients</div>
+              <div class="setting-description">Allow other patients to find you in the network</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="profile-visibility-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-title">Data Sharing for Research</div>
+              <div class="setting-description">Contribute anonymized data to medical research</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="data-sharing-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+        
+        <div class="settings-section">
+          <h4 class="settings-section-title">Notifications</h4>
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-title">Appointment Reminders</div>
+              <div class="setting-description">Receive notifications before appointments</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="reminders-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-title">Prescription Updates</div>
+              <div class="setting-description">Get notified when prescriptions are ready</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="prescription-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-title">Promotional Offers</div>
+              <div class="setting-description">Receive special offers and discounts</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="promotions-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="cancel-settings">Cancel</button>
+        <button class="btn btn-primary" id="save-settings">Save Changes</button>
+      </div>
+    </div>
   </div>
 
 <script>
@@ -1028,5 +1298,118 @@ document.addEventListener('DOMContentLoaded', () => {
   initDashboard();
 });
 </script>
+  <script>
+    // Aggiungi queste funzioni alla fine dello script esistente
+    
+    // Settings Modal Functions
+    function openSettingsModal() {
+      // Carica le impostazioni salvate
+      loadSettings();
+      
+      const modal = document.getElementById('settings-modal');
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+    
+    function closeSettingsModal() {
+      const modal = document.getElementById('settings-modal');
+      modal.classList.remove('active');
+      document.body.style.overflow = 'auto';
+    }
+    
+    async function loadSettings() {
+      // Simula il caricamento delle impostazioni dal server
+      try {
+        const settings = await makeAuthenticatedRequest('http://localhost:5501/user/settings');
+        if (settings) {
+          document.getElementById('two-factor-toggle').checked = settings.twoFactorEnabled || false;
+          document.getElementById('login-notifications-toggle').checked = settings.loginNotifications || true;
+          document.getElementById('profile-visibility-toggle').checked = settings.profileVisible || true;
+          document.getElementById('data-sharing-toggle').checked = settings.dataSharing || false;
+          document.getElementById('reminders-toggle').checked = settings.appointmentReminders || true;
+          document.getElementById('prescription-toggle').checked = settings.prescriptionUpdates || true;
+          document.getElementById('promotions-toggle').checked = settings.promotionalOffers || false;
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+      }
+    }
+    
+    async function saveSettings() {
+      const settings = {
+        twoFactorEnabled: document.getElementById('two-factor-toggle').checked,
+        loginNotifications: document.getElementById('login-notifications-toggle').checked,
+        profileVisible: document.getElementById('profile-visibility-toggle').checked,
+        dataSharing: document.getElementById('data-sharing-toggle').checked,
+        appointmentReminders: document.getElementById('reminders-toggle').checked,
+        prescriptionUpdates: document.getElementById('prescription-toggle').checked,
+        promotionalOffers: document.getElementById('promotions-toggle').checked
+      };
+      
+      try {
+        const response = await makeAuthenticatedRequest(
+          'http://localhost:5501/user/settings',
+          'POST',
+          settings
+        );
+        
+        if (response && response.success) {
+          showSuccessMessage('Settings saved successfully');
+          closeSettingsModal();
+        } else {
+          showError('Failed to save settings');
+        }
+      } catch (error) {
+        console.error('Error saving settings:', error);
+        showError('Failed to save settings');
+      }
+    }
+    
+    function showSuccessMessage(message) {
+      const successDiv = document.createElement('div');
+      successDiv.style.position = 'fixed';
+      successDiv.style.top = '20px';
+      successDiv.style.right = '20px';
+      successDiv.style.backgroundColor = 'var(--success)';
+      successDiv.style.color = 'white';
+      successDiv.style.padding = '12px 16px';
+      successDiv.style.borderRadius = '12px';
+      successDiv.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+      successDiv.style.zIndex = '1000';
+      successDiv.textContent = message;
+      
+      document.body.appendChild(successDiv);
+      
+      setTimeout(() => {
+        successDiv.style.opacity = '0';
+        setTimeout(() => successDiv.remove(), 300);
+      }, 3000);
+    }
+    
+    // Aggiungi questi event listener alla fine della funzione initDashboard()
+    document.querySelector('.nav-item a[href="#"]').addEventListener('click', (e) => {
+      e.preventDefault();
+      openSettingsModal();
+    });
+    
+    document.getElementById('close-settings').addEventListener('click', closeSettingsModal);
+    document.getElementById('cancel-settings').addEventListener('click', closeSettingsModal);
+    document.getElementById('save-settings').addEventListener('click', saveSettings);
+    
+    // Chiudi il modal cliccando fuori dal contenuto
+    document.getElementById('settings-modal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('settings-modal')) {
+        closeSettingsModal();
+      }
+    });
+    
+    // Chiudi il modal con il tasto ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('settings-modal').classList.contains('active')) {
+        closeSettingsModal();
+      }
+    });
+  </script>
+
 </body>
 </html>

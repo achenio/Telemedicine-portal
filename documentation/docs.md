@@ -19,7 +19,22 @@ Telemedicine Portal is a modern web application designed to provide remote healt
 - **Security:** WebSocket encryption for chat, password hashing, input validation  
 
 ---
+## 🗄️  Database Architecture
+The telemedicine portal database is structured into five main tables:
 
+- **users** – Stores user information including patients and healthcare professionals.  
+- **appointments** – Manages scheduling and details of medical appointments.  
+- **messages** – Handles real-time encrypted chat between users and professionals.  
+- **payments** – Logs transaction details related to medical services.  
+- **sqlite_sequence** – Internal table used by SQLite to keep track of AUTOINCREMENT values.
+
+This relational model ensures secure, organized, and efficient handling of sensitive healthcare data.
+| users             | appointments          | messages           | payments          | sqlite_sequence |
+| ---------------------- | ---------------------- | ---------------------- | ---------------------- |
+| ![Home Screenshot](./screenshots/) | ![Chat Screenshot](./screenshots/patientview_securechat.png) | ![Chat Screenshot](./screenshots/doctorview_securechat.png) | ![Appointment Booking](./screenshots/screenshot_appointmentbooking.png) |
+
+
+---
 ## Features Detail
 
 ### Appointment Booking
@@ -31,7 +46,10 @@ Telemedicine Portal is a modern web application designed to provide remote healt
 
 - Real-time encrypted chat between users and healthcare professionals.  
 - WebSocket-based communication ensures instant messaging.  
-- Multiple clients can connect and exchange messages.
+- Multiple clients can connect and exchange messages.  
+![Screenshot](/screenshots/Secure_chat_encrypted.jpg)
+
+
 
 ### AI Chat Popup
 

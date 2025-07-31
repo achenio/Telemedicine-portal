@@ -31,7 +31,7 @@ The telemedicine portal database is structured into five main tables:
 This relational model ensures secure, organized, and efficient handling of sensitive healthcare data.
 | **Users**                                             | **Appointments**                                         | **Messages**                                               | **Payments**                                            | **sqlite_sequence**                                          |
 | ----------------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------ |
-| ![Users Screenshot](/screenshots/users.png)            | ![Appointments Screenshot](/screenshots/appointments.png)  | ![Messages Screenshot](screenshots/messages_encrypted.png) | ![Payments Screenshot](screenshots/payments.png)         | ![sqlite_sequence Screenshot](screenshots/sqlite_sequence.png) |
+| ![Users Screenshot](/screenshots/users.png)            | ![Appointments Screenshot](/screenshots/appointments.png)  | ![Messages Screenshot](/screenshots/messages_encrypted.png) | ![Payments Screenshot](/screenshots/payments.png)         | ![sqlite_sequence Screenshot](/screenshots/sqlite_sequence.png) |
 
 
 

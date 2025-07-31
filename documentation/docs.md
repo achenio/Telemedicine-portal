@@ -31,7 +31,10 @@ Telemedicine Portal is a modern web application designed to provide remote healt
 
 - Real-time encrypted chat between users and healthcare professionals.  
 - WebSocket-based communication ensures instant messaging.  
-- Multiple clients can connect and exchange messages.
+- Multiple clients can connect and exchange messages.  
+![Screenshot](/screenshots/Secure_chat_encrypted.jpg)
+
+
 
 ### AI Chat Popup
 

@@ -118,39 +118,39 @@ Security is a core aspect of the telemedicine portal, ensuring all sensitive dat
 
 
 ---
-## Features Detail
+## ✨ Features Detail
 
-### Appointment Booking
+### 📅 Appointment Booking
 
 - Users can select available time slots and book medical consultations.  
 - Booking data is stored securely on the server.
 
-### Payments
+### 💳 Payments
 
-- Multiple payment options available: credit card, PayPal, bank transfer (IBAN), and insurance package.
-- Sensitive information is protected using the bcrypt hashing algorithm.
-- Possibility to request payment exemptions by submitting a formal application.
-- 
-### Secure Chat
+- Multiple payment options available: credit card, PayPal, bank transfer (IBAN), and insurance package.  
+-  Sensitive information is protected using the bcrypt hashing algorithm.  
+-  Possibility to request payment exemptions by submitting a formal application.
+
+### 🔐 Secure Chat
 
 - Real-time encrypted chat between users and healthcare professionals.  
 - WebSocket-based communication ensures instant messaging.  
 - Multiple clients can connect and exchange messages.
 
-### Our Family
-- List of doctors affiliated with the portal
-- Search filtered by specialization and specialty
+### 🧑‍⚕️ Our Family
+
+- List of doctors affiliated with the portal  
+- Search filtered by specialization and specialty  
 - Doctor biography and rating
 
-### AI Chat Popup
+### 🤖 AI Chat Popup
 
 - Floating, closable AI assistant popup available on main page.  
 - Provides quick answers to symptoms or common healthcare questions.
 
-### User Registration and Login
+### 🧍 User Registration and Login
 
 - Secure forms to register with personal data and login credentials.  
 - Backend validates unique constraints on email, username, and ID codes.  
 - Passwords are securely hashed using the bcrypt algorithm before storage.
-
 ---

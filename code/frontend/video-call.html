@@ -557,6 +557,48 @@
         height: 40px;
         margin: 0 4px;
       }
+      #videoContainer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        width: 100%;
+        padding: 16px;
+      }
+      
+      #localVideo {
+        width: 300px;
+        height: 225px;
+        background-color: #202124;
+        border-radius: 8px;
+        object-fit: cover;
+      }
+      
+      #remoteVideosContainer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+      
+      #remoteVideosContainer video {
+        width: 300px;
+        height: 225px;
+        background-color: #202124;
+        border-radius: 8px;
+        object-fit: cover;
+      }
+      
+      /* For mobile responsiveness */
+      @media (max-width: 768px) {
+        #videoContainer {
+          flex-direction: column;
+        }
+        
+        #localVideo, #remoteVideosContainer video {
+          width: 100%;
+          height: auto;
+          max-height: 200px;
+        }
+      }
 
       .chat-panel.open,
       .participants-panel.open {
@@ -623,7 +665,10 @@
       <div class="meeting-container">
         <div class="video-container">
           <div class="participants-grid" id="participantsGrid">
-            <!-- Participants will be added here dynamically -->
+            <div id="videoContainer">
+              <video id="localVideo" autoplay playsinline muted></video>
+              <div id="remoteVideosContainer"></div>
+            </div>
           </div>
           
           <div class="call-controls">

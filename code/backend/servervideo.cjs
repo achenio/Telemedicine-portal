@@ -3,8 +3,8 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
-const app = express();
 
+const app = express();
 const PORT = process.env.VIDEO_PORT || 3010;
 
 app.use(cors());
@@ -21,202 +21,220 @@ const io = socketIo(server, {
   transports: ['websocket']
 });
 
+// Room management
 const rooms = {};
-
-function getSocketById(socketId) {
-  return io.sockets.sockets.get(socketId);
-}
-
-// Configurazione migliorata per più partecipanti
-const MAX_PARTICIPANTS = 10; // Aumentato da 2 a 10
+const MAX_PARTICIPANTS = 10;
 const ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:global.stun.twilio.com:3478?transport=udp' },
-  // Aggiungi il tuo server TURN qui se disponibile
-  // { urls: 'turn:your-turn-server.com:3478', username: 'username', credential: 'password' }
+  { urls: 'stun:stun1.l.google.com:19302' }
 ];
 
 io.on('connection', socket => {
   console.log('User connected:', socket.id);
-  
+
+  // Heartbeat mechanism
   const heartbeatInterval = setInterval(() => {
     socket.emit('heartbeat');
   }, 20000);
 
-  socket.on('error', (error) => {
-    console.error(`Socket error (${socket.id}):`, error);
-  });
-
-  socket.on('disconnect', (reason) => {
-    console.log(`User disconnected: ${socket.id} (${reason})`);
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
     clearInterval(heartbeatInterval);
     
-    Object.keys(rooms).forEach(room => {
-      if (rooms[room].participants[socket.id]) {
-        delete rooms[room].participants[socket.id];
-        rooms[room].count--;
+    // Clean up room participation
+    Object.keys(rooms).forEach(roomId => {
+      if (rooms[roomId].participants[socket.id]) {
+        const userName = rooms[roomId].participants[socket.id];
+        delete rooms[roomId].participants[socket.id];
+        rooms[roomId].count--;
         
-        if (rooms[room].count === 0) {
-          delete rooms[room];
-          console.log(`Room ${room} deleted (no more participants)`);
+        if (rooms[roomId].count === 0) {
+          delete rooms[roomId];
         } else {
-          io.to(room).emit('participant_left', { 
+          io.to(roomId).emit('participant_left', {
             socketId: socket.id,
-            participants: rooms[room].participants
+            userName
           });
         }
       }
     });
   });
 
-  socket.on('create_or_join', (room, userName, callback) => {
+  // Enhanced create_or_join with safe callback handling
+  socket.on('create_or_join', (data, callback) => {
     try {
-      console.log(`Join request: ${userName} (${socket.id}) to ${room}`);
+      // Validate callback is a function
+      if (typeof callback !== 'function') {
+        console.warn('No callback provided for create_or_join');
+        callback = () => {}; // Create empty function as fallback
+      }
 
-      room = room.trim().toUpperCase();
+      const { roomId, userName } = data || {};
       
-      if (!room || !userName) {
-        return callback?.({ error: "Room code and user name are required" });
+      if (!roomId || !userName) {
+        return callback({ error: "Room ID and user name are required" });
       }
 
-      if (rooms[room]?.count >= MAX_PARTICIPANTS) {
-        return callback?.({ error: `Room is full (max ${MAX_PARTICIPANTS} participants)` });
-      }
+      const normalizedRoomId = roomId.trim().toUpperCase();
+      const normalizedUserName = userName.trim();
 
-      if (!rooms[room]) {
-        rooms[room] = {
+      // Check if room exists or create new
+      if (!rooms[normalizedRoomId]) {
+        rooms[normalizedRoomId] = {
           participants: {},
           count: 0,
-          createdAt: new Date(),
-          iceServers: ICE_SERVERS // Fornisce i server ICE a tutti i partecipanti
+          chatHistory: []
         };
-      } 
+      }
 
-      rooms[room].participants[socket.id] = userName;
-      rooms[room].count++;
-      socket.join(room);
-      
+      const room = rooms[normalizedRoomId];
+
+      // Check if room is full
+      if (room.count >= MAX_PARTICIPANTS) {
+        return callback({ error: `Room is full (max ${MAX_PARTICIPANTS} participants)` });
+      }
+
+      // Check if username is taken
+      if (Object.values(room.participants).includes(normalizedUserName)) {
+        return callback({ error: "Username already taken in this room" });
+      }
+
+      // Add participant to room
+      room.participants[socket.id] = normalizedUserName;
+      room.count++;
+      socket.join(normalizedRoomId);
+
       const response = {
-        status: rooms[room].count === 1 ? "created" : "joined",
-        room: room,
-        participants: rooms[room].participants,
-        iceServers: rooms[room].iceServers // Invia i server ICE al client
+        status: room.count === 1 ? "created" : "joined",
+        roomId: normalizedRoomId,
+        participants: room.participants,
+        iceServers: ICE_SERVERS,
+        chatHistory: room.chatHistory
       };
 
-      callback?.(response);
+      callback(response);
 
-      if (rooms[room].count > 1) {
-        socket.to(room).emit('participant_joined', {
+      // Notify other participants if not the first one
+      if (room.count > 1) {
+        socket.to(normalizedRoomId).emit('participant_joined', {
           socketId: socket.id,
-          name: userName,
-          participants: rooms[room].participants
-        });
-        
-        // Invia a tutti i partecipanti la lista aggiornata
-        io.to(room).emit('participants_updated', {
-          participants: rooms[room].participants
+          name: normalizedUserName
         });
       }
+
     } catch (error) {
       console.error('Error in create_or_join:', error);
-      callback?.({ error: "Internal server error" });
+      if (typeof callback === 'function') {
+        callback({ error: "Internal server error" });
+      }
     }
   });
 
-  // Nuovo handler per la negoziazione semplificata
-  socket.on('relay_signal', ({ to, signal }) => {
-    const targetSocket = getSocketById(to);
-    if (targetSocket) {
-      targetSocket.emit('signal', { from: socket.id, signal });
-    }
-  });
-
-  // Gestione semplificata delle offerte/risposte/candidati
+  // WebRTC signaling handlers
   socket.on('offer', (data) => {
-    const targetSocket = getSocketById(data.target);
+    const { target, offer, roomId } = data || {};
+    if (!target || !offer || !roomId) return;
+
+    const targetSocket = io.sockets.sockets.get(target);
     if (targetSocket) {
       targetSocket.emit('offer', {
         sender: socket.id,
-        offer: data.offer,
-        roomId: data.roomId
+        offer,
+        roomId
       });
     }
   });
 
   socket.on('answer', (data) => {
-    const targetSocket = getSocketById(data.target);
+    const { target, answer, roomId } = data || {};
+    if (!target || !answer || !roomId) return;
+
+    const targetSocket = io.sockets.sockets.get(target);
     if (targetSocket) {
       targetSocket.emit('answer', {
         sender: socket.id,
-        answer: data.answer,
-        roomId: data.roomId
+        answer,
+        roomId
       });
     }
   });
 
-  socket.on('candidate', (data) => {
-    const targetSocket = getSocketById(data.target);
+  socket.on('ice_candidate', (data) => {
+    const { target, candidate, roomId } = data || {};
+    if (!target || !candidate || !roomId) return;
+
+    const targetSocket = io.sockets.sockets.get(target);
     if (targetSocket) {
-      targetSocket.emit('candidate', {
+      targetSocket.emit('ice_candidate', {
         sender: socket.id,
-        candidate: data.candidate,
-        roomId: data.roomId
+        candidate,
+        roomId
       });
     }
   });
 
-  // Chat centralizzata via server invece che peer-to-peer
-  socket.on('chat', (data) => {
-    if (!data.roomId || !data.message) return;
-    
-    // Verifica che il mittente sia nella stanza
-    if (rooms[data.roomId]?.participants[socket.id]) {
-      io.to(data.roomId).emit('chat_message', {
-        sender: socket.id,
-        senderName: rooms[data.roomId].participants[socket.id],
-        message: data.message,
-        timestamp: new Date()
-      });
+  // Chat functionality
+  socket.on('chat_message', (data) => {
+    const { roomId, message } = data || {};
+    if (!roomId || !message) return;
+
+    const room = rooms[roomId];
+    if (!room || !room.participants[socket.id]) return;
+
+    const chatMessage = {
+      sender: socket.id,
+      senderName: room.participants[socket.id],
+      message,
+      timestamp: new Date()
+    };
+
+    // Store message
+    room.chatHistory.push(chatMessage);
+    if (room.chatHistory.length > 100) {
+      room.chatHistory.shift();
     }
+
+    // Broadcast to room
+    io.to(roomId).emit('chat_message', chatMessage);
   });
 
-  socket.on('leave', (room, callback) => {
-    try {
-      room = room?.trim().toUpperCase();
-      if (!room || !rooms[room]) {
-        return callback?.({ error: "Invalid room" });
-      }
+  // Screen sharing
+  socket.on('screen_share_started', (data) => {
+    const { roomId } = data || {};
+    if (!roomId) return;
 
-      delete rooms[room].participants[socket.id];
-      rooms[room].count--;
-      
-      if (rooms[room].count === 0) {
-        delete rooms[room];
-      }
-      
-      socket.leave(room);
-      socket.to(room).emit('participant_left', { 
-        socketId: socket.id,
-        participants: rooms[room]?.participants || {}
-      });
-      
-      // Invia a tutti i partecipanti la lista aggiornata
-      if (rooms[room]) {
-        io.to(room).emit('participants_updated', {
-          participants: rooms[room].participants
-        });
-      }
-      
-      callback?.({ status: "left room" });
-    } catch (error) {
-      console.error('Error handling leave:', error);
-      callback?.({ error: "Internal server error" });
-    }
+    const room = rooms[roomId];
+    if (!room || !room.participants[socket.id]) return;
+
+    io.to(roomId).emit('screen_share_status', {
+      sender: socket.id,
+      senderName: room.participants[socket.id],
+      isSharing: true
+    });
+  });
+
+  socket.on('screen_share_ended', (data) => {
+    const { roomId } = data || {};
+    if (!roomId) return;
+
+    const room = rooms[roomId];
+    if (!room || !room.participants[socket.id]) return;
+
+    io.to(roomId).emit('screen_share_status', {
+      sender: socket.id,
+      senderName: room.participants[socket.id],
+      isSharing: false
+    });
+  });
+
+  // Error handling middleware
+  socket.on('error', (error) => {
+    console.error(`Socket error (${socket.id}):`, error);
   });
 });
 
 server.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+  console.log(`Signaling server running on port ${PORT}`);
 });
 
 process.on('uncaughtException', (err) => {

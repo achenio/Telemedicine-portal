@@ -129,7 +129,7 @@ Security is a core aspect of the telemedicine portal, ensuring all sensitive dat
 - Real-time encrypted chat between users and healthcare professionals.  
 - WebSocket-based communication ensures instant messaging.  
 - Multiple clients can connect and exchange messages.  
-![Screenshot](/screenshots/Secure_chat_encrypted.jpg)
+
 
 
 

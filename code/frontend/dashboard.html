@@ -921,7 +921,7 @@
   </div>
 
 <script>
-// Funzione per formattare la data
+// Utility Functions
 function formatDate(dateStr) {
   const date = new Date(dateStr);
   const today = new Date();
@@ -939,7 +939,6 @@ function formatDate(dateStr) {
   }
 }
 
-// Funzione per formattare l'ora
 function formatTime(timeStr) {
   const [hours, minutes] = timeStr.split(':');
   const hour = parseInt(hours);
@@ -948,57 +947,44 @@ function formatTime(timeStr) {
   return `${hour12}:${minutes} ${ampm}`;
 }
 
-// Funzione per calcolare i giorni rimanenti
 function daysUntil(dateStr) {
   const date = new Date(dateStr);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
   const diffTime = date - today;
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
-  return diffDays;
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
 
-// Funzione per mostrare errori
-function showError(message) {
-  const errorDiv = document.createElement('div');
-  errorDiv.style.position = 'fixed';
-  errorDiv.style.top = '20px';
-  errorDiv.style.right = '20px';
-  errorDiv.style.backgroundColor = 'var(--error)';
-  errorDiv.style.color = 'white';
-  errorDiv.style.padding = '12px 16px';
-  errorDiv.style.borderRadius = '12px';
-  errorDiv.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
-  errorDiv.style.zIndex = '1000';
-  errorDiv.textContent = message;
+// Notification Functions
+function showNotification(type, message) {
+  const colors = {
+    error: '#ff3b30',
+    success: '#34c759',
+    warning: '#ff9500'
+  };
   
-  document.body.appendChild(errorDiv);
+  const notification = document.createElement('div');
+  notification.style.position = 'fixed';
+  notification.style.top = '20px';
+  notification.style.right = '20px';
+  notification.style.backgroundColor = colors[type] || colors.success;
+  notification.style.color = 'white';
+  notification.style.padding = '12px 16px';
+  notification.style.borderRadius = '12px';
+  notification.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+  notification.style.zIndex = '1000';
+  notification.style.transition = 'opacity 0.3s';
+  notification.textContent = message;
+  
+  document.body.appendChild(notification);
   
   setTimeout(() => {
-    errorDiv.style.opacity = '0';
-    setTimeout(() => errorDiv.remove(), 300);
-  }, 5000);
+    notification.style.opacity = '0';
+    setTimeout(() => notification.remove(), 300);
+  }, type === 'error' ? 5000 : 3000);
 }
 
-// Funzione per ottenere la classe CSS dello stato
-function getStatusClass(status) {
-  switch(status.toLowerCase()) {
-    case 'confirmed':
-      return 'status-confirmed';
-    case 'booked':
-      return 'status-booked';
-    case 'completed':
-      return 'status-completed';
-    case 'cancelled':
-      return 'status-cancelled';
-    default:
-      return 'status-pending';
-  }
-}
-
-// Funzione per richieste autenticate
+// API Functions
 async function makeAuthenticatedRequest(url, method = 'GET', body = null) {
   try {
     const token = localStorage.getItem('token');
@@ -1007,19 +993,15 @@ async function makeAuthenticatedRequest(url, method = 'GET', body = null) {
       return null;
     }
 
-    const headers = {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    };
-
     const options = {
       method,
-      headers
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
     };
 
-    if (body) {
-      options.body = JSON.stringify(body);
-    }
+    if (body) options.body = JSON.stringify(body);
 
     const response = await fetch(url, options);
     
@@ -1035,33 +1017,128 @@ async function makeAuthenticatedRequest(url, method = 'GET', body = null) {
     return await response.json();
   } catch (error) {
     console.error('API request error:', error);
-    showError('Failed to fetch data. Please try again.');
+    showNotification('error', 'Failed to fetch data. Please try again.');
     return null;
   }
 }
 
-// Funzione per caricare i dati dell'utente
+// 2FA Functions
+function setupTwoFactorToggle() {
+  const toggle = document.getElementById('two-factor-toggle');
+  toggle.setAttribute('data-was-enabled', toggle.checked.toString());
+  
+  toggle.addEventListener('change', async function() {
+    if (this.checked) {
+      window.location.href = '2fa-setup.html';
+    } else {
+      const confirmed = await showConfirmationDialog(
+        'Disable Two-Factor Authentication?',
+        'Disabling 2FA reduces your account security. Are you sure you want to proceed?',
+        'Disable',
+        'Cancel'
+      );
+      
+      if (!confirmed) {
+        this.checked = true;
+        return;
+      }
+      
+      try {
+        const response = await makeAuthenticatedRequest(
+          'http://localhost:5501/user/disable-2fa',
+          'POST'
+        );
+        
+        if (response?.success) {
+          showNotification('success', 'Two-factor authentication disabled');
+          this.setAttribute('data-was-enabled', 'false');
+        } else {
+          showNotification('error', 'Failed to disable 2FA');
+          this.checked = true;
+        }
+      } catch (error) {
+        console.error('Error disabling 2FA:', error);
+        showNotification('error', 'Failed to disable 2FA');
+        this.checked = true;
+      }
+    }
+  });
+}
+
+async function showConfirmationDialog(title, message, confirmText, cancelText) {
+  return new Promise((resolve) => {
+    const dialog = document.createElement('div');
+    dialog.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    `;
+    
+    const dialogContent = document.createElement('div');
+    dialogContent.style.cssText = `
+      background-color: var(--card);
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    `;
+    
+    dialogContent.innerHTML = `
+      <h3 style="margin-bottom: 16px; color: var(--text);">${title}</h3>
+      <p style="margin-bottom: 24px; color: var(--subtext);">${message}</p>
+      <div style="display: flex; justify-content: flex-end; gap: 12px;">
+        <button id="confirm-cancel" class="btn btn-outline">${cancelText}</button>
+        <button id="confirm-ok" class="btn btn-primary">${confirmText}</button>
+      </div>
+    `;
+    
+    dialog.appendChild(dialogContent);
+    document.body.appendChild(dialog);
+    document.body.style.overflow = 'hidden';
+    
+    dialogContent.querySelector('#confirm-ok').addEventListener('click', () => {
+      cleanupDialog();
+      resolve(true);
+    });
+    
+    dialogContent.querySelector('#confirm-cancel').addEventListener('click', () => {
+      cleanupDialog();
+      resolve(false);
+    });
+    
+    function cleanupDialog() {
+      document.body.style.overflow = 'auto';
+      dialog.remove();
+    }
+  });
+}
+
+// Data Loading Functions
 async function loadUserData() {
   const userData = await makeAuthenticatedRequest('http://localhost:5501/user/profile');
   if (!userData) return null;
 
-  // Aggiorna UI con i dati dell'utente
   document.getElementById('user-name').textContent = `${userData.nome} ${userData.cognome}`;
   document.getElementById('user-type').textContent = userData.user_type === 'doctor' ? 'Doctor' : 'Patient';
   
-  // Genera iniziali per l'avatar
   const initials = `${userData.nome.charAt(0)}${userData.cognome.charAt(0)}`.toUpperCase();
   document.getElementById('user-avatar').textContent = initials;
 
   return userData;
 }
 
-// Funzione per caricare le statistiche
 async function loadDashboardStats() {
   const statsData = await makeAuthenticatedRequest('http://localhost:5501/dashboard-stats');
   if (!statsData) return;
 
-  // Aggiorna le card delle statistiche
   document.getElementById('upcoming-count').textContent = statsData.upcomingAppointments;
   document.getElementById('unread-messages').textContent = statsData.unreadMessages;
   document.getElementById('pending-rx').textContent = statsData.pendingPrescriptions;
@@ -1070,19 +1147,15 @@ async function loadDashboardStats() {
   return statsData;
 }
 
-// Funzione per caricare gli appuntamenti recenti
 async function loadRecentAppointments() {
   const appointmentsData = await makeAuthenticatedRequest('http://localhost:5501/user/recent-appointments?limit=3');
-  if (!appointmentsData) return;
-
   const container = document.getElementById('appointments-list');
   container.innerHTML = '';
 
-  if (appointmentsData.appointments && appointmentsData.appointments.length > 0) {
+  if (appointmentsData?.appointments?.length > 0) {
     appointmentsData.appointments.forEach(appointment => {
       const item = document.createElement('div');
       item.className = 'appointment-item fade-in';
-      
       item.innerHTML = `
         <div class="appointment-time">
           <div class="appointment-date">${formatDate(appointment.date)}</div>
@@ -1101,7 +1174,6 @@ async function loadRecentAppointments() {
           </button>
         </div>
       `;
-      
       container.appendChild(item);
     });
   } else {
@@ -1114,108 +1186,40 @@ async function loadRecentAppointments() {
       </div>
     `;
   }
-
-  return appointmentsData;
 }
 
-// Funzione per caricare i pazienti (solo per dottori)
-async function loadDoctorPatients() {
-  const patientsData = await makeAuthenticatedRequest('http://localhost:5501/doctor/patients');
-  if (!patientsData) return;
-
-  // Qui puoi implementare la visualizzazione dei pazienti se necessario
-  return patientsData;
+function getStatusClass(status) {
+  const statusMap = {
+    confirmed: 'status-confirmed',
+    booked: 'status-booked',
+    completed: 'status-completed',
+    cancelled: 'status-cancelled'
+  };
+  return statusMap[status.toLowerCase()] || 'status-pending';
 }
 
-// Funzione per caricare l'attività recente
-async function loadRecentActivity() {
-  const activityData = await makeAuthenticatedRequest('http://localhost:5501/user/recent-activity');
-  if (!activityData) return;
-
-  const container = document.getElementById('recent-activity');
-  container.innerHTML = '';
-
-  if (activityData.activities && activityData.activities.length > 0) {
-    activityData.activities.forEach(activity => {
-      const item = document.createElement('div');
-      item.className = 'activity-item fade-in';
-      
-      item.innerHTML = `
-        <div class="activity-avatar">${activity.initials}</div>
-        <div class="activity-details">
-          <div class="activity-title">${activity.title}</div>
-          <div class="activity-time">${formatDate(activity.date)} at ${formatTime(activity.time)}</div>
-        </div>
-      `;
-      
-      container.appendChild(item);
-    });
-  } else {
-    container.innerHTML = `
-      <div style="text-align: center; color: var(--subtext); padding: 20px;">
-        No recent activity
-      </div>
-    `;
-  }
-
-  return activityData;
-}
-
-// Funzione per caricare le metriche di salute
-async function loadHealthMetrics() {
-  const metricsData = await makeAuthenticatedRequest('http://localhost:5501/user/health-metrics');
-  if (!metricsData) return;
-
-  const container = document.getElementById('health-metrics');
-  container.innerHTML = '';
-
-  container.innerHTML = `
-    <div class="metric-item fade-in" style="animation-delay: 0.1s">
-      <div class="metric-value">${metricsData.heartRate || '--'}</div>
-      <div class="metric-label">Heart Rate (bpm)</div>
-    </div>
-    <div class="metric-item fade-in" style="animation-delay: 0.2s">
-      <div class="metric-value">${metricsData.bloodPressure || '--'}</div>
-      <div class="metric-label">Blood Pressure</div>
-    </div>
-    <div class="metric-item fade-in" style="animation-delay: 0.3s">
-      <div class="metric-value">${metricsData.weight || '--'}</div>
-      <div class="metric-label">Weight (kg)</div>
-    </div>
-    <div class="metric-item fade-in" style="animation-delay: 0.4s">
-      <div class="metric-value">${metricsData.steps || '--'}</div>
-      <div class="metric-label">Steps Today</div>
-    </div>
-  `;
-
-  return metricsData;
-}
-
-// Funzioni per il modal delle impostazioni
-function openSettingsModal() {
-  loadSettings();
-  const modal = document.getElementById('settings-modal');
-  modal.classList.add('active');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeSettingsModal() {
-  const modal = document.getElementById('settings-modal');
-  modal.classList.remove('active');
-  document.body.style.overflow = 'auto';
-}
-
+// Settings Modal Functions
 async function loadSettings() {
   try {
     const settings = await makeAuthenticatedRequest('http://localhost:5501/user/settings');
     if (settings) {
-      document.getElementById('two-factor-toggle').checked = settings.twoFactorEnabled || false;
-      document.getElementById('login-notifications-toggle').checked = settings.loginNotifications || true;
-      document.getElementById('profile-visibility-toggle').checked = settings.profileVisible || true;
-      document.getElementById('data-sharing-toggle').checked = settings.dataSharing || false;
-      document.getElementById('reminders-toggle').checked = settings.appointmentReminders || true;
-      document.getElementById('prescription-toggle').checked = settings.prescriptionUpdates || true;
-      document.getElementById('promotions-toggle').checked = settings.promotionalOffers || false;
+      const twoFactorToggle = document.getElementById('two-factor-toggle');
+      
+      if (localStorage.getItem('2fa-setup-complete') === 'true') {
+        twoFactorToggle.checked = true;
+        localStorage.removeItem('2fa-setup-complete');
+        showNotification('success', 'Two-factor authentication setup completed!');
+      } else {
+        twoFactorToggle.checked = settings.twoFactorEnabled || false;
+      }
+      
+      twoFactorToggle.setAttribute('data-was-enabled', twoFactorToggle.checked.toString());
+      
+      document.getElementById('login-notifications-toggle').checked = settings.loginNotifications ?? true;
+      document.getElementById('profile-visibility-toggle').checked = settings.profileVisible ?? true;
+      document.getElementById('data-sharing-toggle').checked = settings.dataSharing ?? false;
+      document.getElementById('reminders-toggle').checked = settings.appointmentReminders ?? true;
+      document.getElementById('prescription-toggle').checked = settings.prescriptionUpdates ?? true;
     }
   } catch (error) {
     console.error('Error loading settings:', error);
@@ -1229,8 +1233,7 @@ async function saveSettings() {
     profileVisible: document.getElementById('profile-visibility-toggle').checked,
     dataSharing: document.getElementById('data-sharing-toggle').checked,
     appointmentReminders: document.getElementById('reminders-toggle').checked,
-    prescriptionUpdates: document.getElementById('prescription-toggle').checked,
-    promotionalOffers: document.getElementById('promotions-toggle').checked
+    prescriptionUpdates: document.getElementById('prescription-toggle').checked
   };
   
   try {
@@ -1240,160 +1243,117 @@ async function saveSettings() {
       settings
     );
     
-    if (response && response.success) {
-      showSuccessMessage('Settings saved successfully');
+    if (response?.success) {
+      showNotification('success', 'Settings saved successfully');
       closeSettingsModal();
     } else {
-      showError('Failed to save settings');
+      showNotification('error', 'Failed to save settings');
     }
   } catch (error) {
     console.error('Error saving settings:', error);
-    showError('Failed to save settings');
+    showNotification('error', 'Failed to save settings');
   }
 }
 
-function showSuccessMessage(message) {
-  const successDiv = document.createElement('div');
-  successDiv.style.position = 'fixed';
-  successDiv.style.top = '20px';
-  successDiv.style.right = '20px';
-  successDiv.style.backgroundColor = 'var(--success)';
-  successDiv.style.color = 'white';
-  successDiv.style.padding = '12px 16px';
-  successDiv.style.borderRadius = '12px';
-  successDiv.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
-  successDiv.style.zIndex = '1000';
-  successDiv.textContent = message;
-  
-  document.body.appendChild(successDiv);
-  
-  setTimeout(() => {
-    successDiv.style.opacity = '0';
-    setTimeout(() => successDiv.remove(), 300);
-  }, 3000);
+function openSettingsModal() {
+  loadSettings();
+  document.getElementById('settings-modal').classList.add('active');
+  document.body.style.overflow = 'hidden';
 }
 
-// Funzione per inizializzare la dashboard
-async function initDashboard() {
-  // Carica i dati dell'utente
-  const user = await loadUserData();
-  if (!user) return;
+function closeSettingsModal() {
+  document.getElementById('settings-modal').classList.remove('active');
+  document.body.style.overflow = 'auto';
+}
 
-  // Carica le statistiche
-  const stats = await loadDashboardStats();
-  
-  // Carica gli appuntamenti
-  await loadRecentAppointments();
+// Event Listeners
+function setupEventListeners() {
+  document.getElementById('logout-btn').addEventListener('click', () => {
+    localStorage.removeItem('token');
+    window.location.href = 'login.html';
+  });
 
-  // Carica l'attività recente
-  await loadRecentActivity();
+  document.getElementById('new-appointment-btn').addEventListener('click', () => {
+    window.location.href = 'appointments.html';
+  });
 
-  // Carica le metriche di salute
-  await loadHealthMetrics();
+  document.getElementById('notifications-btn').addEventListener('click', () => {
+    window.location.href = 'notifications.html';
+  });
 
-  // Se è un dottore, carica anche i pazienti
-  if (user.user_type === 'doctor') {
-    await loadDoctorPatients();
-    
-    // Aggiungi voci di menu specifiche per i dottori
-    const navMenu = document.getElementById('nav-menu');
-    const medicalRecordsItem = document.querySelector('.nav-item a[href="medical-records.html"]').parentNode;
-    
-    const scheduleItem = document.createElement('li');
-    scheduleItem.className = 'nav-item';
-    scheduleItem.innerHTML = '<a href="doctor-schedule.html" class="nav-link"><i class="icon">⏰</i> My Schedule</a>';
-    
-    const patientsItem = document.createElement('li');
-    patientsItem.className = 'nav-item';
-    patientsItem.innerHTML = '<a href="my-patients.html" class="nav-link"><i class="icon">👥</i> My Patients</a>';
-    
-    navMenu.insertBefore(scheduleItem, medicalRecordsItem.nextSibling);
-    navMenu.insertBefore(patientsItem, scheduleItem.nextSibling);
-  }
-
-  // Aggiorna il testo descrittivo
-  if (stats && stats.upcomingAppointments > 0) {
-    const nextAppointment = await makeAuthenticatedRequest('http://localhost:5501/user/recent-appointments?limit=1');
-    if (nextAppointment && nextAppointment.appointments && nextAppointment.appointments.length > 0) {
-      const days = daysUntil(nextAppointment.appointments[0].date);
-      document.getElementById('next-appointment-text').textContent = 
-        `Next appointment in ${days} day${days !== 1 ? 's' : ''}`;
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('view-appointment')) {
+      const appointmentId = e.target.getAttribute('data-id');
+      window.location.href = `appointment-details.html?id=${appointmentId}`;
     }
-  } else {
-    document.getElementById('next-appointment-text').textContent = 'No upcoming appointments';
-  }
+  });
 
-  // Aggiorna il testo del saldo
-  if (stats && stats.outstandingBalance > 0) {
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 15);
-    document.getElementById('balance-due-text').textContent = 
-      `Due by ${dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-  } else {
-    document.getElementById('balance-due-text').textContent = 'All payments settled';
-  }
+  document.getElementById('settings-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    openSettingsModal();
+  });
+  
+  document.getElementById('close-settings').addEventListener('click', closeSettingsModal);
+  document.getElementById('cancel-settings').addEventListener('click', closeSettingsModal);
+  document.getElementById('save-settings').addEventListener('click', saveSettings);
+  
+  document.getElementById('settings-modal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('settings-modal')) {
+      closeSettingsModal();
+    }
+  });
+  
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.getElementById('settings-modal').classList.contains('active')) {
+      closeSettingsModal();
+    }
+  });
 }
 
-// Gestione del logout
-document.getElementById('logout-btn').addEventListener('click', () => {
-  localStorage.removeItem('token');
-  window.location.href = 'login.html';
-});
-
-// Gestione del pulsante nuovo appuntamento
-document.getElementById('new-appointment-btn').addEventListener('click', () => {
-  window.location.href = 'appointments.html';
-});
-
-// Gestione del pulsante notifiche
-document.getElementById('notifications-btn').addEventListener('click', () => {
-  window.location.href = 'notifications.html';
-});
-
-// Delegazione degli eventi per i pulsanti degli appuntamenti
-document.addEventListener('click', (e) => {
-  if (e.target.classList.contains('view-appointment')) {
-    const appointmentId = e.target.getAttribute('data-id');
-    window.location.href = `appointment-details.html?id=${appointmentId}`;
-  }
-});
-
-// Inizializza la dashboard quando la pagina è pronta
-document.addEventListener('DOMContentLoaded', () => {
-  // Verifica l'autenticazione
+// Initialization
+async function initDashboard() {
   const token = localStorage.getItem('token');
   if (!token) {
     window.location.href = 'login.html';
     return;
   }
 
-  // Carica i dati della dashboard
-  initDashboard().then(() => {
-    // Aggiungi gli event listener dopo che la dashboard è inizializzata
-    document.getElementById('settings-link').addEventListener('click', (e) => {
-      e.preventDefault();
-      openSettingsModal();
-    });
-    
-    document.getElementById('close-settings').addEventListener('click', closeSettingsModal);
-    document.getElementById('cancel-settings').addEventListener('click', closeSettingsModal);
-    document.getElementById('save-settings').addEventListener('click', saveSettings);
-    
-    // Chiudi il modal cliccando fuori dal contenuto
-    document.getElementById('settings-modal').addEventListener('click', (e) => {
-      if (e.target === document.getElementById('settings-modal')) {
-        closeSettingsModal();
-      }
-    });
-    
-    // Chiudi il modal con il tasto ESC
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && document.getElementById('settings-modal').classList.contains('active')) {
-        closeSettingsModal();
-      }
-    });
-  });
-});
+  const user = await loadUserData();
+  if (!user) return;
+
+  await Promise.all([
+    loadDashboardStats(),
+    loadRecentAppointments(),
+    loadRecentActivity(),
+    loadHealthMetrics()
+  ]);
+
+  setupTwoFactorToggle();
+  setupEventListeners();
+
+  if (user.user_type === 'doctor') {
+    await loadDoctorPatients();
+    addDoctorMenuItems();
+  }
+}
+
+function addDoctorMenuItems() {
+  const navMenu = document.getElementById('nav-menu');
+  const medicalRecordsItem = document.querySelector('.nav-item a[href="medical-records.html"]').parentNode;
+  
+  const scheduleItem = document.createElement('li');
+  scheduleItem.className = 'nav-item';
+  scheduleItem.innerHTML = '<a href="doctor-schedule.html" class="nav-link"><i class="icon">⏰</i> My Schedule</a>';
+  
+  const patientsItem = document.createElement('li');
+  patientsItem.className = 'nav-item';
+  patientsItem.innerHTML = '<a href="my-patients.html" class="nav-link"><i class="icon">👥</i> My Patients</a>';
+  
+  navMenu.insertBefore(scheduleItem, medicalRecordsItem.nextSibling);
+  navMenu.insertBefore(patientsItem, scheduleItem.nextSibling);
+}
+
+document.addEventListener('DOMContentLoaded', initDashboard);
 </script>
 </body>
 </html>

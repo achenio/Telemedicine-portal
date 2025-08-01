@@ -327,5 +327,137 @@
       }
     });
   </script>
+<script>
+// Funzione per mostrare messaggi di successo
+function showSuccessMessage(message) {
+  const successDiv = document.createElement('div');
+  successDiv.style.position = 'fixed';
+  successDiv.style.top = '20px';
+  successDiv.style.right = '20px';
+  successDiv.style.backgroundColor = 'var(--success)';
+  successDiv.style.color = 'white';
+  successDiv.style.padding = '12px 16px';
+  successDiv.style.borderRadius = '12px';
+  successDiv.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+  successDiv.style.zIndex = '1000';
+  successDiv.textContent = message;
+  
+  document.body.appendChild(successDiv);
+  
+  setTimeout(() => {
+    successDiv.style.opacity = '0';
+    setTimeout(() => successDiv.remove(), 300);
+  }, 3000);
+}
+
+// Funzione per richieste autenticate
+async function makeAuthenticatedRequest(url, method = 'GET', body = null) {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.location.href = 'login.html';
+      return null;
+    }
+
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+
+    const options = {
+      method,
+      headers
+    };
+
+    if (body) {
+      options.body = JSON.stringify(body);
+    }
+
+    const response = await fetch(url, options);
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        window.location.href = 'login.html';
+        return null;
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('API request error:', error);
+    return null;
+  }
+}
+
+// Funzione per completare il setup della 2FA
+async function complete2FASetup() {
+  const verificationCode = document.getElementById('verification-code').value;
+  
+  if (!verificationCode || verificationCode.length !== 6) {
+    alert('Please enter a valid 6-digit verification code');
+    return;
+  }
+
+  try {
+    const response = await makeAuthenticatedRequest(
+      'http://localhost:5501/user/complete-2fa-setup',
+      'POST',
+      { code: verificationCode }
+    );
+    
+    if (response && response.success) {
+      // Segnala che il setup è stato completato
+      localStorage.setItem('2fa-setup-complete', 'true');
+      showSuccessMessage('Two-factor authentication setup completed!');
+      
+      // Reindirizza alla dashboard dopo un breve ritardo
+      setTimeout(() => {
+        window.location.href = 'dashboard.html';
+      }, 1500);
+    } else {
+      alert('Failed to verify code. Please try again.');
+    }
+  } catch (error) {
+    console.error('Error completing 2FA setup:', error);
+    alert('An error occurred. Please try again.');
+  }
+}
+
+// Funzione per inizializzare la pagina di setup
+async function init2FASetup() {
+  try {
+    // Verifica se l'utente è autenticato
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    // Ottieni i dati per il setup della 2FA
+    const setupData = await makeAuthenticatedRequest('http://localhost:5501/user/init-2fa-setup');
+    
+    if (setupData && setupData.qrCodeUrl) {
+      // Mostra il QR code
+      document.getElementById('qr-code').src = setupData.qrCodeUrl;
+      document.getElementById('manual-code').textContent = setupData.manualCode;
+      
+      // Configura il pulsante di verifica
+      document.getElementById('verify-btn').addEventListener('click', complete2FASetup);
+    } else {
+      alert('Failed to initialize 2FA setup. Please try again.');
+      window.location.href = 'dashboard.html';
+    }
+  } catch (error) {
+    console.error('Error initializing 2FA setup:', error);
+    alert('An error occurred. Please try again.');
+    window.location.href = 'dashboard.html';
+  }
+}
+
+// Inizializza la pagina quando è pronta
+document.addEventListener('DOMContentLoaded', init2FASetup);
+</script>
 </body>
 </html>

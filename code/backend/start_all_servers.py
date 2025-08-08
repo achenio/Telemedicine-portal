@@ -18,10 +18,6 @@ servers = [
         "cmd": ["node", "servervideo.cjs"]
     },
     {
-        "name": "serverbot.cjs",
-        "cmd": ["node", "serverbot.cjs"]
-    },
-    {
         "name": "server-post.cjs",
         "cmd": ["node", "server-post.cjs"]
     },

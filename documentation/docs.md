@@ -1,22 +1,22 @@
-# Telemedicine Portal Documentation
+# 🏥 Telemedicine Portal Documentation
 
-## Overview
+## 📄 Overview
 
 Telemedicine Portal is a modern web application designed to provide remote healthcare services. It enables users to:
 
-- Book and manage medical appointments online.  
-- Communicate securely with healthcare professionals via encrypted chat.  
-- Access AI-powered support for quick symptom checking and guidance.  
-- Register and login with secure user authentication backed by a database.
+- 📅 Book and manage medical appointments online  
+- 💬 Communicate securely with healthcare professionals via encrypted chat  
+- 🤖 Access AI-powered support for quick symptom checking and guidance  
+- 🔐 Register and login with secure user authentication backed by a database
 
 ---
 
-## Technologies Used
+## 🛠️ Technologies Used
 
-- **Frontend:** HTML5, CSS3, JavaScript  
-- **Backend:** Node.js with Express and WebSocket for real-time chat, FLASK CORS to allow real-time payments on the platform 
-- **Database:** SQLite to manage user profiles, payment registration, and secure chat history
-- **Security:** WebSocket encryption for chat, password hashing, input validation  
+- 🎨 **Frontend:** HTML5, CSS3, JavaScript  
+- 🖥️ **Backend:** Node.js with Express and WebSocket for real-time chat, Flask CORS for secure payments  
+- 🗃️ **Database:** SQLite to manage user profiles, payment registration, and secure chat history  
+- 🔒 **Security:** WebSocket encryption for chat, password hashing, input validation  
 
 ---
 ## 📡Server Launch
@@ -29,11 +29,11 @@ To simplify development, all backend servers (Node.js and Python) can be managed
 1. **Start all servers:**  
    Run the script and type `start`  
    ```sh
-   python code/backend/start_all_servers.py
+   python start_all_servers.py
    ```
    Then, at the prompt:
    ```
-   start
+   start 
    ```
    This will open a terminal window for each server (Node.js and Python).
 
@@ -57,7 +57,7 @@ To simplify development, all backend servers (Node.js and Python) can be managed
    exit
    ```
    This will stop all servers and close the launcher.
-![Users Screenshot](/screenshots/start_all_servers.jpg) 
+![servers Screenshot](/screenshots/start_all_servers.jpg) 
 
 ---
 ## 🗄️  Database Architecture
@@ -124,24 +124,26 @@ Security is a core aspect of the telemedicine portal, ensuring all sensitive dat
 - Users can select available time slots and book medical consultations.  
 - Booking data is stored securely on the server.
 
+### Payments
+
+- Multiple payment options available: credit card, PayPal, bank transfer (IBAN), and insurance package.
+- Possibility to request payment exemptions by submitting a formal application.
+- Sensitive information is protected using the bcrypt hashing algorithm.
+
 ### Secure Chat
 
 - Real-time encrypted chat between users and healthcare professionals.  
 - WebSocket-based communication ensures instant messaging.  
 - Multiple clients can connect and exchange messages.  
-![Screenshot](/screenshots/Secure_chat_encrypted.jpg)
-
-
-
-### AI Chat Popup
-
-- Floating, closable AI assistant popup available on main page.  
-- Provides quick answers to symptoms or common healthcare questions.
 
 ### User Registration and Login
 
 - Secure forms to register with personal data and login credentials.  
 - Backend validates unique constraints on email, username, and ID codes.  
-- Passwords are securely hashed before storage.
+- Passwords are securely hashed using the bcrypt algorithm before storage.
 
+### Our Family
+-   List of doctors affiliated with the portal
+-   Search filtered by specialization and specialty
+-   Biography and rating
 ---

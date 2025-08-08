@@ -77,6 +77,8 @@
       margin-bottom: 1rem;
       font-weight: 600;
       color: var(--primary);
+      text-align: center;
+      padding: 0.5rem;
     }
 
     #login-message {
@@ -519,7 +521,7 @@
       postsContainer.innerHTML = '<div class="loading">Loading posts...</div>';
       
       try {
-        const response = await fetch('http://localhost:5502/posts', {
+        const response = await fetch('http://localhost:5520/posts', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -619,7 +621,7 @@
       const token = localStorage.getItem('token');
       
       try {
-        const response = await fetch(`http://localhost:5502/posts/${postId}`, {
+        const response = await fetch(`http://localhost:5520/posts/${postId}`, {
           method: 'DELETE',
           headers: { 
             'Authorization': `Bearer ${token}`,
@@ -645,7 +647,7 @@
       const token = localStorage.getItem('token');
       
       try {
-        const response = await fetch(`http://localhost:5502/posts/${postId}/like`, {
+        const response = await fetch(`http://localhost:5520/posts/${postId}/like`, {
           method: 'POST',
           headers: { 
             'Authorization': `Bearer ${token}`,
@@ -710,11 +712,14 @@
 
     async function loadAndRenderComments(postId) {
       const commentsContainer = document.getElementById(`comments-${postId}`);
+      const token = localStorage.getItem('token');
       
       try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5502/posts/${postId}/comments`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+        const response = await fetch(`http://localhost:5520/posts/${postId}/comments`, {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         });
 
         if (!response.ok) {
@@ -805,7 +810,7 @@
       const token = localStorage.getItem('token');
       
       try {
-        const response = await fetch(`http://localhost:5502/comments/${commentId}/like`, {
+        const response = await fetch(`http://localhost:5520/comments/${commentId}/like`, {
           method: 'POST',
           headers: { 
             'Authorization': `Bearer ${token}`,
@@ -849,7 +854,7 @@
       }
       
       try {
-        const response = await fetch(`http://localhost:5502/posts/${postId}/comments`, {
+        const response = await fetch(`http://localhost:5520/posts/${postId}/comments`, {
           method: 'POST',
           headers: { 
             'Authorization': `Bearer ${token}`,
@@ -888,7 +893,7 @@
       const messageContainer = document.getElementById('message-container');
       
       try {
-        const response = await fetch('http://localhost:5502/posts', {
+        const response = await fetch('http://localhost:5520/posts', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,

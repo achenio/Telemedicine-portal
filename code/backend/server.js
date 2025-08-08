@@ -1774,745 +1774,454 @@ app.get('/doctors', (req, res) => {
   });
 });
 
-// ==================== APPOINTMENTS ROUTES ====================
-
-/**
- * @swagger
- * tags:
- *   name: Appointments
- *   description: Gestione degli appuntamenti
- */
-
-/**
- * @swagger
- * /appointments:
- *   get:
- *     summary: Ottieni tutti gli appuntamenti dell'utente
- *     tags: [Appointments]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Lista degli appuntamenti
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 appointments:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Appointment'
- *       500:
- *         description: Errore del server
- */
-app.get('/appointments', authenticateToken, (req, res) => {
-  const userId = req.user.id;
-  const userType = req.user.user_type;
-
-  let query, params;
-  
-  if (userType === 'patient') {
-    query = `
-      SELECT 
-        a.id, a.date, a.time, a.status, a.medical_report_url,
-        a.created_at, a.updated_at,
-        d.id as doctor_id, d.nome as doctor_nome, d.cognome as doctor_cognome, 
-        d.specialization, d.bio
-      FROM appointments a
-      JOIN utenti d ON a.doctor_id = d.id
-      WHERE a.user_id = ?
-      ORDER BY a.date DESC, a.time DESC
-    `;
-    params = [userId];
-  } else if (userType === 'doctor') {
-    query = `
-      SELECT 
-        a.id, a.date, a.time, a.status, a.medical_report_url,
-        a.created_at, a.updated_at,
-        u.id as patient_id, u.nome as patient_nome, u.cognome as patient_cognome
-      FROM appointments a
-      JOIN utenti u ON a.user_id = u.id
-      WHERE a.doctor_id = ?
-      ORDER BY a.date DESC, a.time DESC
-    `;
-    params = [userId];
-  } else {
-    // Admin può vedere tutti gli appuntamenti
-    query = `
-      SELECT 
-        a.id, a.date, a.time, a.status, a.medical_report_url,
-        a.created_at, a.updated_at,
-        u.id as patient_id, u.nome as patient_nome, u.cognome as patient_cognome,
-        d.id as doctor_id, d.nome as doctor_nome, d.cognome as doctor_cognome, 
-        d.specialization
-      FROM appointments a
-      JOIN utenti u ON a.user_id = u.id
-      JOIN utenti d ON a.doctor_id = d.id
-      ORDER BY a.date DESC, a.time DESC
-    `;
-    params = [];
-  }
-
-  db.all(query, params, (err, appointments) => {
-    if (err) {
-      console.error('Get appointments error:', err);
-      return res.status(500).json({ error: 'Database error' });
-    }
-    res.json({ appointments: appointments || [] });
-  });
-});
-
-/**
- * @swagger
- * /appointments/{id}:
- *   get:
- *     summary: Ottieni i dettagli di un singolo appuntamento
- *     tags: [Appointments]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: integer
- *         required: true
- *         description: ID dell'appuntamento
- *     responses:
- *       200:
- *         description: Dettagli dell'appuntamento
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Appointment'
- *       404:
- *         description: Appuntamento non trovato o non autorizzato
- *       500:
- *         description: Errore del server
- */
-app.get('/appointments/:id', authenticateToken, (req, res) => {
-  const appointmentId = req.params.id;
-  const userId = req.user.id;
-  const userType = req.user.user_type;
-
-  let query, params;
-  
-  if (userType === 'patient') {
-    query = `
-      SELECT 
-        a.*,
-        d.nome as doctor_nome, d.cognome as doctor_cognome, 
-        d.specialization, d.bio, d.rating
-      FROM appointments a
-      JOIN utenti d ON a.doctor_id = d.id
-      WHERE a.id = ? AND a.user_id = ?
-    `;
-    params = [appointmentId, userId];
-  } else if (userType === 'doctor') {
-    query = `
-      SELECT 
-        a.*,
-        u.nome as patient_nome, u.cognome as patient_cognome,
-        u.email as patient_email, u.telefono as patient_phone
-      FROM appointments a
-      JOIN utenti u ON a.user_id = u.id
-      WHERE a.id = ? AND a.doctor_id = ?
-    `;
-    params = [appointmentId, userId];
-  } else {
-    // Admin può vedere qualsiasi appuntamento
-    query = `
-      SELECT 
-        a.*,
-        u.nome as patient_nome, u.cognome as patient_cognome,
-        d.nome as doctor_nome, d.cognome as doctor_cognome, 
-        d.specialization
-      FROM appointments a
-      JOIN utenti u ON a.user_id = u.id
-      JOIN utenti d ON a.doctor_id = d.id
-      WHERE a.id = ?
-    `;
-    params = [appointmentId];
-  }
-
-  db.get(query, params, (err, appointment) => {
-    if (err) {
-      console.error('Get appointment error:', err);
-      return res.status(500).json({ error: 'Database error' });
-    }
-    
-    if (!appointment) {
-      return res.status(404).json({ error: 'Appointment not found or unauthorized' });
-    }
-    
-    res.json(appointment);
-  });
-});
-
-/**
- * @swagger
- * /appointments:
- *   post:
- *     summary: Crea un nuovo appuntamento
- *     tags: [Appointments]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             properties:
- *               date:
- *                 type: string
- *                 format: date
- *                 description: Data dell'appuntamento (YYYY-MM-DD)
- *               time:
- *                 type: string
- *                 description: Orario dell'appuntamento (HH:MM)
- *               doctor_id:
- *                 type: integer
- *                 description: ID del dottore
- *               medical_report:
- *                 type: string
- *                 format: binary
- *                 description: File PDF del referto medico (opzionale)
- *     responses:
- *       201:
- *         description: Appuntamento creato con successo
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Appointment'
- *       400:
- *         description: Dati mancanti o non validi
- *       404:
- *         description: Dottore non trovato
- *       409:
- *         description: Slot orario già occupato
- *       500:
- *         description: Errore del server
- */
+// ==================== Appointment Routes ====================
 app.post('/appointments', authenticateToken, upload.single('medical_report'), async (req, res) => {
   try {
-    const { date, time, doctor_id } = req.body;
-    const user_id = req.user.id;
-    
-    if (!date || !time || !doctor_id) {
-      return res.status(400).json({ error: 'Date, time and doctor ID are required' });
-    }
-
-    // Validazione della data e ora
-    const appointmentDate = new Date(`${date}T${time}`);
-    if (isNaN(appointmentDate.getTime())) {
-      return res.status(400).json({ error: 'Invalid date or time format' });
-    }
-
-    // Verifica che la data non sia nel passato
-    const now = new Date();
-    if (appointmentDate < now) {
-      return res.status(400).json({ error: 'Cannot book appointments in the past' });
-    }
-
-    // Verifica che il dottore esista
-    const doctor = await new Promise((resolve, reject) => {
-      db.get('SELECT id, nome, cognome FROM utenti WHERE id = ? AND user_type = "doctor"', [doctor_id], (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
-      });
-    });
-
-    if (!doctor) {
-      return res.status(404).json({ error: 'Doctor not found' });
-    }
-
-    // Verifica che l'utente non stia cercando di prenotare con se stesso (se è un dottore)
-    if (req.user.user_type === 'doctor' && user_id === doctor_id) {
-      return res.status(400).json({ error: 'Doctors cannot book appointments with themselves' });
-    }
-
-    // Verifica che non ci siano conflitti di orario (30 minuti prima e dopo)
-    const existingAppointment = await new Promise((resolve, reject) => {
-      db.get(
-        `SELECT * FROM appointments 
-         WHERE doctor_id = ? AND date = ? 
-         AND (
-           (time BETWEEN time(?, '-30 minutes') AND time(?, '+30 minutes'))
-         AND status IN ('booked', 'confirmed')`,
-        [doctor_id, date, time, time],
-        (err, row) => {
-          if (err) reject(err);
-          else resolve(row);
-        }
-      );
-    });
-
-    if (existingAppointment) {
-      return res.status(409).json({ 
-        error: 'The selected time slot is already booked',
-        conflictingAppointment: existingAppointment
-      });
-    }
-
-    // Gestione del file medical report
-    let medical_report_url = null;
-    if (req.file) {
-      medical_report_url = `/uploads/${req.file.filename}`;
-    } else if (req.body.onedrive_file) {
-      try {
-        const onedriveFile = JSON.parse(req.body.onedrive_file);
-        medical_report_url = `onedrive:${onedriveFile.id}`; // Memorizza solo il riferimento al file
-      } catch (err) {
-        console.error('Error parsing OneDrive file:', err);
-      }
-    }
-
-    // Crea l'appuntamento
-    const appointmentId = await new Promise((resolve, reject) => {
-      db.run(
-        `INSERT INTO appointments 
-         (user_id, username, date, time, doctor_id, doctor_name, medical_report_url, status) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'booked')`,
-        [
-          user_id,
-          req.user.username,
-          date,
-          time,
-          doctor_id,
-          `${doctor.nome} ${doctor.cognome}`,
-          medical_report_url
-        ],
-        function(err) {
-          if (err) reject(err);
-          else resolve(this.lastID);
-        }
-      );
-    });
-
-    // Ottieni i dettagli completi dell'appuntamento creato
-    const newAppointment = await new Promise((resolve, reject) => {
-      db.get(
-        `SELECT a.*, d.specialization 
-         FROM appointments a
-         JOIN utenti d ON a.doctor_id = d.id
-         WHERE a.id = ?`,
-        [appointmentId],
-        (err, row) => {
-          if (err) reject(err);
-          else resolve(row);
-        }
-      );
-    });
-
-    res.status(201).json(newAppointment);
-
-  } catch (err) {
-    console.error('Appointment booking error:', err);
-    res.status(500).json({ error: 'Failed to book appointment' });
-  }
-});
-
-/**
- * @swagger
- * /appointments/{id}:
- *   put:
- *     summary: Aggiorna un appuntamento
- *     tags: [Appointments]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: integer
- *         required: true
- *         description: ID dell'appuntamento
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               date:
- *                 type: string
- *                 format: date
- *               time:
- *                 type: string
- *               status:
- *                 type: string
- *                 enum: [booked, confirmed, cancelled, completed]
- *     responses:
- *       200:
- *         description: Appuntamento aggiornato
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Appointment'
- *       400:
- *         description: Dati non validi
- *       403:
- *         description: Non autorizzato
- *       404:
- *         description: Appuntamento non trovato
- *       409:
- *         description: Conflitto di orario
- *       500:
- *         description: Errore del server
- */
-app.put('/appointments/:id', authenticateToken, async (req, res) => {
-  try {
-    const appointmentId = req.params.id;
-    const { date, time, status } = req.body;
-    const userId = req.user.id;
-    const userType = req.user.user_type;
-
-    // Verifica che l'appuntamento esista e che l'utente abbia i permessi
-    const appointment = await new Promise((resolve, reject) => {
-      let query = 'SELECT * FROM appointments WHERE id = ?';
-      const params = [appointmentId];
-      
-      if (userType !== 'admin') {
-        query += userType === 'doctor' 
-          ? ' AND doctor_id = ?' 
-          : ' AND user_id = ?';
-        params.push(userId);
-      }
-      
-      db.get(query, params, (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
-      });
-    });
-
-    if (!appointment) {
-      return res.status(404).json({ error: 'Appointment not found or unauthorized' });
-    }
-
-    // Solo dottori e admin possono cambiare lo status
-    if (status && userType === 'patient' && status !== 'cancelled') {
-      return res.status(403).json({ error: 'Only doctors can change appointment status' });
-    }
-
-    // Validazione della data e ora se fornite
-    if (date && time) {
-      const newAppointmentDate = new Date(`${date}T${time}`);
-      if (isNaN(newAppointmentDate.getTime())) {
-        return res.status(400).json({ error: 'Invalid date or time format' });
-      }
-
-      // Verifica che la data non sia nel passato
-      const now = new Date();
-      if (newAppointmentDate < now) {
-        return res.status(400).json({ error: 'Cannot reschedule to past date' });
-      }
-
-      // Verifica conflitti di orario (escludendo l'appuntamento corrente)
-      const existingAppointment = await new Promise((resolve, reject) => {
-        db.get(
-          `SELECT * FROM appointments 
-           WHERE doctor_id = ? AND date = ? 
-           AND (
-             (time BETWEEN time(?, '-30 minutes') AND time(?, '+30 minutes'))
-           AND status IN ('booked', 'confirmed')
-           AND id != ?`,
-          [appointment.doctor_id, date, time, time, appointmentId],
-          (err, row) => {
-            if (err) reject(err);
-            else resolve(row);
-          }
-        );
-      });
-
-      if (existingAppointment) {
-        return res.status(409).json({ 
-          error: 'The selected time slot is already booked',
-          conflictingAppointment: existingAppointment
-        });
-      }
-    }
-
-    // Costruisci l'oggetto di aggiornamento
-    const updates = {
-      date: date || appointment.date,
-      time: time || appointment.time,
-      status: status || appointment.status,
-      updated_at: new Date().toISOString()
-    };
-
-    // Esegui l'aggiornamento
-    await new Promise((resolve, reject) => {
-      db.run(
-        `UPDATE appointments SET 
-          date = ?, 
-          time = ?, 
-          status = ?,
-          updated_at = ?
-         WHERE id = ?`,
-        [updates.date, updates.time, updates.status, updates.updated_at, appointmentId],
-        (err) => {
-          if (err) reject(err);
-          else resolve();
-        }
-      );
-    });
-
-    // Restituisci l'appuntamento aggiornato
-    const updatedAppointment = await new Promise((resolve, reject) => {
-      db.get(
-        `SELECT a.*, 
-         u.nome as patient_nome, u.cognome as patient_cognome,
-         d.nome as doctor_nome, d.cognome as doctor_cognome, d.specialization
-         FROM appointments a
-         JOIN utenti u ON a.user_id = u.id
-         JOIN utenti d ON a.doctor_id = d.id
-         WHERE a.id = ?`,
-        [appointmentId],
-        (err, row) => {
-          if (err) reject(err);
-          else resolve(row);
-        }
-      );
-    });
-
-    res.json(updatedAppointment);
-
-  } catch (err) {
-    console.error('Update appointment error:', err);
-    res.status(500).json({ error: 'Failed to update appointment' });
-  }
-});
-
-/**
- * @swagger
- * /appointments/{id}:
- *   delete:
- *     summary: Cancella un appuntamento
- *     tags: [Appointments]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: integer
- *         required: true
- *         description: ID dell'appuntamento
- *     responses:
- *       200:
- *         description: Appuntamento cancellato
- *       404:
- *         description: Appuntamento non trovato o non autorizzato
- *       500:
- *         description: Errore del server
- */
-app.delete('/appointments/:id', authenticateToken, (req, res) => {
-  const appointmentId = req.params.id;
-  const userId = req.user.id;
-  const userType = req.user.user_type;
-
-  // Verifica che l'appuntamento appartenga all'utente
-  let query, params;
-  
-  if (userType === 'admin') {
-    query = 'SELECT * FROM appointments WHERE id = ?';
-    params = [appointmentId];
-  } else if (userType === 'doctor') {
-    query = 'SELECT * FROM appointments WHERE id = ? AND doctor_id = ?';
-    params = [appointmentId, userId];
-  } else {
-    query = 'SELECT * FROM appointments WHERE id = ? AND user_id = ?';
-    params = [appointmentId, userId];
-  }
-
-  db.get(query, params, (err, appointment) => {
-    if (err) {
-      console.error('Check appointment error:', err);
-      return res.status(500).json({ error: 'Database error' });
-    }
-    
-    if (!appointment) {
-      return res.status(404).json({ error: 'Appointment not found or unauthorized' });
-    }
-
-    // Se l'appuntamento è già cancellato
-    if (appointment.status === 'cancelled') {
-      return res.status(400).json({ error: 'Appointment is already cancelled' });
-    }
-
-    // Aggiorna lo stato a "cancelled" invece di eliminare
-    db.run(
-      'UPDATE appointments SET status = "cancelled", updated_at = ? WHERE id = ?',
-      [new Date().toISOString(), appointmentId],
-      function(err) {
-        if (err) {
-          console.error('Cancel appointment error:', err);
-          return res.status(500).json({ error: 'Failed to cancel appointment' });
-        }
-        
-        res.json({ success: true, message: 'Appointment cancelled successfully' });
-      }
-    );
-  });
-});
-/**
- * @swagger
- * /appointments:
- *   post:
- *     summary: Crea un nuovo appuntamento
- *     tags: [Appointments]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             properties:
- *               date:
- *                 type: string
- *                 format: date
- *               time:
- *                 type: string
- *               doctor_id:
- *                 type: integer
- *               medical_report:
- *                 type: string
- *                 format: binary
- *     responses:
- *       201:
- *         description: Appuntamento creato con successo
- *       400:
- *         description: Dati mancanti o non validi
- *       500:
- *         description: Errore del server
- */
-app.post('/appointments', authenticateToken, upload.single('medical_report'), async (req, res) => {
-  try {
-    const { date, time, doctor_id } = req.body;
+    const { doctor_id, date, time, payment_method, insurance_package } = req.body;
     const user_id = req.user.id;
     const username = req.user.username;
 
-    // Validazione input
-    if (!date || !time || !doctor_id) {
-      return res.status(400).json({ 
-        error: 'Missing required fields',
-        details: {
-          date: !date ? 'Date is required' : undefined,
-          time: !time ? 'Time is required' : undefined,
-          doctor_id: !doctor_id ? 'Doctor ID is required' : undefined
-        }
-      });
+    if (!doctor_id || !date || !time || !payment_method) {
+      return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // Verifica che il dottore esista
+    if (payment_method === 'insurance' && !insurance_package) {
+      return res.status(400).json({ error: "Insurance package required when payment method is insurance" });
+    }
+
+    if (user_id == doctor_id) {
+      return res.status(403).json({ error: "Cannot book an appointment with yourself" });
+    }
+
+    const user = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM utenti WHERE id = ?', [user_id], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: "User not found" });
+    }
+
     const doctor = await new Promise((resolve, reject) => {
-      db.get(
-        'SELECT id, nome, cognome FROM utenti WHERE id = ? AND user_type = "doctor"', 
-        [doctor_id],
-        (err, row) => {
-          if (err) return reject(err);
-          resolve(row);
-        }
-      );
+      db.get('SELECT * FROM utenti WHERE id = ? AND user_type = "doctor"', [doctor_id], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
     });
 
     if (!doctor) {
-      return res.status(404).json({ error: 'Doctor not found' });
+      return res.status(400).json({ error: "Invalid doctor" });
     }
 
-    // Verifica che un dottore non prenoti con se stesso
-    if (req.user.user_type === 'doctor' && user_id === doctor_id) {
-      return res.status(400).json({ error: 'Doctors cannot book appointments with themselves' });
-    }
-
-    // Controlla conflitti di orario
-    const conflictingAppointment = await new Promise((resolve, reject) => {
+    const existing = await new Promise((resolve, reject) => {
       db.get(
         `SELECT id FROM appointments 
          WHERE doctor_id = ? AND date = ? AND time = ? 
          AND status IN ('booked', 'confirmed')`,
         [doctor_id, date, time],
         (err, row) => {
-          if (err) return reject(err);
-          resolve(row);
+          if (err) reject(err);
+          else resolve(row);
         }
       );
     });
 
-    if (conflictingAppointment) {
-      return res.status(409).json({ 
-        error: 'Time slot already booked',
-        conflictingAppointmentId: conflictingAppointment.id
-      });
+    if (existing) {
+      return res.status(409).json({ error: "Time slot already booked" });
     }
 
-    // Gestione file (se presente)
-    let medical_report_url = null;
+    let medicalReportUrl = null;
     if (req.file) {
-      medical_report_url = `/uploads/${req.file.filename}`;
+      try {
+        const ext = path.extname(req.file.originalname || '.pdf');
+        const newFilename = `report_${Date.now()}_${user_id}${ext}`;
+        const newPath = path.join(uploadsDir, newFilename);
+        
+        await fs.promises.rename(req.file.path, newPath);
+        medicalReportUrl = `/uploads/${newFilename}`;
+      } catch (err) {
+        console.error('File upload error:', err);
+        return res.status(500).json({ error: "Failed to save medical report" });
+      }
     }
 
-    // Inserimento appuntamento (query corretta)
     const result = await new Promise((resolve, reject) => {
       db.run(
         `INSERT INTO appointments 
-         (user_id, username, date, time, doctor_id, doctor_name, medical_report_url, status) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+         (user_id, username, date, time, doctor_id, doctor_name, status, medical_report_url, payment_method, insurance_package) 
+         VALUES (?, ?, ?, ?, ?, ?, 'booked', ?, ?, ?)`,
         [
-          user_id,
-          username,
-          date,
-          time,
-          doctor_id,
+          user_id, 
+          username, 
+          date, 
+          time, 
+          doctor_id, 
           `${doctor.nome} ${doctor.cognome}`,
-          medical_report_url,
-          'booked' // Stato iniziale
+          medicalReportUrl,
+          payment_method,
+          payment_method === 'insurance' ? insurance_package : null
         ],
         function(err) {
-          if (err) return reject(err);
-          resolve({ id: this.lastID });
+          if (err) reject(err);
+          else resolve(this);
         }
       );
     });
 
-    // Recupera l'appuntamento appena creato
-    const newAppointment = await new Promise((resolve, reject) => {
-      db.get(
-        `SELECT a.*, d.specialization 
-         FROM appointments a
-         JOIN utenti d ON a.doctor_id = d.id
-         WHERE a.id = ?`,
-        [result.id],
-        (err, row) => {
-          if (err) return reject(err);
-          resolve(row);
-        }
-      );
-    });
+    try {
+      if (user.email) {
+        const patientEmailContent = getEmailTemplate(
+          'Appointment Booked',
+          `
+            <h2>Appointment Booked</h2>
+            <p>Dear ${user.nome} ${user.cognome},</p>
+            <p>Your appointment has been successfully booked.</p>
+            <p><strong>Appointment details:</strong></p>
+            <ul>
+              <li><strong>Doctor:</strong> ${doctor.nome} ${doctor.cognome}</li>
+              <li><strong>Date:</strong> ${date}</li>
+              <li><strong>Time:</strong> ${time}</li>
+              <li><strong>Payment method:</strong> ${payment_method}${payment_method === 'insurance' ? ` (${insurance_package})` : ''}</li>
+            </ul>
+            <p>You can view your appointments in your profile.</p>
+            <a href="http://localhost:5500/frontend/bookings.html" class="button">View Appointments</a>
+          `
+        );
+        
+        await sendEmail(user.email, 'Appointment Confirmation', patientEmailContent);
+      }
 
-    res.status(201).json(newAppointment);
+      if (doctor.email) {
+        const doctorEmailContent = getEmailTemplate(
+          'New Appointment Booked',
+          `
+            <h2>New Appointment Booked</h2>
+            <p>Dr. ${doctor.cognome},</p>
+            <p>A new appointment has been booked with you.</p>
+            <p><strong>Appointment details:</strong></p>
+            <ul>
+              <li><strong>Patient:</strong> ${user.nome} ${user.cognome}</li>
+              <li><strong>Date:</strong> ${date}</li>
+              <li><strong>Time:</strong> ${time}</li>
+            </ul>
+            <a href="http://localhost:5500/frontend/doctor-appointments.html" class="button">View Appointment</a>
+          `
+        );
+        
+        await sendEmail(doctor.email, 'New Appointment Booked', doctorEmailContent);
+      }
+    } catch (err) {
+      console.error('Email send error:', err);
+    }
+
+    res.json({ 
+      success: true, 
+      appointmentId: result.lastID, 
+      medical_report_url: medicalReportUrl 
+    });
 
   } catch (err) {
-    console.error('Appointment booking error:', err);
-    
-    // Gestione specifica per errori SQLite
-    if (err.code === 'SQLITE_ERROR') {
-      return res.status(400).json({ 
-        error: 'Database error',
-        details: err.message,
-        suggestion: 'Check if all required fields are provided correctly'
-      });
-    }
-    
-    res.status(500).json({ 
-      error: 'Failed to book appointment',
-      details: process.env.NODE_ENV === 'development' ? err.message : undefined
-    });
+    console.error('Book appointment error:', err);
+    res.status(500).json({ error: "Server error" });
   }
 });
+
+app.get('/appointments', authenticateToken, (req, res) => {
+  const user_id = req.user.id;
+  const { date, status, page = 1, limit = 10, order = 'asc' } = req.query;
+
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+  const whereClauses = [`a.user_id = ?`];
+  const params = [user_id];
+
+  if (date) {
+    whereClauses.push('a.date = ?');
+    params.push(date);
+  }
+
+  if (status) {
+    whereClauses.push('a.status = ?');
+    params.push(status);
+  } else {
+    whereClauses.push(`a.status != 'cancelled'`);
+  }
+
+  const where = whereClauses.length ? 'WHERE ' + whereClauses.join(' AND ') : '';
+
+// Modifica la query per includere le note
+  db.all(
+    `SELECT a.*, d.nome as doctor_nome, d.cognome as doctor_cognome, d.specialization
+    FROM appointments a
+    JOIN utenti d ON a.doctor_id = d.id
+    ${where}
+    ORDER BY a.date ${order.toUpperCase()}, a.time ${order.toUpperCase()}
+    LIMIT ? OFFSET ?`,
+    [...params, parseInt(limit), offset],
+    (err, appointments) => {
+      if (err) {
+        console.error('Get appointments error:', err);
+        return res.status(500).json({ error: "Database error" });
+      }
+      res.json({ 
+        page: parseInt(page), 
+        limit: parseInt(limit), 
+        appointments 
+      });
+    }
+  );
+});
+
+app.get('/doctor/appointments', authenticateToken, checkUserType(['doctor']), (req, res) => {
+  const doctorId = req.user.id;
+  const { date, status, page = 1, limit = 10, order = 'asc' } = req.query;
+
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+  const whereClauses = [`a.doctor_id = ?`];
+  const params = [doctorId];
+
+  if (date) {
+    whereClauses.push('a.date = ?');
+    params.push(date);
+  }
+
+  if (status) {
+    whereClauses.push('a.status = ?');
+    params.push(status);
+  }
+
+  const where = whereClauses.length ? 'WHERE ' + whereClauses.join(' AND ') : '';
+
+  db.all(
+    `SELECT a.*, u.nome, u.cognome, u.codice_fiscale, u.telefono
+     FROM appointments a
+     JOIN utenti u ON a.user_id = u.id
+     ${where}
+     ORDER BY a.date ${order.toUpperCase()}, a.time ${order.toUpperCase()}
+     LIMIT ? OFFSET ?`,
+    [...params, parseInt(limit), offset],
+    (err, appointments) => {
+      if (err) {
+        console.error('Get doctor appointments error:', err);
+        return res.status(500).json({ error: "Database error" });
+      }
+      res.json(appointments);
+    }
+  );
+});
+
+app.get('/patient/doctors-with-conversations', authenticateToken, checkUserType(['patient']), (req, res) => {
+  db.all(
+    `SELECT DISTINCT u.id, u.nome, u.cognome, u.specialization
+     FROM messages m
+     JOIN utenti u ON m.sender_id = u.id OR m.receiver_id = u.id
+     WHERE (m.sender_id = ? OR m.receiver_id = ?) 
+     AND u.user_type = 'doctor'
+     UNION
+     SELECT DISTINCT u.id, u.nome, u.cognome, u.specialization
+     FROM appointments a
+     JOIN utenti u ON a.doctor_id = u.id
+     WHERE a.user_id = ? AND u.user_type = 'doctor'
+     ORDER BY cognome, nome`,
+    [req.user.id, req.user.id, req.user.id],
+    (err, doctors) => {
+      if (err) {
+        console.error('Get doctors with conversations error:', err);
+        return res.status(500).json({ error: "Database error" });
+      }
+      res.json(doctors);
+    }
+  );
+});
+
+app.delete('/appointments/:id', authenticateToken, async (req, res) => {
+  const appointmentId = req.params.id;
+  const userId = req.user.id;
+
+  try {
+    const appointment = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM appointments WHERE id = ?', [appointmentId], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    if (!appointment) {
+      return res.status(404).json({ error: "Appointment not found" });
+    }
+
+    if (appointment.user_id !== userId && appointment.doctor_id !== userId) {
+      return res.status(403).json({ error: "Unauthorized to cancel this appointment" });
+    }
+
+    await new Promise((resolve, reject) => {
+      db.run(
+        'UPDATE appointments SET status = "cancelled" WHERE id = ?',
+        [appointmentId],
+        function(err) {
+          if (err) reject(err);
+          else resolve();
+        }
+      );
+    });
+
+    const user = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM utenti WHERE id = ?', [appointment.user_id], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    const doctor = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM utenti WHERE id = ?', [appointment.doctor_id], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    try {
+      if (user && user.email) {
+        const patientEmailContent = getEmailTemplate(
+          'Appointment Cancelled',
+          `
+            <h2>Appointment Cancelled</h2>
+            <p>Dear ${user.nome} ${user.cognome},</p>
+            <p>Your appointment with Dr. ${doctor.cognome} has been cancelled.</p>
+            <p><strong>Appointment details:</strong></p>
+            <ul>
+              <li><strong>Date:</strong> ${appointment.date}</li>
+              <li><strong>Time:</strong> ${appointment.time}</li>
+            </ul>
+            <p>You can book a new appointment from your profile.</p>
+            <a href="http://localhost:5500/frontend/appointments.html" class="button">Book New Appointment</a>
+          `
+        );
+        
+        await sendEmail(user.email, 'Appointment Cancelled', patientEmailContent);
+      }
+
+      if (doctor && doctor.email) {
+        const doctorEmailContent = getEmailTemplate(
+          'Appointment Cancelled',
+          `
+            <h2>Appointment Cancelled</h2>
+            <p>Dr. ${doctor.cognome},</p>
+            <p>The appointment with ${user.nome} ${user.cognome} has been cancelled.</p>
+            <p><strong>Appointment details:</strong></p>
+            <ul>
+              <li><strong>Date:</strong> ${appointment.date}</li>
+              <li><strong>Time:</strong> ${appointment.time}</li>
+            </ul>
+          `
+        );
+        
+        await sendEmail(doctor.email, 'Appointment Cancelled', doctorEmailContent);
+      }
+    } catch (err) {
+      console.error('Email send error:', err);
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Cancel appointment error:', err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.patch('/appointments/:id', authenticateToken, checkUserType(['doctor']), async (req, res) => {
+  const { status } = req.body;
+  const appointmentId = req.params.id;
+  const userId = req.user.id;
+
+  if (!status || !['confirmed', 'cancelled', 'completed'].includes(status)) {
+    return res.status(400).json({ error: "Invalid status" });
+  }
+
+  try {
+    const appointment = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM appointments WHERE id = ?', [appointmentId], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    if (!appointment) {
+      return res.status(404).json({ error: "Appointment not found" });
+    }
+
+    if (appointment.doctor_id !== userId) {
+      return res.status(403).json({ error: "Only the assigned doctor can update appointment status" });
+    }
+
+    await new Promise((resolve, reject) => {
+      db.run(
+        'UPDATE appointments SET status = ? WHERE id = ?',
+        [status, appointmentId],
+        function(err) {
+          if (err) reject(err);
+          else resolve();
+        }
+      );
+    });
+
+    try {
+      const user = await new Promise((resolve, reject) => {
+        db.get('SELECT * FROM utenti WHERE id = ?', [appointment.user_id], (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        });
+      });
+
+      if (user && user.email) {
+        let subject = '';
+        let content = '';
+        
+        if (status === 'confirmed') {
+          subject = 'Appointment Confirmed';
+          content = getEmailTemplate(
+            'Appointment Confirmed',
+            `
+              <h2>Appointment Confirmed</h2>
+              <p>Dear ${user.nome} ${user.cognome},</p>
+              <p>Dr. ${req.user.cognome} has confirmed your appointment.</p>
+              <p><strong>Appointment details:</strong></p>
+              <ul>
+                <li><strong>Date:</strong> ${appointment.date}</li>
+                <li><strong>Time:</strong> ${appointment.time}</li>
+              </ul>
+              <a href="http://localhost:5500/frontend/appointments.html" class="button">View Appointment</a>
+            `
+          );
+        } else if (status === 'completed') {
+          subject = 'Appointment Completed';
+          content = getEmailTemplate(
+            'Appointment Completed',
+            `
+              <h2>Appointment Completed</h2>
+              <p>Dear ${user.nome} ${user.cognome},</p>
+              <p>Your appointment with Dr. ${req.user.cognome} has been completed.</p>
+              <p>You can view the medical report in your profile.</p>
+              <a href="http://localhost:5500/frontend/appointments.html" class="button">View Report</a>
+            `
+          );
+        }
+        
+        if (subject && content) {
+          await sendEmail(user.email, subject, content);
+        }
+      }
+    } catch (err) {
+      console.error('Email send error:', err);
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Update appointment status error:', err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 // ==================== Messaging Routes ====================
 app.post('/messages', authenticateToken, (req, res) => {
   const { receiver_id, content } = req.body;

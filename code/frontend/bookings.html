@@ -12,8 +12,6 @@
       --primary: #007aff;
       --card: #ffffff;
       --error: #ff3b30;
-      --completed: #34c759;
-      --cancelled: #ff9500;
     }
 
     * {
@@ -73,18 +71,6 @@
       margin-bottom: 2rem;
     }
 
-    .appointments-section {
-      margin-bottom: 3rem;
-    }
-
-    .section-title {
-      font-size: 1.5rem;
-      margin-bottom: 1.5rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid #eee;
-      color: var(--subtext);
-    }
-
     #login-message {
       text-align: center;
       margin: 2rem 0;
@@ -92,7 +78,7 @@
       color: var(--error);
     }
 
-    ul.appointments-list {
+    ul#appointments-list {
       list-style: none;
       padding: 0;
       display: flex;
@@ -100,7 +86,7 @@
       gap: 1.5rem;
     }
 
-    ul.appointments-list li {
+    ul#appointments-list li {
       background-color: var(--card);
       padding: 1.5rem;
       border-radius: 16px;
@@ -111,33 +97,14 @@
       transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
-    ul.appointments-list li:hover {
+    ul#appointments-list li:hover {
       transform: translateY(-3px);
       box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
     }
 
-    ul.appointments-list li span {
+    ul#appointments-list li span {
       font-weight: 500;
       color: var(--text);
-    }
-
-    .status-completed {
-      color: var(--completed);
-      font-weight: 600;
-    }
-
-    .status-cancelled {
-      color: var(--cancelled);
-      font-weight: 600;
-    }
-
-    .status-confirmed {
-      color: var(--primary);
-      font-weight: 600;
-    }
-
-    .status-booked {
-      font-weight: 600;
     }
 
     .cancel-btn {
@@ -152,18 +119,6 @@
 
     .cancel-btn:hover {
       opacity: 0.8;
-    }
-
-    .report-link {
-      color: var(--primary);
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-    }
-
-    .report-link:hover {
-      text-decoration: underline;
     }
 
     footer {
@@ -193,7 +148,7 @@
     }
 
     @media (max-width: 600px) {
-      ul.appointments-list li {
+      ul#appointments-list li {
         flex-direction: column;
         align-items: flex-start;
         gap: 0.5rem;
@@ -207,7 +162,7 @@
       <ul>
         <li><a href="index.html">Home</a></li>
         <li><a href="appointments.html">Book Appointment</a></li>
-        <li><a href="#" id="secure-chat-link">Secure Chat</a></li>
+        <li><a href="chat.html">Secure Chat</a></li>
       </ul>
     </nav>
   </header>
@@ -219,26 +174,10 @@
       Please <a href="login.html">login</a> to view your appointments.
     </div>
 
-    <div id="active-appointments" class="appointments-section" style="display: none;">
-      <h3 class="section-title">Upcoming & Completed Appointments</h3>
-      <ul class="appointments-list">
-        <!-- Active appointments will be loaded here -->
-      </ul>
-    </div>
+    <ul id="appointments-list" style="display: none;">
+      <!-- Appointments will be loaded here -->
+    </ul>
 
-    <div id="cancelled-appointments" class="appointments-section" style="display: none;">
-      <h3 class="section-title">Cancelled Appointments</h3>
-      <ul class="appointments-list">
-        <!-- Cancelled appointments will be loaded here -->
-      </ul>
-    </div>
-
-    <div id="no-appointments" style="display: none; text-align: center; margin: 2rem 0;">
-      You have no appointments.<br>
-      <a href="appointments.html" style="color: var(--primary);">Book one now</a>
-    </div>
-
-  </main>
 
   <footer>
     <p>&copy; 2025 Telemedicine Portal</p>
@@ -247,19 +186,8 @@
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       const token = localStorage.getItem('token');
-      const activeAppointmentsSection = document.getElementById('active-appointments');
-      const cancelledAppointmentsSection = document.getElementById('cancelled-appointments');
-      const noAppointmentsMessage = document.getElementById('no-appointments');
+      const appointmentsList = document.getElementById('appointments-list');
       const loginMessage = document.getElementById('login-message');
-      const secureChatLink = document.getElementById('secure-chat-link');
-
-      // Update chat link based on user type
-      const userType = localStorage.getItem('user_type');
-      if (userType === 'doctor') {
-        secureChatLink.href = 'doctor-chat.html';
-      } else {
-        secureChatLink.href = 'chat.html';
-      }
 
       if (!token) {
         showLoginPrompt();
@@ -282,48 +210,19 @@
         const appointments = await loadAppointments(token);
 
         if (appointments.length > 0) {
-          const { activeAppointments, cancelledAppointments } = separateAppointments(appointments);
-          
-          if (activeAppointments.length > 0) {
-            renderAppointments(activeAppointments, 'active', userId, userType);
-            activeAppointmentsSection.style.display = 'block';
-          }
-          
-          if (cancelledAppointments.length > 0) {
-            renderAppointments(cancelledAppointments, 'cancelled', userId, userType);
-            cancelledAppointmentsSection.style.display = 'block';
-          }
-          
-          if (activeAppointments.length === 0 && cancelledAppointments.length === 0) {
-            showNoAppointments();
-          }
-          
+          renderAppointments(appointments, userId, userType);
           setupCancelButtons(token);
         } else {
           showNoAppointments();
         }
 
+        appointmentsList.style.display = 'flex';
         loginMessage.style.display = 'none';
       } catch (error) {
         console.error('Error:', error);
         handleError(error);
       }
     });
-
-    function separateAppointments(appointments) {
-      const activeAppointments = [];
-      const cancelledAppointments = [];
-      
-      appointments.forEach(appt => {
-        if (appt.status.toLowerCase() === 'cancelled') {
-          cancelledAppointments.push(appt);
-        } else {
-          activeAppointments.push(appt);
-        }
-      });
-      
-      return { activeAppointments, cancelledAppointments };
-    }
 
     async function loadAppointments(token) {
       const response = await fetch('http://localhost:5501/appointments', {
@@ -338,52 +237,108 @@
       return data.appointments;
     }
 
-    function renderAppointments(appointments, type, userId, userType) {
-      const container = type === 'cancelled' 
-        ? document.querySelector('#cancelled-appointments .appointments-list')
-        : document.querySelector('#active-appointments .appointments-list');
+function renderAppointments(appointments, userId, userType) {
+  const appointmentsList = document.getElementById('appointments-list');
 
-      container.innerHTML = appointments.map(appt => {
-        const doctorName = appt.doctor_name || `${appt.doctor_nome} ${appt.doctor_cognome}` || 'Doctor';
-        const date = new Date(appt.date);
-        const formattedDate = date.toLocaleDateString('en-US', {
-          weekday: 'short',
-          month: 'short',
-          day: 'numeric'
-        });
+  appointmentsList.innerHTML = appointments.map(appt => {
+    const doctorName = appt.doctor_name || `${appt.doctor_nome} ${appt.doctor_cognome}` || 'Doctor';
+    const date = new Date(appt.date);
+    const formattedDate = date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
+    });
 
-        // Format report link if available
-        let reportLink = '';
-        if (appt.medical_report_url) {
-          const reportUrl = appt.medical_report_url.startsWith('http') 
-            ? appt.medical_report_url 
-            : `http://localhost:5501${appt.medical_report_url}`;
-          
-          reportLink = `
-            <a href="${reportUrl}" target="_blank" class="report-link">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 12H15M12 9L12 15M12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-              View Report
-            </a>
-          `;
-        }
+    // Aggiungi la visualizzazione delle note
+    const notesButton = appt.notes ? `
+      <button class="view-notes-btn" data-notes="${escapeHtml(appt.notes)}" 
+        style="background: var(--primary); color: white; border: none; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer;">
+        View Notes
+      </button>
+    ` : 'No notes';
 
-        return `
-          <li>
-            <span>📅 ${formattedDate}</span>
-            <span>🕒 ${appt.time}</span>
-            <span>👨‍⚕️ ${doctorName}</span>
-            <span class="status-${appt.status.toLowerCase()}">${appt.status}</span>
-            ${reportLink || '<span>No report</span>'}
-            ${type !== 'cancelled' && appt.status !== 'completed' ? `
-              <button class="cancel-btn" data-id="${appt.id}">Cancel</button>
-            ` : ''}
-          </li>
-        `;
-      }).join('');
+    // Modificato il percorso del report
+    let reportLink = '';
+    if (appt.medical_report_url) {
+      const reportUrl = `http://localhost:5500/backend/${appt.medical_report_url}`;
+      reportLink = `
+        <span>
+          <a href="${reportUrl}" target="_blank" style="color: var(--primary); text-decoration: underline;">
+            📄 View Medical Report
+          </a>
+        </span>
+      `;
     }
 
+    return `
+      <li>
+        <span>📅 ${formattedDate}</span>
+        <span>🕒 ${appt.time}</span>
+        <span>👨‍⚕️ ${doctorName}</span>
+        <span class="status-${appt.status.toLowerCase()}">${appt.status}</span>
+        ${reportLink}
+        <span>${notesButton}</span>
+        ${appt.status !== 'cancelled' && appt.status !== 'completed' ? `
+          <button class="cancel-btn" data-id="${appt.id}">Cancel</button>
+        ` : ''}
+      </li>
+    `;
+  }).join('');
+
+  // Aggiungi l'handler per i pulsanti delle note
+  setupNotesButtons();
+}
+
+// Aggiungi questa funzione per gestire la visualizzazione delle note
+function setupNotesButtons() {
+  document.querySelectorAll('.view-notes-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const notes = btn.getAttribute('data-notes');
+      showNotesPopup(notes);
+    });
+  });
+}
+
+// Aggiungi questa funzione per mostrare il popup delle note
+function showNotesPopup(notes) {
+  const popup = document.createElement('div');
+  popup.style.position = 'fixed';
+  popup.style.top = '0';
+  popup.style.left = '0';
+  popup.style.right = '0';
+  popup.style.bottom = '0';
+  popup.style.backgroundColor = 'rgba(0,0,0,0.8)';
+  popup.style.display = 'flex';
+  popup.style.justifyContent = 'center';
+  popup.style.alignItems = 'center';
+  popup.style.zIndex = '1000';
+
+  popup.innerHTML = `
+    <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 500px; width: 90%;">
+      <h3 style="color: var(--primary); margin-bottom: 1rem;">Patient Notes</h3>
+      <div style="padding: 1rem; background: #f8f8f8; border-radius: 8px; white-space: pre-wrap;">
+        ${notes}
+      </div>
+      <button style="margin-top: 1.5rem; padding: 0.75rem 1.5rem; background: var(--error); 
+        color: white; border: none; border-radius: 20px; cursor: pointer; width: 100%;"
+        onclick="this.parentElement.parentElement.remove()">
+        Close
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+}
+
+// Funzione per escape HTML (aggiungila in cima allo script)
+function escapeHtml(unsafe) {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
     function setupCancelButtons(token) {
       document.querySelectorAll('.cancel-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -409,17 +364,18 @@
     }
 
     function showLoginPrompt() {
-      document.getElementById('active-appointments').style.display = 'none';
-      document.getElementById('cancelled-appointments').style.display = 'none';
-      document.getElementById('no-appointments').style.display = 'none';
+      document.getElementById('appointments-list').style.display = 'none';
       document.getElementById('login-message').style.display = 'block';
     }
 
     function showNoAppointments() {
-      document.getElementById('active-appointments').style.display = 'none';
-      document.getElementById('cancelled-appointments').style.display = 'none';
-      document.getElementById('no-appointments').style.display = 'block';
-      document.getElementById('login-message').style.display = 'none';
+      const appointmentsList = document.getElementById('appointments-list');
+      appointmentsList.innerHTML = `
+        <li style="text-align: center; padding: 2rem;">
+          You have no upcoming appointments.<br>
+          <a href="appointments.html" style="color: var(--primary);">Book one now</a>
+        </li>
+      `;
     }
 
     function handleError(error) {
@@ -429,22 +385,18 @@
         return;
       }
 
-      document.getElementById('active-appointments').style.display = 'none';
-      document.getElementById('cancelled-appointments').style.display = 'none';
-      document.getElementById('no-appointments').style.display = 'none';
-      document.getElementById('login-message').style.display = 'none';
-      
-      const errorDiv = document.createElement('div');
-      errorDiv.style.color = 'var(--error)';
-      errorDiv.style.textAlign = 'center';
-      errorDiv.style.margin = '2rem 0';
-      errorDiv.innerHTML = `
-        ${error.message}<br>
-        <button onclick="location.reload()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: var(--primary); color: white; border: none; border-radius: 5px; cursor: pointer;">Retry</button>
+      const appointmentsList = document.getElementById('appointments-list');
+      appointmentsList.innerHTML = `
+        <li style="color: var(--error); text-align: center;">
+          ${error.message}<br>
+          <button onclick="location.reload()">Retry</button>
+        </li>
       `;
-      
-      document.querySelector('main').appendChild(errorDiv);
+      appointmentsList.style.display = 'flex';
+      document.getElementById('login-message').style.display = 'none';
     }
+
+
   </script>
 </body>
 </html>
